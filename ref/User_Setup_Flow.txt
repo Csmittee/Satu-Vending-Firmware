@@ -1,0 +1,126 @@
+========================================
+SATU VENDING MACHINE - USER SETUP FLOW
+========================================
+
+OVERVIEW:
+The machine is designed for zero-touch setup. No app, no laptop, no technical
+skills required. Anyone with a smartphone can set it up in under 2 minutes.
+
+========================================
+PHASE 1: PHYSICAL SETUP
+========================================
+
+1. Remove machine from box
+2. Place on stable surface near power outlet
+3. Plug power cord into machine
+4. Plug other end into wall outlet
+5. Machine powers on automatically
+
+Expected behavior:
+- Screen lights up
+- Shows "SATU VENDING MACHINE" boot screen
+- After 30 seconds, shows setup instructions
+
+========================================
+PHASE 2: WI-FI PROVISIONING (Captive Portal)
+========================================
+
+Machine displays:
+"Connect to Wi-Fi network 'Satu-Setup' on your phone"
+
+User steps:
+1. Open phone Wi-Fi settings
+2. Find and tap "Satu-Setup" (no password required)
+3. Phone automatically opens setup webpage (captive portal)
+4. Webpage shows list of nearby Wi-Fi networks
+5. Tap your temple's Wi-Fi name
+6. Enter Wi-Fi password
+7. Tap "Connect"
+
+Expected behavior:
+- Machine connects to temple Wi-Fi
+- Machine calls backend with status "unclaimed"
+- Machine generates 6-digit registration code
+- Screen updates to show registration code
+
+========================================
+PHASE 3: REGISTRATION (Backend Claim)
+========================================
+
+Machine displays:
+"REGISTRATION CODE: 371492"
+"Log into satu.com/register and enter this code"
+
+User steps:
+1. Open phone browser (still connected to temple Wi-Fi)
+2. Go to satu.com/register
+3. Log in with email and password (or create account)
+4. Click "Register New Machine"
+5. Enter 6-digit code from screen
+6. Fill in temple details:
+   - Temple name
+   - Address
+   - Contact person name
+   - Phone number
+7. Click "Register"
+
+Expected behavior:
+- Backend validates code
+- Backend links machine to user account
+- Backend sends "registered" command to machine
+- Machine screen changes to "READY"
+- Machine begins normal operation
+
+========================================
+PHASE 4: NORMAL OPERATION
+========================================
+
+Machine displays:
+"SATU VENDING MACHINE"
+"Insert ID card to begin"
+
+User inserts Thai national ID card:
+- Machine reads 13-digit ID
+- User selects product on touchscreen
+- Machine displays QR code for PromptPay
+- User scans with banking app
+- Payment confirmed
+- Machine dispenses product
+- Door unlocks
+- User removes product
+- Transaction complete
+
+========================================
+TROUBLESHOOTING
+========================================
+
+Problem: Cannot find "Satu-Setup" Wi-Fi
+Solution: Wait 60 seconds after power on. If still not visible,
+         unplug for 10 seconds and try again.
+
+Problem: Captive portal doesn't open automatically
+Solution: Open phone browser and go to 192.168.4.1
+
+Problem: Registration code invalid
+Solution: Code expires after 1 hour. Unplug machine for 10 seconds
+         to generate new code.
+
+Problem: Forgot Wi-Fi password
+Solution: Contact temple IT staff. Or perform factory reset
+         (see maintenance section).
+
+========================================
+FACTORY RESET (User Accessible)
+========================================
+
+From idle screen, press and hold the top-right corner of
+touchscreen for 10 seconds.
+
+Screen shows: "Factory reset? All data will be erased."
+Tap "Confirm" to reset.
+
+After reset, machine restarts and repeats Phase 2 setup.
+
+========================================
+END OF SEED 1
+========================================
