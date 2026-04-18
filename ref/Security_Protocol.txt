@@ -1,0 +1,185 @@
+========================================
+SATU VENDING MACHINE - SECURITY PROTOCOL
+========================================
+
+This document defines the hardware and firmware security measures
+to prevent unauthorized copying, reading, or modification.
+
+========================================
+HARDWARE SECURITY (ESP32-S3 Features)
+========================================
+
+1. FLASH ENCRYPTION (AES-XTS)
+   - Encrypts entire external flash
+   - Decryption key stored in eFuse (one-time programmable)
+   - Key never leaves chip
+   - Enables: espefuse.py burn_efuse FLASH_CRYPT_CNT
+
+2. SECURE BOOT V2
+   - Verifies digital signature of bootloader and firmware
+   - Public key hash stored in eFuse
+   - Prevents running modified firmware
+   - Enables: espefuse.py burn_efuse ABS_DONE_1
+
+3. DISABLE JTAG
+   - Blocks debugging access
+   - Prevents memory read via JTAG
+   - Enables: espefuse.py burn_efuse DIS_PAD_JTAG
+   - Enables: espefuse.py burn_efuse DIS_USB_JTAG
+
+4. DISABLE UART BOOTLOADER
+   - Prevents flashing via serial
+   - Blocks readout via UART download mode
+   - Enables: espefuse.py burn_efuse UART_DOWNLOAD_DIS
+   - Enables: espefuse.py burn_efuse DISABLE_DL_DECRYPT
+
+========================================
+PRODUCTION WORKFLOW
+========================================
+
+BEFORE PRODUCTION (Test boards):
+- Security disabled
+- JTAG enabled for debugging
+- UART bootloader enabled
+- Use for development only
+
+PRODUCTION FLASHING (Each board):
+1. Flash firmware via USB
+2. Run test suite
+3. Burn security eFuses (one-time, irreversible)
+4. Verify protection: espefuse.py summary
+5. Label board with MAC and Device ID
+6. Ship
+
+BURN COMMANDS (Run once per board):
+espefuse.py --port COM3 burn_efuse FLASH_CRYPT_CNT
+espefuse.py --port COM3 burn_efuse ABS_DONE_1
+espefuse.py --port COM3 burn_efuse DIS_PAD_JTAG
+espefuse.py --port COM3 burn_efuse DIS_USB_JTAG
+espefuse.py --port COM3 burn_efuse UART_DOWNLOAD_DIS
+espefuse.py --port COM3 burn_efuse DISABLE_DL_DECRYPT
+
+========================================
+FIRMWARE SIGNING (OTA Updates)
+========================================
+
+SIGNING KEY GENERATION (Offline, air-gapped computer):
+espsecure.py generate_signing_key --version 2 secure_boot_key.pem
+
+SIGNING OTA FIRMWARE:
+espsecure.py sign_data --key secure_boot_key.pem --version 2 \
+    --output firmware_signed.bin firmware.bin
+
+VERIFY SIGNATURE:
+espsecure.py verify_signature --key secure_boot_key.pem \
+    --signature firmware_signed.bin.sig firmware.bin
+
+========================================
+BACKEND SECURITY (Registration)
+========================================
+
+1. MAC ADDRESS TRACKING
+   - Every board has unique MAC burned in chip
+   - MAC is read during first boot
+   - MAC cannot be changed (hardware level)
+
+2. ONE-TIME SETUP CODES
+   - 6-digit alphanumeric code (e.g., "A1B2C3")
+   - Generated in batches, printed on stickers
+   - Code must be entered during registration
+   - Code is one-time use, expires after 1 hour
+   - Code links MAC to user account
+
+3. OWNERSHIP LOCK
+   - Device can only be claimed by logged-in user
+   - Device tied to user account in database
+   - Admin can override (logged in ownership_log)
+
+4. HEARTBEAT VERIFICATION
+   - Device sends heartbeats every 5 minutes
+   - Backend verifies device_id and status
+   - Disabled devices return error on any vend attempt
+
+========================================
+WHAT A CLONER CAN/CANNOT DO
+========================================
+
+CAN:
+- Desolder flash chip and read encrypted data (garbage)
+- Copy flash to another chip (won't boot without decryption key)
+- Reverse engineer PCB and build identical hardware
+
+CANNOT:
+- Read firmware (flash encryption prevents this)
+- Run copied firmware on another chip (missing decryption key)
+- Modify firmware (Secure Boot rejects it)
+- Debug via JTAG (disabled)
+- Flash via UART (disabled)
+- Register clone with backend (MAC not in database, no setup code)
+
+COST TO BREAK:
+- Decapping and electron microscope reading of eFuses: >$100,000
+- Not economical for vending machine cloning
+
+========================================
+FIRMWARE SELF-PROTECTION
+========================================
+
+The firmware must also protect itself at runtime:
+
+1. CHECK FLASH ENCRYPTION STATUS
+   On boot, verify FLASH_CRYPT_CNT > 0
+   If not, refuse to vend, show error
+
+2. CHECK SECURE BOOT STATUS
+   On boot, verify ABS_DONE_1 = 1
+   If not, refuse to vend
+
+3. CHECK FOR DEBUGGING
+   Periodically check if JTAG or UART is accessible
+   If detected, disable vending and log to backend
+
+4. RUNTIME INTEGRITY CHECK
+   Optional: CRC check of critical code sections
+   If mismatch, trigger safe mode
+
+========================================
+PRODUCTION CHECKLIST (Per Batch)
+========================================
+
+Before assembly:
+[ ] Generate batch of setup codes
+[ ] Upload codes to D1 database
+[ ] Print stickers with codes
+
+During assembly:
+[ ] Flash firmware to each board
+[ ] Run test suite
+[ ] Burn security eFuses
+[ ] Verify protection with espefuse.py summary
+[ ] Apply sticker with code to enclosure
+[ ] Record MAC and Device ID in spreadsheet
+
+After assembly:
+[ ] Ship to customer
+[ ] Customer registers using code from sticker
+[ ] Dashboard shows device online
+
+========================================
+RECOVERY PROCEDURES
+========================================
+
+If a board fails in field and needs replacement:
+
+1. Ship replacement board (pre-flashed, pre-burned)
+2. In dashboard, transfer ownership from old MAC to new MAC
+3. Old MAC is marked "decommissioned"
+4. Customer does NOT need to re-register
+
+If board is lost/stolen and later reappears online:
+1. Dashboard alerts admin
+2. Admin can disable, track IP, or ignore
+
+========================================
+END OF SEED 3
+========================================
