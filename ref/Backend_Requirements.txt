@@ -1,0 +1,211 @@
+========================================
+SATU VENDING MACHINE - BACKEND REQUIREMENTS
+========================================
+
+This document defines the API endpoints and business logic required
+for the backend team to implement. All endpoints are hosted on
+Cloudflare Workers with D1 database.
+
+========================================
+API ENDPOINTS SUMMARY
+========================================
+
+| Method | Endpoint | Purpose | Called By |
+|--------|----------|---------|-----------|
+| POST   | /api/machine/hello | First contact, unclaimed | Machine |
+| POST   | /api/machine/register | Claim machine | User (via dashboard) |
+| GET    | /api/machine/commands | Poll for commands | Machine |
+| POST   | /api/machine/heartbeat | Regular status update | Machine |
+| POST   | /api/order | Create payment order | Machine |
+| GET    | /api/order/{id}/status | Check payment | Machine |
+| POST   | /api/order/webhook | Omise payment callback | Omise |
+| POST   | /api/admin/device/disable | Remote disable | Admin |
+| POST   | /api/admin/device/enable | Remote enable | Admin |
+| POST   | /api/admin/device/reassign | Transfer ownership | Admin |
+| POST   | /api/admin/device/reboot | Force reboot | Admin |
+| POST   | /api/admin/device/factory-reset | Remote reset | Admin |
+
+========================================
+DATABASE SCHEMA
+========================================
+
+-- Users table
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    role TEXT DEFAULT 'user',  -- 'user' or 'admin'
+    created_at INTEGER NOT NULL
+);
+
+-- Devices table
+CREATE TABLE devices (
+    mac TEXT PRIMARY KEY,
+    device_id TEXT UNIQUE,
+    owner_id INTEGER,
+    status TEXT DEFAULT 'pending',  -- 'pending', 'active', 'disabled', 'stolen'
+    temple_name TEXT,
+    address TEXT,
+    contact_phone TEXT,
+    firmware_version TEXT,
+    last_heartbeat INTEGER,
+    first_seen INTEGER,
+    disable_reason TEXT,
+    disabled_at INTEGER,
+    FOREIGN KEY (owner_id) REFERENCES users(id)
+);
+
+-- Setup codes (one-time use)
+CREATE TABLE setup_codes (
+    code TEXT PRIMARY KEY,
+    used INTEGER DEFAULT 0,
+    assigned_mac TEXT,
+    generated_at INTEGER,
+    used_at INTEGER
+);
+
+-- Orders
+CREATE TABLE orders (
+    order_id TEXT PRIMARY KEY,
+    device_id TEXT,
+    user_id TEXT,
+    product_id INTEGER,
+    amount INTEGER,
+    status TEXT,  -- 'pending', 'paid', 'expired', 'failed'
+    omise_charge_id TEXT,
+    qr_code_url TEXT,
+    created_at INTEGER,
+    paid_at INTEGER,
+    FOREIGN KEY (device_id) REFERENCES devices(device_id)
+);
+
+-- Device commands (pending)
+CREATE TABLE device_commands (
+    id INTEGER PRIMARY KEY,
+    device_id TEXT,
+    command TEXT,  -- 'disable', 'enable', 'reboot', 'update'
+    data TEXT,  -- JSON payload
+    created_at INTEGER,
+    executed INTEGER DEFAULT 0,
+    executed_at INTEGER
+);
+
+-- Ownership transfer log
+CREATE TABLE ownership_log (
+    id INTEGER PRIMARY KEY,
+    device_mac TEXT,
+    from_user_id INTEGER,
+    to_user_id INTEGER,
+    reason TEXT,
+    changed_by INTEGER,
+    changed_at INTEGER
+);
+
+========================================
+API DETAILS
+========================================
+
+1. POST /api/machine/hello
+   Called when machine first connects to internet.
+   Request: { "mac": "94:B5:5D:A1:B2:C3", "status": "unclaimed" }
+   Response: { "status": "ok", "message": "Device registered, waiting for claim" }
+   Action: Store device with status='pending', generate 6-digit setup code,
+           store in setup_codes table, return code to machine? (Machine generates its own)
+
+2. POST /api/machine/register
+   Called from dashboard when user claims machine.
+   Request: { "userId": 123, "setup_code": "371492", "temple_name": "Wat Phra Kaew", "address": "..." }
+   Response: { "status": "ok", "device_id": "SATU-A1B2C3" }
+   Action: Verify code exists and unused, mark used, assign device to user,
+           insert command 'register' into device_commands table
+
+3. GET /api/machine/commands?device_id=SATU-A1B2C3
+   Called by machine every 30 seconds.
+   Response: { "commands": [{"command": "disable", "reason": "payment_overdue"}] }
+   Action: Return all unexecuted commands for this device, mark as executed
+
+4. POST /api/machine/heartbeat
+   Called by machine every 5 minutes.
+   Request: { "device_id": "SATU-A1B2C3", "free_heap": 184320, "firmware": "v1.0.2" }
+   Response: { "status": "ok" }
+   Action: Update last_heartbeat in devices table
+
+5. POST /api/order
+   Called by machine after product selection.
+   Request: { "device_id": "SATU-A1B2C3", "user_id": "1234567890", "product_id": 3 }
+   Response: { "order_id": "ORD-001", "qr_code_url": "https://...", "amount": 10 }
+   Action: Create order in Omise, store in orders table, return QR code
+
+6. GET /api/order/{order_id}/status
+   Called by machine to poll payment status.
+   Response: { "status": "paid" }
+   Action: Check orders table, return current status
+
+7. POST /api/order/webhook
+   Called by Omise when payment completes.
+   Request: { "charge_id": "chrg_xxx", "status": "successful", "order_id": "ORD-001" }
+   Response: { "status": "ok" }
+   Action: Update orders table status='paid', insert command 'payment_confirmed' into device_commands
+
+8. POST /api/admin/device/disable
+   Admin only.
+   Request: { "device_id": "SATU-A1B2C3", "reason": "payment_overdue" }
+   Response: { "status": "ok" }
+   Action: Insert 'disable' command into device_commands, update devices.status='disabled'
+
+9. POST /api/admin/device/enable
+   Admin only.
+   Request: { "device_id": "SATU-A1B2C3" }
+   Response: { "status": "ok" }
+   Action: Insert 'enable' command into device_commands, update devices.status='active'
+
+10. POST /api/admin/device/reassign
+    Admin only.
+    Request: { "device_id": "SATU-A1B2C3", "new_owner_email": "newtemple@email.com", "reason": "sold" }
+    Response: { "status": "ok" }
+    Action: Log transfer in ownership_log, update devices.owner_id
+
+========================================
+REMOTE COMMAND TYPES
+========================================
+
+| Command | Data | Machine Action |
+|---------|------|----------------|
+| disable | {"reason": "string"} | Stop vending, show disabled screen, continue heartbeats |
+| enable | {} | Resume normal operation |
+| reboot | {} | Restart ESP32 |
+| factory_reset | {} | Wipe flash, reboot into setup mode |
+| update | {"url": "https://...", "version": "v1.0.3"} | Download and install OTA firmware |
+| register | {"device_id": "SATU-...", "owner_id": 123} | Save device_id, start normal operation |
+
+========================================
+DASHBOARD PAGES (Admin)
+========================================
+
+Required pages:
+- /dashboard/login
+- /dashboard/devices (list all devices)
+- /dashboard/devices/:id (device detail)
+- /dashboard/devices/register (claim new machine)
+- /dashboard/orders (transaction history)
+
+Admin-only pages:
+- /admin/devices (all devices with override controls)
+- /admin/users (manage users)
+- /admin/setup_codes (generate/view codes)
+
+========================================
+SECURITY REQUIREMENTS
+========================================
+
+1. All API endpoints (except webhook) require authentication via JWT token
+2. Admin endpoints require role='admin' check
+3. Setup codes are one-time use, expire after 1 hour
+4. Device commands are stored in database, not sent directly (polling model)
+5. All HTTPS only
+6. Rate limiting on public endpoints
+7. Log all admin actions (who did what, when, to which device)
+
+========================================
+END OF SEED 2
+========================================
