@@ -17,7 +17,7 @@
 // ============================================================
 // WiFi — edit these before flashing
 // ============================================================
-const char* WIFI_SSID     = "chaijohn";
+const char* WIFI_SSID     = "Jaydahome2.4G";
 const char* WIFI_PASSWORD = "Jeda2322";
 
 // ============================================================
