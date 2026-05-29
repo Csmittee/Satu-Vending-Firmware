@@ -1,6 +1,17 @@
 # RULES.md — Satu Lessons (newest at TOP)
 <!-- CC prepends new rule after every session · Chat adds from design decisions · stays scannable -->
 
+New Rules — prepend these to TOP of RULES.md in firmware repo
+
+R-00: Display library = Arduino_GFX NOT TFT_eSPI — TFT_eSPI does not support RGB panel interface
+R-01: PSRAM setting in Arduino IDE must be OPI PSRAM — if set to Disabled, display crashes with "no mem for frame buffer"
+R-02: Upload speed = 460800 on Mac Big Sur — 921600 causes "chip stopped responding" error
+R-03: Touch rotation = ROTATION_INVERTED for ESP32-8048S070C — default orientation is mirrored
+R-04: Display init requires Wire.begin(19,20) called BEFORE touch.begin() — order matters
+R-05: Arduino IDE sometimes resets PSRAM to Disabled when other settings change — always verify before upload
+
+
+
 ## Session Protocol
 - R-01: CC reads CLAUDE.md + RULES.md + PROJECT_STATE.md before touching any file — state names aloud
 - R-02: Fix Mode = CLAUDE.md + RULES.md + 1-2 source files only (low token)
