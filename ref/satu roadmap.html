@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Satu — Project Roadmap</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Chakra+Petch:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #C9A84C;
+  --gold-light: #E8C96A;
+  --gold-dim: #7a6530;
+  --saffron: #FF9933;
+  --deep: #0A0A0F;
+  --surface: #111118;
+  --surface2: #1A1A24;
+  --surface3: #22222F;
+  --border: #2A2A3A;
+  --text: #E8E8F0;
+  --text-dim: #888899;
+  --green: #2ECC71;
+  --green-dim: #1a5c38;
+  --yellow: #F39C12;
+  --yellow-dim: #5c3d0a;
+  --red: #E74C3C;
+  --red-dim: #5c1a14;
+  --blue: #3498DB;
+  --blue-dim: #0d3352;
+  --purple: #9B59B6;
+  --purple-dim: #3d1f52;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Sarabun', sans-serif;
+  background: var(--deep);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Ambient background */
+body::before {
+  content: '';
+  position: fixed;
+  top: -200px; left: 50%;
+  transform: translateX(-50%);
+  width: 800px; height: 800px;
+  background: radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wrapper { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+
+/* Header */
+.header {
+  text-align: center;
+  margin-bottom: 50px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 50%;
+  transform: translateX(-50%);
+  width: 200px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.logo-symbol {
+  font-size: 48px;
+  margin-bottom: 12px;
+  display: block;
+  filter: drop-shadow(0 0 20px rgba(201,168,76,0.4));
+}
+.logo-title {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: 8px;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--saffron));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.logo-sub {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 4px;
+  margin-top: 8px;
+  text-transform: uppercase;
+}
+.vision-tag {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 6px 20px;
+  border: 1px solid var(--gold-dim);
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--gold);
+  letter-spacing: 2px;
+}
+
+/* Overall progress */
+.overall {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 40px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+.stat-card.gold::before { background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+.stat-card.green::before { background: linear-gradient(90deg, transparent, var(--green), transparent); }
+.stat-card.blue::before { background: linear-gradient(90deg, transparent, var(--blue), transparent); }
+.stat-card.saffron::before { background: linear-gradient(90deg, transparent, var(--saffron), transparent); }
+.stat-number {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--gold);
+  display: block;
+}
+.stat-card.green .stat-number { color: var(--green); }
+.stat-card.blue .stat-number { color: var(--blue); }
+.stat-card.saffron .stat-number { color: var(--saffron); }
+.stat-label { font-size: 11px; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+
+/* Phase sections */
+.phase {
+  margin-bottom: 32px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.phase-header {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+.phase-header:hover { filter: brightness(1.1); }
+.phase-1 .phase-header { background: linear-gradient(135deg, #1a1a0a, #1f1a08); border-bottom: 1px solid var(--gold-dim); }
+.phase-2 .phase-header { background: linear-gradient(135deg, #0a1a1a, #08181f); border-bottom: 1px solid #1a5c5c; }
+.phase-3 .phase-header { background: linear-gradient(135deg, #0a1a0a, #081f08); border-bottom: 1px solid var(--green-dim); }
+.phase-4 .phase-header { background: linear-gradient(135deg, #1a0a1a, #1f081f); border-bottom: 1px solid var(--purple-dim); }
+.phase-badge {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.phase-1 .phase-badge { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid var(--gold-dim); }
+.phase-2 .phase-badge { background: rgba(52,152,219,0.15); color: var(--blue); border: 1px solid var(--blue-dim); }
+.phase-3 .phase-badge { background: rgba(46,204,113,0.15); color: var(--green); border: 1px solid var(--green-dim); }
+.phase-4 .phase-badge { background: rgba(155,89,182,0.15); color: var(--purple); border: 1px solid var(--purple-dim); }
+.phase-title {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  flex: 1;
+}
+.phase-status {
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-family: 'Space Mono', monospace;
+  letter-spacing: 1px;
+}
+.status-active { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid var(--gold-dim); }
+.status-pending { background: rgba(136,136,153,0.1); color: var(--text-dim); border: 1px solid var(--border); }
+.status-done { background: rgba(46,204,113,0.15); color: var(--green); border: 1px solid var(--green-dim); }
+.phase-progress-bar {
+  height: 3px;
+  background: var(--surface3);
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+}
+.phase-progress-fill {
+  height: 100%;
+  transition: width 0.8s ease;
+}
+.phase-1 .phase-progress-fill { background: linear-gradient(90deg, var(--gold), var(--saffron)); }
+.phase-2 .phase-progress-fill { background: linear-gradient(90deg, var(--blue), #5dade2); }
+.phase-3 .phase-progress-fill { background: linear-gradient(90deg, var(--green), #58d68d); }
+.phase-4 .phase-progress-fill { background: linear-gradient(90deg, var(--purple), #bb8fce); }
+.phase-toggle { color: var(--text-dim); font-size: 18px; transition: transform 0.3s; }
+.phase.collapsed .phase-toggle { transform: rotate(-90deg); }
+
+.phase-body {
+  background: var(--surface);
+  padding: 24px;
+}
+.phase.collapsed .phase-body { display: none; }
+
+/* Categories within phase */
+.category { margin-bottom: 24px; }
+.category:last-child { margin-bottom: 0; }
+.category-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--surface3);
+}
+
+/* Task items */
+.tasks { display: flex; flex-direction: column; gap: 8px; }
+.task {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--surface2);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  transition: border-color 0.2s;
+}
+.task:hover { border-color: var(--surface3); }
+.task-icon {
+  font-size: 16px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+.task-content { flex: 1; min-width: 0; }
+.task-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.task-detail {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.task-tags { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.tag {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.tag-done { background: rgba(46,204,113,0.1); color: var(--green); border: 1px solid var(--green-dim); }
+.tag-wip { background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid var(--gold-dim); }
+.tag-next { background: rgba(52,152,219,0.1); color: var(--blue); border: 1px solid var(--blue-dim); }
+.tag-blocked { background: rgba(231,76,60,0.1); color: var(--red); border: 1px solid var(--red-dim); }
+.tag-future { background: rgba(136,136,153,0.1); color: var(--text-dim); border: 1px solid var(--border); }
+.tag-critical { background: rgba(255,153,51,0.1); color: var(--saffron); border: 1px solid #7a5020; }
+
+/* Action plan box */
+.action-plan {
+  background: var(--surface);
+  border: 1px solid var(--gold-dim);
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+}
+.action-plan::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), var(--saffron), transparent);
+}
+.action-plan-title {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 16px;
+  color: var(--gold);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+.action-items { display: flex; flex-direction: column; gap: 10px; }
+.action-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--surface2);
+  border-radius: 10px;
+  border-left: 3px solid var(--gold-dim);
+}
+.action-item.urgent { border-left-color: var(--saffron); }
+.action-item.soon { border-left-color: var(--blue); }
+.action-item.later { border-left-color: var(--text-dim); }
+.action-num {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gold-dim);
+  width: 28px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.action-item.urgent .action-num { color: var(--saffron); }
+.action-item.soon .action-num { color: var(--blue); }
+.action-text { flex: 1; }
+.action-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.action-desc { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+.action-when {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+.when-now { background: rgba(255,153,51,0.1); color: var(--saffron); border: 1px solid #7a5020; }
+.when-week { background: rgba(52,152,219,0.1); color: var(--blue); border: 1px solid var(--blue-dim); }
+.when-month { background: rgba(136,136,153,0.1); color: var(--text-dim); border: 1px solid var(--border); }
+
+/* Foundation warning */
+.foundation-box {
+  background: linear-gradient(135deg, #1a0a00, #0f0a00);
+  border: 1px solid #5c3010;
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 32px;
+  position: relative;
+}
+.foundation-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--saffron), transparent);
+}
+.foundation-title {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 14px;
+  color: var(--saffron);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.foundation-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.foundation-item {
+  padding: 12px 16px;
+  background: rgba(255,153,51,0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255,153,51,0.15);
+}
+.foundation-item-title { font-size: 13px; font-weight: 600; color: var(--saffron); margin-bottom: 4px; }
+.foundation-item-desc { font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+
+/* Satu version timeline */
+.version-timeline {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.version-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.version-card.current { border-color: var(--gold-dim); }
+.version-card.next { border-color: var(--blue-dim); }
+.version-card.future { border-color: var(--purple-dim); }
+.version-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+}
+.version-card.current::before { background: linear-gradient(90deg, var(--gold), var(--saffron)); }
+.version-card.next::before { background: linear-gradient(90deg, var(--blue), #5dade2); }
+.version-card.future::before { background: linear-gradient(90deg, var(--purple), #bb8fce); }
+.version-num {
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.version-card.current .version-num { color: var(--gold); }
+.version-card.next .version-num { color: var(--blue); }
+.version-card.future .version-num { color: var(--purple); }
+.version-name { font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text); }
+.version-desc { font-size: 12px; color: var(--text-dim); line-height: 1.6; margin-bottom: 14px; }
+.version-features { list-style: none; }
+.version-features li {
+  font-size: 11px;
+  color: var(--text-dim);
+  padding: 3px 0;
+  padding-left: 14px;
+  position: relative;
+}
+.version-features li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--gold-dim);
+}
+.version-card.next .version-features li::before { color: var(--blue-dim); }
+.version-card.future .version-features li::before { color: var(--purple-dim); }
+.version-tag {
+  display: inline-block;
+  margin-top: 14px;
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  letter-spacing: 1px;
+}
+.version-card.current .version-tag { background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid var(--gold-dim); }
+.version-card.next .version-tag { background: rgba(52,152,219,0.1); color: var(--blue); border: 1px solid var(--blue-dim); }
+.version-card.future .version-tag { background: rgba(155,89,182,0.1); color: var(--purple); border: 1px solid var(--purple-dim); }
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding-top: 40px;
+  border-top: 1px solid var(--border);
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .overall { grid-template-columns: repeat(2, 1fr); }
+  .version-timeline { grid-template-columns: 1fr; }
+  .foundation-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="header">
+    <span class="logo-symbol">🕉️</span>
+    <div class="logo-title">SATU</div>
+    <div class="logo-sub">Sacred Automated Temple Unit — Project Roadmap</div>
+    <div class="vision-tag">From Prototype → National Digital Donation Infrastructure</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="overall">
+    <div class="stat-card gold">
+      <span class="stat-number">1.0</span>
+      <div class="stat-label">Current Version</div>
+    </div>
+    <div class="stat-card green">
+      <span class="stat-number">~35%</span>
+      <div class="stat-label">Phase 1 Complete</div>
+    </div>
+    <div class="stat-card blue">
+      <span class="stat-number">4</span>
+      <div class="stat-label">Phases Total</div>
+    </div>
+    <div class="stat-card saffron">
+      <span class="stat-number">3</span>
+      <div class="stat-label">Satu Generations</div>
+    </div>
+  </div>
+
+  <!-- Version Timeline -->
+  <div class="version-timeline">
+    <div class="version-card current">
+      <div class="version-num">Satu 1.0</div>
+      <div class="version-name">Temple Donation Vending Machine</div>
+      <div class="version-desc">Physical machine in temple. Donor selects item (amulet, blessing card), pays via PromptPay QR, machine dispenses.</div>
+      <ul class="version-features">
+        <li>ESP32 hardware + touch display</li>
+        <li>Cloudflare Workers backend</li>
+        <li>Omise PromptPay integration</li>
+        <li>Temple owner dashboard</li>
+        <li>Remote machine management</li>
+      </ul>
+      <span class="version-tag">IN DEVELOPMENT</span>
+    </div>
+    <div class="version-card next">
+      <div class="version-num">Satu 2.0</div>
+      <div class="version-name">National Digital Donation Platform</div>
+      <div class="version-desc">Government-scale system. 3D visual storytelling per temple. Tax-exempt donation certificates. Every temple in Thailand.</div>
+      <ul class="version-features">
+        <li>3D temple visualization per machine</li>
+        <li>Tax exemption certificates (PDPA)</li>
+        <li>Government MOU / BOI approval</li>
+        <li>Multi-temple reporting dashboard</li>
+        <li>Anti-fraud + audit trail</li>
+        <li>National rollout infrastructure</li>
+      </ul>
+      <span class="version-tag">CONCEPT STAGE</span>
+    </div>
+    <div class="version-card future">
+      <div class="version-num">Satu 3.0</div>
+      <div class="version-name">AI Dharma — Ancient Wisdom, Modern Interface</div>
+      <div class="version-desc">AI Buddhist guidance system. 2,000 years of Dhamma wisdom accessible via natural conversation. Daily life guidance rooted in Buddhist philosophy.</div>
+      <ul class="version-features">
+        <li>AI monk consultation interface</li>
+        <li>Dhamma knowledge base</li>
+        <li>Merit tracking & spiritual journey</li>
+        <li>Multi-language (TH/EN/CN/JP)</li>
+        <li>Integration with Satu 2.0 network</li>
+      </ul>
+      <span class="version-tag">VISION</span>
+    </div>
+  </div>
+
+  <!-- Immediate Action Plan -->
+  <div class="action-plan">
+    <div class="action-plan-title">⚡ Immediate Action Plan — Next 30 Days</div>
+    <div class="action-items">
+      <div class="action-item urgent">
+        <div class="action-num">1</div>
+        <div class="action-text">
+          <div class="action-title">Complete Omise account setup with sales team</div>
+          <div class="action-desc">Bank account registration, KYC, get live keys. Without this nothing goes live. Meeting already scheduled.</div>
+        </div>
+        <span class="action-when when-now">THIS WEEK</span>
+      </div>
+      <div class="action-item urgent">
+        <div class="action-num">2</div>
+        <div class="action-text">
+          <div class="action-title">Build first physical prototype machine</div>
+          <div class="action-desc">Wire ESP32 per wiring diagram. Flash firmware. Connect to backend. Full end-to-end test with real PromptPay scan.</div>
+        </div>
+        <span class="action-when when-now">THIS WEEK</span>
+      </div>
+      <div class="action-item urgent">
+        <div class="action-num">3</div>
+        <div class="action-text">
+          <div class="action-title">Complete firmware — network.h, ui.h, state_machine.h</div>
+          <div class="action-desc">Heartbeat, command polling, QR display, door unlock relay. These headers are stubs — need full implementation.</div>
+        </div>
+        <span class="action-when when-now">THIS WEEK</span>
+      </div>
+      <div class="action-item soon">
+        <div class="action-num">4</div>
+        <div class="action-text">
+          <div class="action-title">Temple owner web UI — claim machine + manage products</div>
+          <div class="action-desc">dashboard/index.html exists but incomplete. Temple owner needs: login, claim machine with setup code, view orders, manage products.</div>
+        </div>
+        <span class="action-when when-week">NEXT 2 WEEKS</span>
+      </div>
+      <div class="action-item soon">
+        <div class="action-num">5</div>
+        <div class="action-text">
+          <div class="action-title">Fix: delete omise.js, simulator.html, login.html (wrong URLs)</div>
+          <div class="action-desc">Dead code cleanup from earlier scan. omise.js is never imported. simulator.html has wrong API paths. login.html points to wrong domain.</div>
+        </div>
+        <span class="action-when when-week">NEXT 2 WEEKS</span>
+      </div>
+      <div class="action-item soon">
+        <div class="action-num">6</div>
+        <div class="action-text">
+          <div class="action-title">Fix rateLimit.js — in-memory Map doesn't work across Workers instances</div>
+          <div class="action-desc">Use Cloudflare Rate Limiting rules in dashboard instead, or implement D1-backed counter. Current code does nothing in production.</div>
+        </div>
+        <span class="action-when when-week">NEXT 2 WEEKS</span>
+      </div>
+      <div class="action-item later">
+        <div class="action-num">7</div>
+        <div class="action-text">
+          <div class="action-title">Order expiry — QR timeout after 30 minutes</div>
+          <div class="action-desc">Pending orders never expire currently. Need a Cloudflare Cron Trigger to mark orders expired and clear command queue.</div>
+        </div>
+        <span class="action-when when-month">THIS MONTH</span>
+      </div>
+      <div class="action-item later">
+        <div class="action-num">8</div>
+        <div class="action-text">
+          <div class="action-title">Make-or-buy decision on hardware frame + dispensing mechanism</div>
+          <div class="action-desc">BOM analysis exists. Need to decide: custom fabricate vs source ready-made vending chassis. Cost, lead time, MOQ.</div>
+        </div>
+        <span class="action-when when-month">THIS MONTH</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Foundation Warning for Scale -->
+  <div class="foundation-box">
+    <div class="foundation-title">⚠️ Foundation to Build Now — Before Scale Becomes Impossible</div>
+    <div class="foundation-grid">
+      <div class="foundation-item">
+        <div class="foundation-item-title">Company Structure</div>
+        <div class="foundation-item-desc">Register proper Thai company (not sole proprietor) before government contracts. BOI promotion application takes 6–12 months. Start now for Satu 2.0 timeline.</div>
+      </div>
+      <div class="foundation-item">
+        <div class="foundation-item-title">PDPA Compliance</div>
+        <div class="foundation-item-desc">Donor consent flow is partially coded but incomplete. At national scale, PDPA violations carry criminal liability. Need legal review before launch.</div>
+      </div>
+      <div class="foundation-item">
+        <div class="foundation-item-title">Security Hardening</div>
+        <div class="foundation-item-desc">At national scale, you become a target. rateLimit.js is broken. Need Cloudflare WAF rules, D1 backup strategy, incident response plan.</div>
+      </div>
+      <div class="foundation-item">
+        <div class="foundation-item-title">IP Protection</div>
+        <div class="foundation-item-desc">File patent/utility model for the machine concept before public demo with partners. Trade secret for firmware (flash encryption already designed in Security_Protocol.txt).</div>
+      </div>
+      <div class="foundation-item">
+        <div class="foundation-item-title">Financial Audit Trail</div>
+        <div class="foundation-item-desc">Temple donations require transparent accounting for trust. Admin dashboard needs export, reconciliation reports, and eventually integration with Thai Revenue Department systems.</div>
+      </div>
+      <div class="foundation-item">
+        <div class="foundation-item-title">Team / AI Resource Plan</div>
+        <div class="foundation-item-desc">Currently solo. Before Satu 2.0 need: 1 backend dev, 1 hardware tech, 1 business dev, legal counsel, accounting. AI can extend runway significantly in early stage.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 1 -->
+  <div class="phase phase-1" id="phase1">
+    <div class="phase-header" onclick="togglePhase('phase1')">
+      <span class="phase-badge">PHASE 1</span>
+      <div class="phase-title">Prototyping — Product & Software Development</div>
+      <span class="phase-status status-active">● ACTIVE</span>
+      <span class="phase-toggle">▾</span>
+      <div class="phase-progress-bar"><div class="phase-progress-fill" style="width:35%"></div></div>
+    </div>
+    <div class="phase-body">
+
+      <div class="category">
+        <div class="category-title">Backend & API</div>
+        <div class="tasks">
+          <div class="task"><span class="task-icon">✅</span><div class="task-content"><div class="task-name">Cloudflare Workers + D1 backend</div><div class="task-detail">index.js, machine.js, order.js, webhook.js, admin.js — all fixed and tested</div><div class="task-tags"><span class="tag tag-done">Done</span></div></div></div>
+          <div class="task"><span class="task-icon">✅</span><div class="task-content"><div class="task-name">Omise PromptPay payment integration</div><div class="task-detail">Live Omise account created, test keys working, real QR confirmed</div><div class="task-tags"><span class="tag tag-done">Done</span></div></div></div>
+          <div class="task"><span class="task-icon">✅</span><div class="task-content"><div class="task-name">Device authentication (fake + live mode)</div><div class="task-detail">X-Device-Secret header, mode-aware bypass for testing</div><div class="task-tags"><span class="tag tag-done">Done</span></div></div></div>
+          <div class="task"><span class="task-icon">✅</span><div class="task-content"><div class="task-name">Webhook idempotency + HMAC verification</div><div class="task-detail">Race condition guard, duplicate webhook protection, Omise signature verified</div><div class="task-tags"><span class="tag tag-done">Done</span></div></div></div>
+          <div class="task"><span class="task-icon">✅</span><div class="task-content"><div class="task-name">14-test automated test suite</div><div class="task-detail">satu-system-tester.html — 14/14 passing. Run after every deploy.</div><div class="task-tags"><span class="tag tag-done">Done</span></div></div></div>
+          <div class="task"><span class="task-icon">✅</span><div class="task-content"><div class="task-name">Admin dashboard (protected)</div><div class="task-detail">ADMIN_SECRET + ADMIN_PATH secrets, XSS protected, DB browser</div><div class="task-tags"><span class="tag tag-done">Done</span></div></div></div>
+          <div class="task"><span class="task-icon">⚠️</span><div class="task-content"><div class="task-name">Rate limiting</div><div class="task-detail">rateLimit.js exists but broken in production (in-memory Map, multi-instance issue)</div><div class="task-tags"><span class="tag tag-wip">Fix Needed</span><span class="tag tag-critical">Security</span></div></div></div>
+          <div class="task"><span class="task-icon">❌</span><div class="task-content"><div class="task-name">Order expiry / QR timeout</div><div class="task-detail">Pending orders never expire. Need Cloudflare Cron Trigger.</div><div class="task-tags"><span class="tag tag-next">Next</span></div></div></div>
+          <div class="task"><span class="task-icon">❌</span><div class="task-content"><div class="task-name">Auth login endpoint (/v1/auth/login)</div><div class="task-detail">JWT system exists but no login route. login.html points to wrong URL.</div><div class="task-tags"><span class="tag tag-next">Next</span></div></div></div>
+          <div class="task"><span class="task-icon">❌</span><div class="task-content"><div class="task-name">PDPA consent flow</div><div class="task-detail">Partially coded in order.js. Not complete. Legal review required before launch.</div><div class="task-tags"><span class="tag tag-next">Next</span><span class="tag tag-critical">Legal</span></div></div></div>
+        </div>
+      </div>
+
+      <div class="category">
+        <div class="category-title">Firmware (ESP32)</div>
+        <div class="tasks">
+          <div class="task"><span class="task-icon">✅</span><div class="task-content"><div class="task-name">State machine architecture</div><div class="task-detail">state_machine.h defined. IDLE, PRODUCT_SELECTION, AWAITING_PAYMENT, VENDING, COMPLETING, ERROR states.</div><div class="task-tags"><span class="tag tag-done">Done</span></div></div></div>
+          <div class="task"><span class="task-icon">✅</span><div class="task-content"><div class="task-name">Hardware pin mapping + config</div><div class="task-detail">config.h complete. MCP23017 addresses, relay pins, LED zones, timeouts defined.</div><div class="task-tags"><span class="tag tag-done">Done</span></div></div></div>
+          <div class="task"><span class="task-icon">✅</span><div class="task-content"><div class="task-name">Security protocol designed</div><div class="task-detail">Flash encryption, Secure Boot V2, JTAG disable, UART disable, OTA signing.</div><div class="task-tags"><span class="tag tag-done">Done</span></div></div></div>
+          <div class="task"><span class="task-icon">⚠️</span><div class="task-content"><div class="task-name">network.h — WiFi + API calls</div><div class="task-detail">Stub exists. Need: WiFi connect, POST /hello, heartbeat, GET /commands, POST /order.</div><div class="task-tags"><span class="tag tag-wip">In Progress</span></div></div></div>
+          <div class="task"><span class="task-icon">⚠️</span><div class="task-content"><div class="task-name">ui.h — Touch display + QR rendering</div><div class="task-detail">Stub exists. Need: product selection screen, QR display, vending animation, error screen.</div><div class="task-tags"><span class="tag tag-wip">In Progress</span></div></div></div>
+          <div class="task"><span class="task-icon">⚠️</span><div class="task-content"><div class="task-name">hardware.h — Relay control + sensors</div><div class="task-detail">Stub exists. Need: MCP23017 init, relay on/off, IR sensor read, door lock/unlock.</div><div class="task-tags"><span class="tag tag-wip">In Progress</span></div></div></div>
+          <div class="task"><span class="task-icon">❌</span><div class="task-content"><div class="task-name">satu_vending.ino — Fix C++ compile error</div><div class="task-detail">Variable declaration inside switch case without braces — won't compile. Fix STATE_PRODUCT_SELECTION case.</div><div class="task-tags"><span class="tag tag-next">Fix Needed</span></div></div></div>
+          <div class="task"><span class="task-icon">❌</span><div class="task-content"><div class="task-name">NVS storage — device_secret persistence</div><div class="task-detail">ESP32 must store device_secret in NVS flash after first /hello. Survives reboot, not factory reset.</div><div class="task-tags"><span class="tag tag-next">Next</span></div></div></div>
+          <div class="task"><span class="task-icon">❌</span><div class="task-content"><div class="task-name">OTA firmware update</div><div class="task-detail">Backend command system ready. ESP32 side needs OTA handler for 'update' command.</div><div class="task-tags"><span class="tag tag-future">Later</span></div></div></div>
+        </div>
+      </div>
+
+      <div class="category">
+        <div class="category-title">Hardware</div>
+        <div class="tasks">
+          <div class="task"><span class="task-icon">✅</span><div class="task-content"><div class="task-name">Wiring diagram complete</div><div class="task-detail">ESP32-S3, 2× MCP23017, relays, IR sensors, WS2812B LEDs, power supply defined.</div><div class="task-tags"><span class="tag tag-done">Done</span></div></div></div>
+          <div class="task"><span class="task-icon">✅</span><div class="task-content"><div class="task-name">BOM created (bom_2025_04.csv)</div><div class="task-detail">Supplier list exists. Components identified.</div><div class="task-tags"><span class="tag tag-done">Done</span></div></div></div>
+          <div class="task"><span class="task-icon">❌</span><div class="task-content"><div class="task-name">Physical prototype build</div><div class="task-detail">First machine assembly. Wire per diagram. Flash firmware. Test relay, sensor, display.</div><div class="task-tags"><span class="tag tag-next">Next</span><span class="tag tag-critical">Critical Path</span></div></div></div>
+          <div class="task"><span class="task-icon">❌</span><div class="task-content"><div class="task-name">Make-or-buy: frame + dispensing mechanism</div><div class="task-detail">Custom fabricate vs ready-made vending chassis. Cost, lead time, MOQ analysis needed.</div><div class="task-tags"><span class="tag tag-next">Next</span></div></div></div>
+          <div class="task"><span class="task-icon">❌</span><div class="task-content"><div class="task-name">End-to-end hardware test</div><div class="task-detail">Real scan → webhook → relay fires → door opens → item dispensed → door closes.</div><div class="task-tags"><span class="tag tag-next">Next</span></div></div></div>
+        </div>
+      </div>
+
+      <div class="category">
+        <div class="category-title">Temple Owner UI & Dashboard</div>
+        <div class="tasks">
+          <div class="task"><span class="task-icon">⚠️</span><div class="task-content"><div class="task-name">Temple owner web dashboard</div><div class="task-detail">dashboard/index.html partial. Needs: login, claim machine, view orders, manage products, see revenue.</div><div class="task-tags"><span class="tag tag-wip">Partial</span></div></div></div>
+          <div class="task"><span class="task-icon">❌</span><div class="task-content"><div class="task-name">Machine claim flow (setup code entry)</div><div class="task-detail">Backend POST /v1/machine/claim exists. Frontend UI to enter 6-digit code not built.</div><div class="task-tags"><span class="tag tag-next">Next</span></div></div></div>
+          <div class="task"><span class="task-icon">❌</span><div class="task-content"><div class="task-name">Mobile app (iOS/Android)</div><div class="task-detail">Not started. Temple owner app for monitoring, or use responsive web for now.</div><div class="task-tags"><span class="tag tag-future">Later</span></div></div></div>
+          <div class="task"><span class="task-icon">❌</span><div class="task-content"><div class="task-name">Donor receipt / confirmation screen</div><div class="task-detail">After payment, show donor name, product, temple, amount. Could be QR → web page.</div><div class="task-tags"><span class="tag tag-future">Later</span></div></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Phase 2 -->
+  <div class="phase phase-2 collapsed" id="phase2">
+    <div class="phase-header" onclick="togglePhase('phase2')">
+      <span class="phase-badge">PHASE 2</span>
+      <div class="phase-title">Process Design — Operations, Legal & Business</div>
+      <span class="phase-status status-pending">● NOT STARTED</span>
+      <span class="phase-toggle">▾</span>
+      <div class="phase-progress-bar"><div class="phase-progress-fill" style="width:0%"></div></div>
+    </div>
+    <div class="phase-body">
+      <div class="category">
+        <div class="category-title">Production & Operations</div>
+        <div class="tasks">
+          <div class="task"><span class="task-icon">📋</span><div class="task-content"><div class="task-name">Production process flow</div><div class="task-detail">Cycle time per unit, assembly steps, quality checkpoints, labor requirements, shop floor layout.</div><div class="task-tags"><span class="tag tag-future">Planned</span></div></div></div>
+          <div class="task"><span class="task-icon">📋</span><div class="task-content"><div class="task-name">Firmware mass production flashing</div><div class="task-detail">Batch flash script, eFuse burning procedure, unit test automation per device.</div><div class="task-tags"><span class="tag tag-future">Planned</span></div></div></div>
+          <div class="task"><span class="task-icon">📋</span><div class="task-content"><div class="task-name">Supply chain & sourcing</div><div class="task-detail">Component suppliers, lead times, safety stock, MOQ negotiation, alternative sources.</div><div class="task-tags"><span class="tag tag-future">Planned</span></div></div></div>
+        </div>
+      </div>
+      <div class="category">
+        <div class="category-title">Legal & Government</div>
+        <div class="tasks">
+          <div class="task"><span class="task-icon">📋</span><div class="task-content"><div class="task-name">Company registration (Thai Ltd.)</div><div class="task-detail">Proper legal entity before government contracts. BOI application for tech startup benefits.</div><div class="task-tags"><span class="tag tag-future">Planned</span><span class="tag tag-critical">Critical</span></div></div></div>
+          <div class="task"><span class="task-icon">📋</span><div class="task-content"><div class="task-name">PDPA full compliance audit</div><div class="task-detail">Data processing agreement, consent management, right to erasure, DPO appointment.</div><div class="task-tags"><span class="tag tag-future">Planned</span><span class="tag tag-critical">Legal</span></div></div></div>
+          <div class="task"><span class="task-icon">📋</span><div class="task-content"><div class="task-name">Religious institution agreements</div><div class="task-detail">MOU template with temples, revenue sharing model, accountability framework.</div><div class="task-tags"><span class="tag tag-future">Planned</span></div></div></div>
+          <div class="task"><span class="task-icon">📋</span><div class="task-content"><div class="task-name">Tax exemption certificate system</div><div class="task-detail">Integration with Revenue Department for Satu 2.0. Legal framework for donation receipts.</div><div class="task-tags"><span class="tag tag-future">Satu 2.0</span></div></div></div>
+        </div>
+      </div>
+      <div class="category">
+        <div class="category-title">Financial & Sales</div>
+        <div class="tasks">
+          <div class="task"><span class="task-icon">📋</span><div class="task-content"><div class="task-name">P&L model per machine</div><div class="task-detail">Hardware cost, installation, monthly cloud cost (Cloudflare ~$5/mo), Omise fees (1.65% PromptPay), maintenance. Break-even analysis.</div><div class="task-tags"><span class="tag tag-future">Planned</span></div></div></div>
+          <div class="task"><span class="task-icon">📋</span><div class="task-content"><div class="task-name">Pricing model</div><div class="task-detail">Machine sale vs revenue share vs SaaS subscription. Temple size tiers.</div><div class="task-tags"><span class="tag tag-future">Planned</span></div></div></div>
+          <div class="task"><span class="task-icon">📋</span><div class="task-content"><div class="task-name">Order & invoice system</div><div class="task-detail">How temples order machines, quote → PO → invoice → delivery tracking.</div><div class="task-tags"><span class="tag tag-future">Planned</span></div></div></div>
+          <div class="task"><span class="task-icon">📋</span><div class="task-content"><div class="task-name">Marketing & sales strategy</div><div class="task-detail">Temple association outreach, Buddhist holiday timing, influencer monks, press. Sale forecast model.</div><div class="task-tags"><span class="tag tag-future">Planned</span></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 3 -->
+  <div class="phase phase-3 collapsed" id="phase3">
+    <div class="phase-header" onclick="togglePhase('phase3')">
+      <span class="phase-badge">PHASE 3</span>
+      <div class="phase-title">Launch & Production — First Temples, Real Revenue</div>
+      <span class="phase-status status-pending">● NOT STARTED</span>
+      <span class="phase-toggle">▾</span>
+      <div class="phase-progress-bar"><div class="phase-progress-fill" style="width:0%"></div></div>
+    </div>
+    <div class="phase-body">
+      <div class="category">
+        <div class="category-title">Launch Milestones</div>
+        <div class="tasks">
+          <div class="task"><span class="task-icon">📋</span><div class="task-content"><div class="task-name">Pilot: 3 temples, 3 machines</div><div class="task-detail">Controlled launch. Collect real data on donation amounts, popular items, failure modes, support load.</div><div class="task-tags"><span class="tag tag-future">Planned</span></div></div></div>
+          <div class="task"><span class="task-icon">📋</span><div class="task-content"><div class="task-name">Backend monitoring & alerting</div><div class="task-detail">Cloudflare Workers logs → alerts. Device heartbeat monitor. Payment failure alerts. On-call procedure.</div><div class="task-tags"><span class="tag tag-future">Planned</span></div></div></div>
+          <div class="task"><span class="task-icon">📋</span><div class="task-content"><div class="task-name">Field support process</div><div class="task-detail">Remote disable/enable already in backend. Physical support SLA. Spare parts inventory.</div><div class="task-tags"><span class="tag tag-future">Planned</span></div></div></div>
+          <div class="task"><span class="task-icon">📋</span><div class="task-content"><div class="task-name">Scale to 50 machines</div><div class="task-detail">Multi-temple reporting, batch firmware OTA, revenue dashboard per temple, central accounting.</div><div class="task-tags"><span class="tag tag-future">Planned</span></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 4 -->
+  <div class="phase phase-4 collapsed" id="phase4">
+    <div class="phase-header" onclick="togglePhase('phase4')">
+      <span class="phase-badge">PHASE 4</span>
+      <div class="phase-title">Growth — Satu 2.0 National Platform + Satu 3.0 AI Dharma</div>
+      <span class="phase-status status-pending">● VISION</span>
+      <span class="phase-toggle">▾</span>
+      <div class="phase-progress-bar"><div class="phase-progress-fill" style="width:0%"></div></div>
+    </div>
+    <div class="phase-body">
+      <div class="category">
+        <div class="category-title">Satu 2.0 — National Scale</div>
+        <div class="tasks">
+          <div class="task"><span class="task-icon">🔮</span><div class="task-content"><div class="task-name">Government MOU — National Temple Network</div><div class="task-detail">Department of Religious Affairs, Fine Arts Dept, Revenue Dept. Become the official digital donation infrastructure.</div><div class="task-tags"><span class="tag tag-future">Vision</span></div></div></div>
+          <div class="task"><span class="task-icon">🔮</span><div class="task-content"><div class="task-name">3D temple visualization per machine</div><div class="task-detail">Each machine shows the temple's actual restoration needs in 3D. "This roof tile costs 200 THB." Emotional, specific, visual.</div><div class="task-tags"><span class="tag tag-future">Vision</span></div></div></div>
+          <div class="task"><span class="task-icon">🔮</span><div class="task-content"><div class="task-name">Tax-exempt donation certificate</div><div class="task-detail">Blockchain-anchored certificate. Revenue Dept API integration. Donor gets PDF + QR for tax filing.</div><div class="task-tags"><span class="tag tag-future">Vision</span></div></div></div>
+          <div class="task"><span class="task-icon">🔮</span><div class="task-content"><div class="task-name">Anti-fraud & audit infrastructure</div><div class="task-detail">At this scale, scammers and corrupt actors will try to divert funds. Immutable audit trail, multi-sig approvals, public transparency dashboard.</div><div class="task-tags"><span class="tag tag-future">Vision</span><span class="tag tag-critical">Critical</span></div></div></div>
+        </div>
+      </div>
+      <div class="category">
+        <div class="category-title">Satu 3.0 — AI Dharma</div>
+        <div class="tasks">
+          <div class="task"><span class="task-icon">🔮</span><div class="task-content"><div class="task-name">AI Buddhist guidance system</div><div class="task-detail">2,000 years of Pali Canon, Thai Buddhist commentaries, modern Dhamma teachers. Natural conversation. Daily guidance. Not a gimmick — deeply respectful.</div><div class="task-tags"><span class="tag tag-future">Vision</span></div></div></div>
+          <div class="task"><span class="task-icon">🔮</span><div class="task-content"><div class="task-name">Merit & spiritual journey tracking</div><div class="task-detail">Donor tracks their merit-making across temples. Pilgrimage digital record. Community of practice.</div><div class="task-tags"><span class="tag tag-future">Vision</span></div></div></div>
+          <div class="task"><span class="task-icon">🔮</span><div class="task-content"><div class="task-name">Multi-language Dhamma</div><div class="task-detail">Thai, English, Chinese, Japanese, Korean. Buddhist tourism is massive. Every temple becomes accessible.</div><div class="task-tags"><span class="tag tag-future">Vision</span></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    SATU PROJECT ROADMAP — LAST UPDATED APRIL 2026 — CONFIDENTIAL
+  </div>
+
+</div>
+
+<script>
+function togglePhase(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('collapsed');
+}
+
+// Animate progress bars on load
+window.addEventListener('load', () => {
+  document.querySelectorAll('.phase-progress-fill').forEach(bar => {
+    const width = bar.style.width;
+    bar.style.width = '0%';
+    setTimeout(() => { bar.style.width = width; }, 300);
+  });
+});
+</script>
+</body>
+</html>
