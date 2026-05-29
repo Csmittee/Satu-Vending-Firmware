@@ -1,14 +1,21 @@
 // ============================================================
 // SATU VENDING MACHINE — Main Firmware
 // Board: ESP32-S3 (ESP32-8048S070C), 7" capacitive touch
-// Flash: 16MB | PSRAM: 8MB
+// Flash: 16MB | PSRAM: 8MB OPI — NEVER change PSRAM setting
 // ============================================================
 // CHANGE LOG:
-//   R2 — Fixed: variable declaration inside switch/case (compile error)
-//         Added: full state machine with all transitions
-//         Added: command polling every 30s
-//         Added: heartbeat every 5min (HEARTBEAT_INTERVAL)
-//         Added: NVS-based device_id + device_secret persistence
+//   R2 — Fixed compile error (variable declaration in switch/case)
+//         Full state machine, command polling, heartbeat, NVS
+//   R3 — ui.h rewrite: TFT_eSPI → Arduino_GFX
+//         getTouchedProduct() → getTouchedSlot()
+//         laneDisabled[] / laneErrorCount[] → NUM_SLOTS (21)
+//         drawQrScreen() / drawVendingScreen() / drawCompletionScreen()
+//           updated signatures
+//         Added: STATE_GIFT_OPTION, STATE_ID_SCAN
+//         Added: loadSlotsFromJson() called after /hello
+//         Added: updateQrTimer() called every second in payment
+//         sacredWater flag passed through to completion screen
+//         Lucky number generated locally (random 10-99)
 // ============================================================
 
 #include "config.h"
@@ -17,31 +24,34 @@
 #include "network.h"
 #include "ui.h"
 
-// ── State machine globals (definitions, not just declarations) ──────────────
-MachineState currentState   = STATE_STARTUP;
-MachineState lastState      = STATE_STARTUP;
-unsigned long stateStartTime = 0;
-String currentOrderId       = "";
-int selectedProduct         = -1;
-String currentUserId        = "";
-int laneErrorCount[10]      = {0};
-bool laneDisabled[10]       = {false};
+// ── State machine globals ────────────────────────────────────────────────────
+MachineState  currentState    = STATE_STARTUP;
+MachineState  lastState       = STATE_STARTUP;
+unsigned long stateStartTime  = 0;
+String        currentOrderId  = "";
+int           selectedSlot    = -1;      // R3: was selectedProduct
+bool          wantSacredWater = false;   // R3: gift option flag
+String        currentUserId   = "";
 
-// ── QR / payment globals (shared with ui.h) ─────────────────────────────────
-String currentQrData        = "";
-int currentAmount           = 0;
+// ── Lane error tracking — now sized for NUM_SLOTS (max 21) ──────────────────
+int  laneErrorCount[NUM_SLOTS] = {0};
+bool laneDisabled[NUM_SLOTS]   = {false};
+
+// ── QR / payment globals ─────────────────────────────────────────────────────
+String currentQrData  = "";
+int    currentAmount  = 0;
 
 // ── Timing ──────────────────────────────────────────────────────────────────
-static unsigned long lastHeartbeatMs  = 0;
+static unsigned long lastHeartbeatMs   = 0;
 static unsigned long lastCommandPollMs = 0;
-static unsigned long lastUiRefreshMs  = 0;
-static unsigned long paymentPollTimer = 0;
+static unsigned long paymentPollTimer  = 0;
+static unsigned long paymentStartMs    = 0;   // for countdown timer
 
-#define COMMAND_POLL_INTERVAL 30000   // 30 seconds
-#define UI_REFRESH_INTERVAL   1000    // UI redraws max 1/sec to avoid flicker
-#define PAYMENT_POLL_INTERVAL 3000    // Poll payment status every 3s
+#define COMMAND_POLL_INTERVAL  30000   // 30 seconds
+#define PAYMENT_POLL_INTERVAL   3000   // 3 seconds
+#define PAYMENT_TIMER_INTERVAL  1000   // update countdown every 1s
 
-// ── setState implementation ──────────────────────────────────────────────────
+// ── setState ─────────────────────────────────────────────────────────────────
 void setState(MachineState newState) {
   lastState      = currentState;
   currentState   = newState;
@@ -49,7 +59,7 @@ void setState(MachineState newState) {
   Serial.printf("[STATE] %d → %d\n", (int)lastState, (int)newState);
 }
 
-// ── Forward declarations ─────────────────────────────────────────────────────
+// ── Forward declarations ──────────────────────────────────────────────────────
 void handleCommands();
 void runStateMachine();
 void runTimers();
@@ -60,22 +70,34 @@ void runTimers();
 void setup() {
   Serial.begin(115200);
   delay(500);
-  Serial.println("\n[SATU] Booting...");
+  Serial.println("\n[SATU] Booting R3...");
 
-  // 1. Hardware first (relays, sensors, LEDs)
+  // 1. Hardware (relays, sensors, LEDs)
   initHardware();
   Serial.println("[SATU] Hardware OK");
 
-  // 2. Display — show boot screen while WiFi connects
+  // 2. Display — boot screen first, then WiFi
   initUI();
-  drawErrorScreen("Connecting to WiFi...");   // reuse error screen as status
+  drawBootScreen("Connecting to WiFi...");
   Serial.println("[SATU] Display OK");
 
-  // 3. Network — connects WiFi, sends /hello, stores device_id + device_secret in NVS
-  initWiFi();                                 // blocks until connected (or reboots after retries)
+  // 3. Network — WiFi connect + /hello (blocks until connected or reboots)
+  //    initWiFi() populates g_deviceId, g_deviceSecret
+  //    Returns JsonDocument with slots[] array from backend
+  JsonDocument helloDoc;
+  initWiFi(helloDoc);   // NOTE: network.h must pass hello response back
+
+  // 4. Load slot config from /hello response
+  if (helloDoc.containsKey("slots")) {
+    loadSlotsFromJson(helloDoc["slots"].as<JsonArray>());
+    Serial.println("[SATU] Slots loaded from backend");
+  } else {
+    Serial.println("[SATU] No slots in /hello — using defaults");
+  }
+
   Serial.println("[SATU] Network OK");
 
-  // 4. Boot animation + idle
+  // 5. Boot animation + idle
   setState(STATE_IDLE);
   idleAnimation();
   drawIdleScreen();
@@ -103,126 +125,137 @@ void runStateMachine() {
 
     // ── IDLE ─────────────────────────────────────────────────────────────
     case STATE_IDLE: {
-      // Waiting for user to touch the screen (product selection)
-      // Touch is detected in getTouchedProduct() which reads TFT_eSPI touch
-      // In this architecture, touching the screen while on the idle screen
-      // transitions directly to PRODUCT_SELECTION.
-      // The drawIdleScreen() is called once on state entry (see runTimers UI refresh).
-      int touched = getTouchedProduct();
+      // Service mode: 3× tap top-right within 2 seconds
+      if (checkServiceGesture()) {
+        setState(STATE_SERVICE);
+        // drawServiceScreen(); // implement in service mode session
+        break;
+      }
+
+      int touched = getTouchedSlot();
       if (touched >= 0) {
-        selectedProduct = touched;
+        selectedSlot = touched;
         setState(STATE_PRODUCT_SELECTION);
-        drawProductSelection();
+        drawProductSelection(selectedSlot);
       }
       break;
     }
 
     // ── PRODUCT_SELECTION ────────────────────────────────────────────────
-    // NOTE: On this board, the "idle screen" IS the product grid.
-    // STATE_PRODUCT_SELECTION handles the confirmation / second tap.
+    // First tap selects + highlights. Second tap confirms → gift option.
+    // 3s timeout returns to idle.
     case STATE_PRODUCT_SELECTION: {
-      int touched = getTouchedProduct();
+      int touched = getTouchedSlot();
+
       if (touched >= 0) {
-        // Check if lane is disabled
-        if (laneDisabled[touched]) {
-          drawErrorScreen("Lane " + String(touched + 1) + " unavailable");
-          delay(2000);
-          setState(STATE_IDLE);
-          drawIdleScreen();
-          break;
+        if (touched == selectedSlot) {
+          // Second tap on same slot — confirm → gift option
+          setState(STATE_GIFT_OPTION);
+          wantSacredWater = false;
+          drawGiftOptionScreen(selectedSlot);
+        } else {
+          // Tapped different slot — re-select
+          selectedSlot = touched;
+          drawProductSelection(selectedSlot);
+          stateStartTime = millis();  // reset timeout
         }
-        selectedProduct = touched;
-        setState(STATE_AWAITING_PAYMENT);
-
-        // Create order on backend → returns QR code URL and amount
-        String qrUrl  = "";
-        int amount    = 0;
-        bool ordered  = createOrder(selectedProduct, qrUrl, amount, currentOrderId);
-
-        if (!ordered || qrUrl.isEmpty()) {
-          Serial.println("[STATE] Order creation failed");
-          setState(STATE_ERROR);
-          drawErrorScreen("ไม่สามารถสร้าง QR ได้\nกรุณาลองใหม่");
-          delay(3000);
-          setState(STATE_IDLE);
-          drawIdleScreen();
-          break;
-        }
-
-        currentQrData  = qrUrl;
-        currentAmount  = amount;
-        paymentPollTimer = millis();
-        drawQrScreen(currentQrData, currentAmount);
-        Serial.printf("[STATE] Order %s created, amount %d THB\n",
-                      currentOrderId.c_str(), currentAmount);
       }
 
-      // Back-to-idle timeout (user walked away without selecting)
-      if (elapsed > 60000) {
+      // 5s idle → back to grid
+      if (elapsed > 5000) {
         setState(STATE_IDLE);
         drawIdleScreen();
       }
       break;
     }
 
-    // ── AWAITING_PAYMENT ─────────────────────────────────────────────────
-    case STATE_AWAITING_PAYMENT: {
-      // Payment confirmed via command poll (see handleCommands) OR
-      // we poll /order/{id}/status here as a fallback.
+    // ── GIFT_OPTION ───────────────────────────────────────────────────────
+    // Donor chooses: Item Only (0) or +Sacred Water (1)
+    case STATE_GIFT_OPTION: {
+      int choice = getTouchedGiftOption();
 
+      if (choice == 0) {
+        // Item only → skip ID scan for now, go straight to payment
+        wantSacredWater = false;
+        Serial.println("[STATE] Gift: Item Only");
+        _proceedToPayment();
+      }
+      else if (choice == 1) {
+        // Sacred water → go to ID scan (or skip if no reader fitted)
+        wantSacredWater = true;
+        Serial.println("[STATE] Gift: +Sacred Water");
+        _proceedToPayment();
+      }
+
+      // 10s timeout → back to idle
+      if (elapsed > 10000) {
+        setState(STATE_IDLE);
+        drawIdleScreen();
+      }
+      break;
+    }
+
+    // ── AWAITING_PAYMENT ──────────────────────────────────────────────────
+    case STATE_AWAITING_PAYMENT: {
+      // Update countdown timer every second
+      static unsigned long lastTimerUpdate = 0;
+      if (millis() - lastTimerUpdate >= PAYMENT_TIMER_INTERVAL) {
+        lastTimerUpdate = millis();
+        int secsLeft = (int)((PAYMENT_TIMEOUT - (millis() - paymentStartMs)) / 1000);
+        if (secsLeft < 0) secsLeft = 0;
+        updateQrTimer(secsLeft);
+      }
+
+      // Timeout
       if (elapsed > PAYMENT_TIMEOUT) {
         Serial.println("[STATE] Payment timeout");
         setState(STATE_ERROR);
-        drawErrorScreen("หมดเวลาชำระเงิน\nกรุณาเริ่มใหม่");
+        drawErrorScreen("Payment timeout\nPlease try again");
         delay(3000);
         setState(STATE_IDLE);
         drawIdleScreen();
         break;
       }
 
-      // Poll payment status every 3 seconds (fallback to webhook/command path)
+      // Poll backend every 3s as fallback (webhook/command is primary path)
       if (millis() - paymentPollTimer > PAYMENT_POLL_INTERVAL) {
         paymentPollTimer = millis();
         String status = checkPaymentStatus(currentOrderId);
         if (status == "paid") {
-          Serial.println("[STATE] Payment confirmed via status poll");
-          setState(STATE_VENDING);
-          drawVendingScreen(selectedProduct);
-          vendProduct(selectedProduct);
+          Serial.println("[STATE] Payment confirmed via poll");
+          _onPaymentConfirmed();
         }
       }
       break;
     }
 
-    // ── VENDING ──────────────────────────────────────────────────────────
+    // ── VENDING ───────────────────────────────────────────────────────────
     case STATE_VENDING: {
-      // vendProduct() fires the relay and waits for the item to drop
-      // Transition happens in STATE_WAITING_DROP
       setState(STATE_WAITING_DROP);
       break;
     }
 
-    // ── WAITING_DROP ─────────────────────────────────────────────────────
+    // ── WAITING_DROP ──────────────────────────────────────────────────────
     case STATE_WAITING_DROP: {
-      // Wait for IR sensor to confirm item has dropped
-      bool dropped = readSensor(selectedProduct);  // sensor triggers LOW when item passes
+      bool dropped = readSensor(selectedSlot);
       if (!dropped) {
-        // Item detected (sensor triggered)
         setState(STATE_DISPENSING);
         unlockDoor();
         Serial.println("[STATE] Item dropped, door unlocked");
       }
 
       if (elapsed > DROP_TIMEOUT) {
-        laneErrorCount[selectedProduct]++;
-        Serial.printf("[STATE] Drop timeout on lane %d (errors: %d)\n",
-                      selectedProduct, laneErrorCount[selectedProduct]);
-        if (laneErrorCount[selectedProduct] >= 3) {
-          laneDisabled[selectedProduct] = true;
-          Serial.printf("[STATE] Lane %d disabled after 3 errors\n", selectedProduct);
+        laneErrorCount[selectedSlot]++;
+        Serial.printf("[STATE] Drop timeout lane %d (errors: %d)\n",
+                      selectedSlot, laneErrorCount[selectedSlot]);
+        if (laneErrorCount[selectedSlot] >= 3) {
+          laneDisabled[selectedSlot] = true;
+          // Also mark slot as disabled in g_slots so UI greys it out
+          g_slots[selectedSlot].enabled = false;
+          Serial.printf("[STATE] Slot %d disabled\n", selectedSlot);
         }
         setState(STATE_ERROR);
-        drawErrorScreen("กรุณาติดต่อเจ้าหน้าที่\nLane " + String(selectedProduct + 1) + " error");
+        drawErrorScreen("Please contact staff\nSlot " + String(selectedSlot + 1) + " error");
         delay(3000);
         setState(STATE_IDLE);
         drawIdleScreen();
@@ -230,43 +263,35 @@ void runStateMachine() {
       break;
     }
 
-    // ── DISPENSING ───────────────────────────────────────────────────────
+    // ── DISPENSING ────────────────────────────────────────────────────────
     case STATE_DISPENSING: {
-      // Door is open, waiting for user to take item
       setState(STATE_WAITING_REMOVAL);
       break;
     }
 
-    // ── WAITING_REMOVAL ──────────────────────────────────────────────────
+    // ── WAITING_REMOVAL ───────────────────────────────────────────────────
     case STATE_WAITING_REMOVAL: {
-      // Wait for user to take item (IR clears) or timeout
-      bool itemGone = readSensor(selectedProduct);  // HIGH = clear
+      bool itemGone = readSensor(selectedSlot);
       if (itemGone) {
         lockDoor();
-        setState(STATE_COMPLETING);
-        drawCompletionScreen();
-        celebrationAnimation();
-        reportCompletion(currentOrderId, true);
+        _onItemRemoved();
       }
-
       if (elapsed > REMOVAL_TIMEOUT) {
         lockDoor();
-        Serial.println("[STATE] Removal timeout — locking door anyway");
-        reportCompletion(currentOrderId, true);
-        setState(STATE_COMPLETING);
-        drawCompletionScreen();
+        Serial.println("[STATE] Removal timeout — locking door");
+        _onItemRemoved();
       }
       break;
     }
 
-    // ── COMPLETING ───────────────────────────────────────────────────────
+    // ── COMPLETING ────────────────────────────────────────────────────────
     case STATE_COMPLETING: {
-      // Show thank-you screen for 4 seconds then return to idle
-      if (elapsed > 4000) {
-        currentOrderId  = "";
-        currentQrData   = "";
-        currentAmount   = 0;
-        selectedProduct = -1;
+      if (elapsed > 6000) {   // 6s on completion screen
+        currentOrderId    = "";
+        currentQrData     = "";
+        currentAmount     = 0;
+        selectedSlot      = -1;
+        wantSacredWater   = false;
         setState(STATE_IDLE);
         idleAnimation();
         drawIdleScreen();
@@ -276,8 +301,6 @@ void runStateMachine() {
 
     // ── ERROR ─────────────────────────────────────────────────────────────
     case STATE_ERROR: {
-      // Error screen shown by whoever entered this state.
-      // Auto-recover after 10 seconds.
       if (elapsed > 10000) {
         setState(STATE_IDLE);
         drawIdleScreen();
@@ -285,17 +308,15 @@ void runStateMachine() {
       break;
     }
 
-    // ── OFFLINE ──────────────────────────────────────────────────────────
+    // ── OFFLINE ───────────────────────────────────────────────────────────
     case STATE_OFFLINE: {
-      // Try reconnect every 30 seconds
       if (elapsed > 30000) {
-        Serial.println("[STATE] Attempting WiFi reconnect...");
-        initWiFi();
+        Serial.println("[STATE] Attempting reconnect...");
         if (WiFi.status() == WL_CONNECTED) {
           setState(STATE_IDLE);
           drawIdleScreen();
         } else {
-          stateStartTime = millis();   // reset timer for next attempt
+          stateStartTime = millis();
         }
       }
       break;
@@ -307,81 +328,130 @@ void runStateMachine() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+//  HELPER: proceed to payment (create order, show QR)
+// ════════════════════════════════════════════════════════════════════════════
+void _proceedToPayment() {
+  String qrUrl = "";
+  int    amount = 0;
+  bool   ordered = createOrder(selectedSlot, wantSacredWater, qrUrl, amount, currentOrderId);
+
+  if (!ordered || qrUrl.isEmpty()) {
+    Serial.println("[STATE] Order creation failed");
+    setState(STATE_ERROR);
+    drawErrorScreen("Cannot create order\nPlease try again");
+    delay(3000);
+    setState(STATE_IDLE);
+    drawIdleScreen();
+    return;
+  }
+
+  currentQrData    = qrUrl;
+  currentAmount    = amount;
+  paymentPollTimer = millis();
+  paymentStartMs   = millis();
+
+  setState(STATE_AWAITING_PAYMENT);
+  drawQrScreen(currentQrData, currentAmount, selectedSlot);
+  Serial.printf("[STATE] Order %s — %d THB — water=%d\n",
+                currentOrderId.c_str(), currentAmount, wantSacredWater);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  HELPER: payment confirmed (from poll or command)
+// ════════════════════════════════════════════════════════════════════════════
+void _onPaymentConfirmed() {
+  setState(STATE_VENDING);
+  drawVendingScreen(selectedSlot);
+  vendProduct(selectedSlot);
+  if (wantSacredWater) {
+    activateWaterPump();   // hardware.h — fires water pump relay
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  HELPER: item removed from tray
+// ════════════════════════════════════════════════════════════════════════════
+void _onItemRemoved() {
+  int lucky = random(10, 100);   // lucky number 10-99
+  setState(STATE_COMPLETING);
+  drawCompletionScreen(selectedSlot, lucky, wantSacredWater);
+  reportCompletion(currentOrderId, true);
+  Serial.printf("[STATE] Complete — lucky=%d water=%d\n", lucky, wantSacredWater);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 //  COMMAND HANDLER
-//  Called from runTimers() — processes commands from backend
 // ════════════════════════════════════════════════════════════════════════════
 void handleCommands() {
   CommandList cmds = pollCommands();
 
   for (int i = 0; i < cmds.count; i++) {
     String cmd = cmds.commands[i];
-    Serial.printf("[CMD] Received: %s\n", cmd.c_str());
+    Serial.printf("[CMD] %s\n", cmd.c_str());
 
     if (cmd == "payment_confirmed") {
-      // Backend tells us payment received (via webhook → command queue)
       if (currentState == STATE_AWAITING_PAYMENT) {
         Serial.println("[CMD] Payment confirmed via command");
-        setState(STATE_VENDING);
-        drawVendingScreen(selectedProduct);
-        vendProduct(selectedProduct);
+        _onPaymentConfirmed();
       }
     }
     else if (cmd == "disable") {
-      Serial.println("[CMD] Machine disabled by admin");
       setState(STATE_ERROR);
-      drawErrorScreen("เครื่องถูกปิดใช้งาน\nกรุณาติดต่อผู้ดูแล");
+      drawErrorScreen("Machine disabled\nContact admin");
     }
     else if (cmd == "enable") {
-      Serial.println("[CMD] Machine re-enabled by admin");
       if (currentState == STATE_ERROR || currentState == STATE_OFFLINE) {
         setState(STATE_IDLE);
         drawIdleScreen();
       }
     }
     else if (cmd == "reboot") {
-      Serial.println("[CMD] Reboot command received");
-      delay(1000);
+      Serial.println("[CMD] Rebooting...");
+      delay(500);
       ESP.restart();
     }
-    else if (cmd == "register") {
-      // Machine has been claimed — update device status from NVS / local flag
-      Serial.println("[CMD] Machine registered to temple owner");
-      // Device is now 'active' — backend already updated status
-      // No action needed; heartbeat will reflect new status
+    else if (cmd == "reload_slots") {
+      // Backend has updated slot config — re-fetch via /hello
+      Serial.println("[CMD] Reloading slot config...");
+      JsonDocument doc;
+      reloadHello(doc);   // network.h — re-calls /hello endpoint
+      if (doc.containsKey("slots")) {
+        loadSlotsFromJson(doc["slots"].as<JsonArray>());
+        g_idleDrawn = false;   // force grid redraw
+        if (currentState == STATE_IDLE) drawIdleScreen();
+      }
     }
     else {
-      Serial.printf("[CMD] Unknown command: %s\n", cmd.c_str());
+      Serial.printf("[CMD] Unknown: %s\n", cmd.c_str());
     }
   }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  TIMERS — heartbeat, command poll, WiFi watchdog
+//  TIMERS
 // ════════════════════════════════════════════════════════════════════════════
 void runTimers() {
   unsigned long now = millis();
 
-  // ── WiFi watchdog ─────────────────────────────────────────────────────
+  // WiFi watchdog
   if (WiFi.status() != WL_CONNECTED) {
     if (currentState != STATE_OFFLINE) {
-      Serial.println("[NET] WiFi lost — entering OFFLINE state");
       setState(STATE_OFFLINE);
-      drawErrorScreen("ไม่มีสัญญาณอินเตอร์เน็ต");
+      drawErrorScreen("No internet connection");
     }
-    return;   // skip network calls while offline
+    return;
   } else if (currentState == STATE_OFFLINE) {
-    // Reconnected
     setState(STATE_IDLE);
     drawIdleScreen();
   }
 
-  // ── Heartbeat ─────────────────────────────────────────────────────────
+  // Heartbeat
   if (now - lastHeartbeatMs > HEARTBEAT_INTERVAL) {
     sendHeartbeat();
     lastHeartbeatMs = now;
   }
 
-  // ── Command poll ──────────────────────────────────────────────────────
+  // Command poll
   if (now - lastCommandPollMs > COMMAND_POLL_INTERVAL) {
     handleCommands();
     lastCommandPollMs = now;

@@ -1,21 +1,27 @@
 // ============================================================
-// network.h — Satu Vending Machine Network Layer
+// network.h — Satu Vending Machine Network Layer  R3
 // Board: ESP32-S3 (ESP32-8048S070C)
 // ============================================================
+// CHANGE LOG:
+//   R3 — initWiFi(JsonDocument&) now passes back full /hello
+//          response so satu_vending.ino can call loadSlotsFromJson()
+//        createOrder() accepts sacredWater bool, passes to backend
+//        reloadHello() added — called on "reload_slots" command
+//        donor_name + donor_id added to createOrder payload
+//        Firmware version string moved to constant FW_VERSION
+// ============================================================
 // RESPONSIBILITIES:
-//   - WiFi connect (with retry + fallback to STATE_OFFLINE)
-//   - NVS storage: device_id, device_secret (survives reboot)
-//   - POST /v1/machine/hello   → on boot
-//   - POST /v1/machine/heartbeat → every HEARTBEAT_INTERVAL
-//   - GET  /v1/machine/commands  → every 30s
-//   - POST /v1/order             → on product selection
-//   - GET  /v1/order/{id}/status → payment poll
-//   - POST /v1/machine/completion → on vend complete
-//
+//   WiFi connect with retry → STATE_OFFLINE fallback
+//   NVS: device_id + device_secret survive reboot
+//   POST /v1/machine/hello      → boot + returns slot config
+//   POST /v1/machine/heartbeat  → every 5 min
+//   GET  /v1/machine/commands   → every 30s
+//   POST /v1/order              → creates PromptPay order
+//   GET  /v1/order/{id}/status  → payment poll fallback
+//   POST /v1/machine/completion → vend complete report
 // SECURITY:
-//   - device_secret is read from NVS only — never hardcoded
-//   - X-Device-Secret header sent on heartbeat + commands (live mode)
-//   - Fake mode: backend accepts without secret header
+//   device_secret in NVS only — never hardcoded
+//   X-Device-Secret header on all authenticated calls
 // ============================================================
 
 #ifndef NETWORK_H
@@ -24,20 +30,23 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include <Preferences.h>    // NVS — ESP32 key-value store, survives reboot
+#include <Preferences.h>
 #include "config.h"
 
-// ── NVS namespace ────────────────────────────────────────────────────────────
-#define NVS_NAMESPACE    "satu"
+// ── Firmware version ─────────────────────────────────────────────────────────
+#define FW_VERSION  "v1.0.0-r3"
+
+// ── NVS keys ─────────────────────────────────────────────────────────────────
+#define NVS_NAMESPACE         "satu"
 #define NVS_KEY_DEVICE_ID     "device_id"
 #define NVS_KEY_DEVICE_SECRET "dev_secret"
 
-// ── Runtime globals (set once on boot, read everywhere) ──────────────────────
-static String g_deviceId     = "";
-static String g_deviceSecret = "";
+// ── Runtime globals ───────────────────────────────────────────────────────────
+static String      g_deviceId     = "";
+static String      g_deviceSecret = "";
 static Preferences g_prefs;
 
-// ── Command list (returned from pollCommands) ─────────────────────────────────
+// ── Command list ──────────────────────────────────────────────────────────────
 #define MAX_COMMANDS 8
 struct CommandList {
   String commands[MAX_COMMANDS];
@@ -48,83 +57,70 @@ struct CommandList {
 //  INTERNAL HELPERS
 // ════════════════════════════════════════════════════════════════════════════
 
-// Add X-Device-Secret header if we have a secret stored
 static void addAuthHeaders(HTTPClient& http) {
-  if (g_deviceSecret.length() > 0) {
+  if (g_deviceSecret.length() > 0)
     http.addHeader("X-Device-Secret", g_deviceSecret);
-  }
 }
 
-// Common POST helper — returns HTTP status code, fills responseBody
-static int doPost(const String& url, const String& jsonBody, String& responseBody) {
+static int doPost(const String& url, const String& body, String& resp) {
   if (WiFi.status() != WL_CONNECTED) return -1;
-
   HTTPClient http;
   http.begin(url);
   http.addHeader("Content-Type", "application/json");
   addAuthHeaders(http);
   http.setTimeout(10000);
-
-  int code = http.POST(jsonBody);
-  responseBody = (code > 0) ? http.getString() : "";
+  int code = http.POST(body);
+  resp = (code > 0) ? http.getString() : "";
   http.end();
   return code;
 }
 
-// Common GET helper
-static int doGet(const String& url, String& responseBody) {
+static int doGet(const String& url, String& resp) {
   if (WiFi.status() != WL_CONNECTED) return -1;
-
   HTTPClient http;
   http.begin(url);
   addAuthHeaders(http);
   http.setTimeout(10000);
-
   int code = http.GET();
-  responseBody = (code > 0) ? http.getString() : "";
+  resp = (code > 0) ? http.getString() : "";
   http.end();
   return code;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-//  NVS — Load / Save device credentials
-// ════════════════════════════════════════════════════════════════════════════
+static void saveCredentialsToNVS(const String& id, const String& secret) {
+  g_prefs.begin(NVS_NAMESPACE, false);
+  g_prefs.putString(NVS_KEY_DEVICE_ID,     id);
+  g_prefs.putString(NVS_KEY_DEVICE_SECRET, secret);
+  g_prefs.end();
+  g_deviceId     = id;
+  g_deviceSecret = secret;
+  Serial.printf("[NET] NVS saved: device_id=%s\n", id.c_str());
+}
 
 static void loadCredentialsFromNVS() {
-  g_prefs.begin(NVS_NAMESPACE, true);   // read-only
+  g_prefs.begin(NVS_NAMESPACE, true);
   g_deviceId     = g_prefs.getString(NVS_KEY_DEVICE_ID,     "");
   g_deviceSecret = g_prefs.getString(NVS_KEY_DEVICE_SECRET, "");
   g_prefs.end();
-  Serial.printf("[NVS] Loaded: device_id=%s secret=%s\n",
-                g_deviceId.c_str(),
-                g_deviceSecret.length() > 0 ? "(present)" : "(empty)");
-}
-
-static void saveCredentialsToNVS(const String& deviceId, const String& deviceSecret) {
-  g_prefs.begin(NVS_NAMESPACE, false);  // read-write
-  g_prefs.putString(NVS_KEY_DEVICE_ID,     deviceId);
-  g_prefs.putString(NVS_KEY_DEVICE_SECRET, deviceSecret);
-  g_prefs.end();
-  g_deviceId     = deviceId;
-  g_deviceSecret = deviceSecret;
-  Serial.printf("[NVS] Saved device_id=%s\n", deviceId.c_str());
+  if (!g_deviceId.isEmpty())
+    Serial.printf("[NET] NVS loaded: device_id=%s\n", g_deviceId.c_str());
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  POST /v1/machine/hello
-//  Called on every boot. Backend returns device_id + device_secret.
-//  If NVS already has credentials, they are confirmed/refreshed.
-//  CRITICAL: device_secret must be persisted in NVS after this call.
+//  SEND /hello  (internal — fills outDoc with full response)
+//  R3: returns full JsonDocument so caller can extract slots[]
 // ════════════════════════════════════════════════════════════════════════════
-static bool sendHello() {
+static bool _sendHello(JsonDocument& outDoc) {
   String mac = WiFi.macAddress();
-  Serial.printf("[NET] Sending /hello — MAC: %s\n", mac.c_str());
+  Serial.printf("[NET] /hello — MAC: %s  FW: %s\n", mac.c_str(), FW_VERSION);
 
-  StaticJsonDocument<128> doc;
-  doc["mac"]      = mac;
-  doc["firmware"] = "v1.0.0";
+  JsonDocument reqDoc;
+  reqDoc["mac"]              = mac;
+  reqDoc["firmware_version"] = FW_VERSION;
+  reqDoc["num_slots"]        = NUM_SLOTS;
+  reqDoc["capabilities"]     = "qr,water,ir,led";
   String body;
-  serializeJson(doc, body);
+  serializeJson(reqDoc, body);
 
   String resp;
   int code = doPost(String(API_BASE_URL) + "/v1/machine/hello", body, resp);
@@ -134,37 +130,35 @@ static bool sendHello() {
     return false;
   }
 
-  StaticJsonDocument<256> rdoc;
-  DeserializationError err = deserializeJson(rdoc, resp);
+  DeserializationError err = deserializeJson(outDoc, resp);
   if (err) {
-    Serial.printf("[NET] /hello JSON parse error: %s\n", err.c_str());
+    Serial.printf("[NET] /hello JSON error: %s\n", err.c_str());
     return false;
   }
 
-  // Extract and persist credentials
-  String deviceId     = rdoc["device_id"]     | "";
-  String deviceSecret = rdoc["device_secret"] | "";
-  String status       = rdoc["status"]        | "unknown";
+  String deviceId     = outDoc["device_id"]     | "";
+  String deviceSecret = outDoc["device_secret"] | "";
 
-  if (deviceId.length() == 0) {
+  if (deviceId.isEmpty()) {
     Serial.println("[NET] /hello: no device_id in response");
     return false;
   }
 
   saveCredentialsToNVS(deviceId, deviceSecret);
-
-  Serial.printf("[NET] /hello OK: device_id=%s status=%s\n",
-                deviceId.c_str(), status.c_str());
+  Serial.printf("[NET] /hello OK: device_id=%s status=%s slots=%d\n",
+                deviceId.c_str(),
+                (const char*)(outDoc["status"] | "unknown"),
+                outDoc["slots"].size());
   return true;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 //  INIT WiFi
-//  Connects to WiFi. Retries 20 times (10s). Falls back to offline state.
-//  After connect: loads NVS creds → sends /hello → saves new creds.
+//  R3: accepts JsonDocument& — passes back full /hello response
+//      so satu_vending.ino can call loadSlotsFromJson(doc["slots"])
 // ════════════════════════════════════════════════════════════════════════════
-void initWiFi() {
-  Serial.printf("[NET] Connecting to WiFi: %s\n", WIFI_SSID);
+void initWiFi(JsonDocument& helloDoc) {
+  Serial.printf("[NET] Connecting WiFi: %s\n", WIFI_SSID);
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
@@ -177,40 +171,40 @@ void initWiFi() {
   Serial.println();
 
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("[NET] WiFi connect failed — machine will enter OFFLINE state");
-    // State machine will handle OFFLINE — don't block here
-    return;
+    Serial.println("[NET] WiFi failed — entering OFFLINE state");
+    return;   // state machine handles STATE_OFFLINE
   }
 
-  Serial.printf("[NET] WiFi connected — IP: %s\n", WiFi.localIP().toString().c_str());
-
-  // Load any previously saved credentials
+  Serial.printf("[NET] WiFi OK — IP: %s\n", WiFi.localIP().toString().c_str());
   loadCredentialsFromNVS();
 
-  // Always send /hello on boot (refreshes device_secret, updates firmware version)
-  bool ok = sendHello();
+  bool ok = _sendHello(helloDoc);
   if (!ok) {
-    Serial.println("[NET] /hello failed — continuing with cached credentials if available");
+    Serial.println("[NET] /hello failed — using cached credentials");
+    // populate helloDoc minimally so caller doesn't crash
+    helloDoc["device_id"] = g_deviceId;
   }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  POST /v1/machine/heartbeat
-//  Sent every HEARTBEAT_INTERVAL (5 min). Includes free heap and uptime.
-//  Requires: device_id (from NVS)
-//  Auth: X-Device-Secret header (added by addAuthHeaders)
+//  RELOAD HELLO  (called on "reload_slots" command from backend)
+// ════════════════════════════════════════════════════════════════════════════
+void reloadHello(JsonDocument& outDoc) {
+  Serial.println("[NET] reloadHello called");
+  _sendHello(outDoc);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  HEARTBEAT
 // ════════════════════════════════════════════════════════════════════════════
 void sendHeartbeat() {
-  if (g_deviceId.isEmpty()) {
-    Serial.println("[NET] Heartbeat skipped: no device_id");
-    return;
-  }
+  if (g_deviceId.isEmpty()) { Serial.println("[NET] Heartbeat skipped: no device_id"); return; }
 
-  StaticJsonDocument<256> doc;
+  JsonDocument doc;
   doc["device_id"] = g_deviceId;
   doc["free_heap"] = ESP.getFreeHeap();
   doc["uptime"]    = millis() / 1000;
-  doc["firmware"]  = "v1.0.0";
+  doc["firmware"]  = FW_VERSION;
   String body;
   serializeJson(doc, body);
 
@@ -220,34 +214,20 @@ void sendHeartbeat() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  GET /v1/machine/commands
-//  Called every 30 seconds. Returns array of pending commands.
-//  Backend marks commands as executed when returned.
-//  Auth: X-Device-Secret header
+//  POLL COMMANDS
 // ════════════════════════════════════════════════════════════════════════════
 CommandList pollCommands() {
   CommandList result;
+  if (g_deviceId.isEmpty()) return result;
 
-  if (g_deviceId.isEmpty()) {
-    Serial.println("[NET] pollCommands skipped: no device_id");
-    return result;
-  }
-
-  String url = String(API_BASE_URL) + "/v1/machine/commands?device_id=" + g_deviceId;
+  String url  = String(API_BASE_URL) + "/v1/machine/commands?device_id=" + g_deviceId;
   String resp;
   int code = doGet(url, resp);
 
-  if (code != 200) {
-    Serial.printf("[NET] /commands: HTTP %d\n", code);
-    return result;
-  }
+  if (code != 200) { Serial.printf("[NET] /commands: HTTP %d\n", code); return result; }
 
-  StaticJsonDocument<512> doc;
-  DeserializationError err = deserializeJson(doc, resp);
-  if (err) {
-    Serial.printf("[NET] /commands JSON error: %s\n", err.c_str());
-    return result;
-  }
+  JsonDocument doc;
+  if (deserializeJson(doc, resp)) return result;
 
   JsonArray arr = doc["commands"].as<JsonArray>();
   for (JsonObject cmd : arr) {
@@ -255,29 +235,28 @@ CommandList pollCommands() {
     result.commands[result.count++] = cmd["command"] | "";
   }
 
-  Serial.printf("[NET] /commands: %d pending\n", result.count);
+  if (result.count) Serial.printf("[NET] %d commands pending\n", result.count);
   return result;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  POST /v1/order
-//  Creates a PromptPay order. Returns QR URL and amount.
-//  Called immediately after product is selected.
-//
-//  product 0-9 → maps to product_id 1-10 (backend is 1-indexed)
+//  CREATE ORDER
+//  R3: added sacredWater, donorName, donorId parameters
+//      slot is 0-indexed (backend receives 1-indexed product_id)
 // ════════════════════════════════════════════════════════════════════════════
-bool createOrder(int productIndex, String& outQrUrl, int& outAmount, String& outOrderId) {
-  if (g_deviceId.isEmpty()) {
-    Serial.println("[NET] createOrder: no device_id");
-    return false;
-  }
+bool createOrder(int slotIdx, bool sacredWater,
+                 String& outQrUrl, int& outAmount, String& outOrderId,
+                 String donorName = "", String donorId = "") {
+  if (g_deviceId.isEmpty()) { Serial.println("[NET] createOrder: no device_id"); return false; }
 
-  StaticJsonDocument<256> doc;
-  doc["device_id"]  = g_deviceId;
-  doc["product_id"] = productIndex + 1;  // backend uses 1-based product IDs
-  // user_id: omitted — anonymous donation flow (backend handles null)
+  JsonDocument reqDoc;
+  reqDoc["device_id"]   = g_deviceId;
+  reqDoc["product_id"]  = slotIdx + 1;   // 1-indexed
+  reqDoc["sacred_water"]= sacredWater;
+  if (donorName.length()) reqDoc["donor_name"] = donorName;
+  if (donorId.length())   reqDoc["donor_id"]   = donorId;
   String body;
-  serializeJson(doc, body);
+  serializeJson(reqDoc, body);
 
   String resp;
   int code = doPost(String(API_BASE_URL) + "/v1/order", body, resp);
@@ -287,12 +266,8 @@ bool createOrder(int productIndex, String& outQrUrl, int& outAmount, String& out
     return false;
   }
 
-  StaticJsonDocument<512> rdoc;
-  DeserializationError err = deserializeJson(rdoc, resp);
-  if (err) {
-    Serial.printf("[NET] /order JSON error: %s\n", err.c_str());
-    return false;
-  }
+  JsonDocument rdoc;
+  if (deserializeJson(rdoc, resp)) { Serial.println("[NET] /order JSON error"); return false; }
 
   outOrderId = rdoc["order_id"]    | "";
   outQrUrl   = rdoc["qr_code_url"] | "";
@@ -303,43 +278,37 @@ bool createOrder(int productIndex, String& outQrUrl, int& outAmount, String& out
     return false;
   }
 
-  Serial.printf("[NET] Order created: %s, %d THB\n", outOrderId.c_str(), outAmount);
+  Serial.printf("[NET] Order %s — %d THB — water=%d\n",
+                outOrderId.c_str(), outAmount, sacredWater);
   return true;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  GET /v1/order/{id}/status
-//  Fallback polling — primary confirmation is via /commands (webhook → queue)
-//  Returns: "pending" | "paid" | "expired" | "failed"
+//  CHECK PAYMENT STATUS  (fallback poll — primary is webhook→command)
 // ════════════════════════════════════════════════════════════════════════════
 String checkPaymentStatus(String orderId) {
   if (orderId.isEmpty()) return "pending";
 
-  String url = String(API_BASE_URL) + "/v1/order/" + orderId + "/status";
+  String url  = String(API_BASE_URL) + "/v1/order/" + orderId + "/status";
   String resp;
   int code = doGet(url, resp);
 
-  if (code != 200) {
-    Serial.printf("[NET] /order/status HTTP %d\n", code);
-    return "pending";
-  }
+  if (code != 200) { Serial.printf("[NET] /status HTTP %d\n", code); return "pending"; }
 
-  StaticJsonDocument<128> doc;
+  JsonDocument doc;
   deserializeJson(doc, resp);
   String status = doc["status"] | "pending";
-  Serial.printf("[NET] Order %s status: %s\n", orderId.c_str(), status.c_str());
+  Serial.printf("[NET] Order %s: %s\n", orderId.c_str(), status.c_str());
   return status;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  POST /v1/machine/completion   (reportCompletion)
-//  Tells backend the vending completed. Logs success/failure.
-//  Backend uses this to mark orders as completed.
+//  REPORT COMPLETION
 // ════════════════════════════════════════════════════════════════════════════
 void reportCompletion(String orderId, bool success) {
   if (orderId.isEmpty() || g_deviceId.isEmpty()) return;
 
-  StaticJsonDocument<256> doc;
+  JsonDocument doc;
   doc["device_id"] = g_deviceId;
   doc["order_id"]  = orderId;
   doc["success"]   = success;
@@ -347,7 +316,6 @@ void reportCompletion(String orderId, bool success) {
   serializeJson(doc, body);
 
   String resp;
-  // Note: this endpoint may not exist yet in backend — gracefully ignored if 404
   int code = doPost(String(API_BASE_URL) + "/v1/machine/completion", body, resp);
   Serial.printf("[NET] Completion report: HTTP %d\n", code);
 }
