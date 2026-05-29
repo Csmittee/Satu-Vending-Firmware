@@ -17,8 +17,8 @@
 // ============================================================
 // WiFi — edit these before flashing
 // ============================================================
-const char* WIFI_SSID     = "YOUR_SSID";
-const char* WIFI_PASSWORD = "YOUR_PASSWORD";
+const char* WIFI_SSID     = "chaijohn";
+const char* WIFI_PASSWORD = "Jeda2322";
 
 // ============================================================
 // Backend API
