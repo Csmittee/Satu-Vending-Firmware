@@ -1,9 +1,9 @@
 # PROJECT_STATE.md — Satu 1.0 Live Status
 <!-- CC updates phase status after Build sessions · Chat updates after design decisions locked -->
-<!-- Last updated: 2026-05-29 — Post-pause restart + full chat history compiled -->
+<!-- Last updated: 2026-05-29 — Firmware R3 session + Cloudflare variable audit -->
 
-## Current Goal: First Real Board Test (Display + Touch)
-Two ESP32-S3 boards arrived. Firmware written. Now validate LCD panel works before building hardware.
+## Current Goal
+Flash firmware R3 to ESP32-S3 board. Confirm display + touch. Then fix Cloudflare variables.
 
 ---
 
@@ -12,34 +12,179 @@ Two ESP32-S3 boards arrived. Firmware written. Now validate LCD panel works befo
 | Phase | What | Status |
 |-------|------|--------|
 | P1 | Backend API | ✅ DONE — 14/14 tests pass |
-| P2 | Payment Gateway (Omise test) | 🟡 TEST KEYS ACTIVE — KYC/bank pending, Omise slow to respond |
-| P3 | Firmware (all .h files) | ✅ WRITTEN — not yet validated on real board |
+| P2 | Payment Gateway | 🟡 TEST KEYS ACTIVE — KYC/bank pending |
+| P3 | Firmware R3 | ✅ WRITTEN — ready to flash, not yet validated on board |
 | P4 | Hardware Build | 🔵 DESIGN DONE — components arrived, build not started |
-| P5 | Temple Owner Dashboard | 🟡 PARTIAL — login/claim/index HTML built, backend patches not applied |
+| P5 | Temple Owner Dashboard | 🟡 PARTIAL — HTML built, backend patches not applied |
 | P6 | Omise Live Keys | 🔴 BLOCKED — KYC incomplete |
 | P7 | First Machine Field Test | ⬜ NOT STARTED |
 
 ---
 
-## ⚠️ CRITICAL: Payment Gateway Variable Changed
-```
-OLD (delete from Cloudflare): PAYMENT_MODE = fake/live
-NEW (set these in Cloudflare):
-  PAYMENT_GATEWAY = fake_omise   ← use this for all dev/test
-  PAYMENT_GATEWAY = omise_test   ← real Omise test keys
-  PAYMENT_GATEWAY = omise_live   ← only when KYC done + real machine
-  SYSTEM_MODE     = online
-```
-**Action needed: delete `PAYMENT_MODE` secret from Cloudflare, set `PAYMENT_GATEWAY` + `SYSTEM_MODE`**
+## ⚠️ CRITICAL: Cloudflare Variables — Action Required
+
+### Must change from Secret → plain Variable (no damage if visible):
+| Name | Change to | Value |
+|------|-----------|-------|
+| `FAKE_OMISE_URL` | Variable | `https://fake-omise.csmittee.workers.dev` |
+| `PAYMENT_GATEWAY` | Variable | `fake_omise` |
+| `SYSTEM_MODE` | Variable | `online` |
+
+### Keep as Secret (real damage if leaked):
+| Name | Why |
+|------|-----|
+| `ADMIN_SECRET` | Grants full DB access |
+| `OMISE_SECRET_KEY` | Payment API — can charge cards |
+| `OMISE_WEBHOOK_SECRET` | HMAC key — fake payments injectable if leaked |
+| `ADMIN_PATH` | Fine either way, keep secret for obscurity |
+
+### Old variable — delete if still present:
+- `PAYMENT_MODE` — replaced by `PAYMENT_GATEWAY`. Delete from Cloudflare.
 
 ---
 
-## ⚠️ CRITICAL: Hardware Lane Count Changed
-Old design: 10 lanes / 2× MCP23017
-**New design: 21 lanes (7 cols × 3 rows) / 3× MCP23017 (0x20, 0x21, 0x22)**
-- config.h and hardware.h may still reference 10 lanes — needs update before flashing
-- BOM needs update: 21 motors, 21 IR sensors, 3× MCP23017, 3× 8-ch relay boards
-- Wiring diagram needs revision (was designed for 12 relays, now needs 24)
+## ⚠️ CRITICAL: Omise Gateway Architecture — LOCKED DECISION
+
+Three modes, controlled by `PAYMENT_GATEWAY` variable in Cloudflare:
+
+| Value | Calls | QR Code | Webhook | Money | Use for |
+|-------|-------|---------|---------|-------|---------|
+| `fake_omise` | fake-omise.csmittee.workers.dev | Fake URL | Auto-called by fake worker (no HMAC) | ❌ None | All dev, all automated tests |
+| `omise_test` | api.omise.co (test keys) | **Real scannable PromptPay QR** | Only fires when someone actually scans & pays | ❌ None | Demos, presentations, real QR testing |
+| `omise_live` | api.omise.co (live keys) | Real QR | Fires on real payment | ✅ Real money | After KYC complete only |
+
+### Why 14-test suite uses fake_omise:
+Tests 8, 10, 11 test the webhook → payment_confirmed → door unlock chain.
+In omise_test/live mode, Omise only calls our webhook when a real human scans and pays.
+This cannot be automated. Those 3 tests are skipped/greyed in True Omise mode.
+All other 11 tests pass in both modes.
+
+### To get real scannable QR in simulator:
+Change `PAYMENT_GATEWAY` → `omise_test` in Cloudflare. No code change needed.
+Change back to `fake_omise` for automated testing.
+
+### What was confirmed working via curl (historical):
+- Real Omise account active with test keys
+- PromptPay enabled (1.65% fee)
+- Real QR URL returned and reachable — confirmed in system tester Tests 3 & 4
+- 502 error previously was wrong API key in Cloudflare (now fixed)
+
+---
+
+## ⚠️ CRITICAL: Hardware Lane Count
+Default: **10 slots (5×2 grid)** — this is what gets flashed now
+Maximum: 21 slots (7×3 grid) — future expansion, scrollable UX needed if >10
+
+config.h is set to NUM_SLOTS=10, NUM_COLS=5 — correct for first build.
+21-slot design is validated in UI simulator only. Physical machine starts at 10.
+
+---
+
+## Firmware R3 — File Status (all files in one Arduino sketch folder)
+
+| File | Version | Status | Action |
+|------|---------|--------|--------|
+| `satu_vending.ino` | R3 | ✅ Ready | Replace in repo |
+| `ui.h` | R3 | ✅ Ready | Replace in repo |
+| `state_machine.h` | R3 | ✅ Ready | Replace in repo |
+| `config.h` | R3 | ✅ Ready | **Edit WiFi SSID/password first**, then replace |
+| `network.h` | R3 | ✅ Ready | Replace in repo |
+| `hardware.h` | R2 | ⚠️ Keep old | Do NOT replace — R2 still correct for 10-lane |
+
+### Key R3 changes from R2:
+- `ui.h`: TFT_eSPI → Arduino_GFX. getTouchedProduct() → getTouchedSlot(). 21-slot grid.
+- `satu_vending.ino`: STATE_GIFT_OPTION added. wantSacredWater flag. loadSlotsFromJson() called after /hello.
+- `state_machine.h`: STATE_GIFT_OPTION + STATE_SERVICE added. Arrays sized to NUM_SLOTS.
+- `config.h`: NUM_SLOTS=10 default, max 21. 3×MCP stubs. Correct API URL.
+- `network.h`: initWiFi() returns JsonDocument for slot loading. createOrder() accepts sacredWater + donorName.
+
+### Arduino IDE settings (DO NOT CHANGE):
+- Board: ESP32S3 Dev Module
+- Flash: 16MB (128Mb)
+- Partition: 16M Flash (3MB APP/9.9MB FATFS)
+- PSRAM: **OPI PSRAM** ← NEVER change this or display breaks
+- Upload Speed: 460800
+- Port: /dev/cu.usbserial-1420
+
+### Display init (confirmed working):
+```cpp
+Arduino_ESP32RGBPanel *bus = new Arduino_ESP32RGBPanel(
+  41, 40, 39, 42,
+  14, 21, 47, 48, 45,
+  9, 46, 3, 8, 16, 1,
+  15, 7, 6, 5, 4,
+  0, 8, 2, 43,
+  0, 8, 2, 12,
+  1, 16000000
+);
+Arduino_RGB_Display *gfx = new Arduino_RGB_Display(800, 480, bus, 0, true);
+TAMC_GT911 touch(19, 20, -1, -1, 800, 480);
+Wire.begin(19, 20);
+touch.begin();
+touch.setRotation(ROTATION_INVERTED);
+```
+
+---
+
+## Donor Flow — LOCKED DECISION (2026-05-29)
+
+```
+IDLE (product grid, 10 slots default)
+  ↓ single tap on slot → 300ms → auto-advance
+DONOR (ID card screen)
+  ↓ insert Thai ID card (auto-confirm after read)  OR  tap Skip (anonymous)
+GIFT OPTION
+  ↓ tap "Item Only"  OR  tap "+ Sacred Water (+20 THB)"
+QR PAYMENT (real or fake QR depending on PAYMENT_GATEWAY)
+  ↓ donor scans & pays  →  Omise calls webhook  →  backend sends payment_confirmed command
+  [if Sacred Water selected]
+SACRED WATER COUNTDOWN (3-2-1 spray animation)
+  ↓ auto-advance after spray
+VENDING (relay fires, progress bar, door opens, beep until pickup)
+  ↓ IR sensor clears when item removed
+LUCKY NUMBER + THANK YOU (8s, then auto-reset)
+  ↓ auto
+IDLE
+```
+
+Key rules:
+- Donor name: ID card slot only, NO keyboard input ever
+- Skip always allowed → anonymous donation
+- Sacred water: +20 THB, fires separate relay (WATER_PUMP_RELAY)
+- Lucky number: random 10-99, generated locally on ESP32
+
+---
+
+## Slot Config — Remote Config Architecture (LOCKED DECISION 2026-05-29)
+
+Machine pulls slot names/prices from backend on boot via `/hello` response.
+Owner configures slots via temple dashboard (web). No flashing needed.
+
+Backend needs (CC job — not yet done):
+- New D1 table: `machine_slots` (machine_id, slot, name_th, name_en, price, enabled)
+- Add `slots[]` array to `/hello` response
+- Dashboard: 7×3 slot editor grid for temple owners
+
+Firmware side: `loadSlotsFromJson(doc["slots"])` already implemented in network.h R3.
+Fallback if no slots from backend: show "Slot N" greyed out (disabled).
+Price: owner-defined free input. Color auto-tiers by value (50/100/200/300/500).
+
+---
+
+## Simulator — File Status
+
+| File | Version | Location | Status |
+|------|---------|----------|--------|
+| `public/simulator.html` | R1 | Cloudflare | ✅ Live at /simulator — original flow |
+| `public/simulator_r3.html` | R3.1 | Cloudflare | ✅ Live at /simulator_r3 |
+
+R3.1 features:
+- Flow Mode (linear, natural journey) + Free Mode (jump anywhere)
+- Sacred water 3-2-1 countdown screen restored
+- Context-sensitive gesture panel (highlights active section)
+- Gateway badge reads from /health — shows fake_omise / omise_test / omise_live
+- Real API calls: /hello, /order, /heartbeat, /commands, /completion
+- Configurable grid: 1-21 slots, 1-7 cols
 
 ---
 
@@ -47,107 +192,47 @@ Old design: 10 lanes / 2× MCP23017
 
 | Endpoint | Status | Notes |
 |----------|--------|-------|
-| POST /v1/machine/hello | ✅ | Device registration + NVS credential return |
-| POST /v1/machine/heartbeat | ⚠️ | HTTP 500 — connection_logs column mismatch (not fixed) |
-| GET /v1/machine/commands | ✅ | 30-sec poll by firmware |
+| POST /v1/machine/hello | ✅ | Device registration + credential return |
+| POST /v1/machine/heartbeat | ⚠️ | HTTP 500 — connection_logs column mismatch |
+| GET /v1/machine/commands | ✅ | 30-sec poll |
 | POST /v1/machine/command-ack | ✅ | Queue acknowledgment |
-| POST /v1/machine/completion | ❌ | Missing — firmware calls it, returns 404 |
-| POST /v1/order/create | ✅ | Creates order + PromptPay QR |
-| GET /v1/order/:id/status | ✅ | Payment polling |
-| POST /v1/webhook/omise | ✅ | Webhook handler (skips HMAC on fake_omise) |
-| POST /v1/auth/login | ✅ | PBKDF2 auth, fixed Apr 2026 |
-| POST /v1/auth/register | ✅ | With ALLOW_REGISTRATION gate |
-| GET /v1/dashboard/* | 🟡 | HTML exists, /dashboard/orders endpoint missing |
-| POST /v1/machine/claim | ✅ | Handler exists in machine.js, route wired |
-| GET /[ADMIN_PATH] | ✅ | Protected admin dashboard |
+| POST /v1/machine/completion | ❌ | Missing — firmware calls it, 404 |
+| POST /v1/order | ✅ | Creates order + QR |
+| GET /v1/order/:id/status | ✅ | Payment poll fallback |
+| POST /v1/webhook/omise | ✅ | HMAC skipped on fake_omise |
+| POST /v1/auth/login | ✅ | PBKDF2 |
+| POST /v1/auth/register | ✅ | ALLOW_REGISTRATION gated |
+| GET /v1/dashboard/* | 🟡 | /dashboard/orders endpoint missing |
+| POST /v1/machine/claim | ✅ | Route wired |
 
-**Open backend items:**
-- `/v1/machine/completion` endpoint — missing (firmware calls it)
-- Heartbeat HTTP 500 — column mismatch in machine.js
-- Order expiry cron — was added in auth session, confirm it's deployed
-- PDPA: Thai privacy notice page missing, donor delete endpoint missing
-- Minimum charge 20 THB not enforced in order.js (10 THB product will fail at Omise)
-- schema.sql seed MAC: `TEST:00:00:00:00:01` → should be `AA:BB:CC:DD:EE:00`
+**Pending CC jobs (backend):**
+1. Add `machine_slots` table + slots[] in /hello response
+2. Add `/v1/machine/completion` endpoint
+3. Fix heartbeat HTTP 500 (connection_logs column)
+4. Add `/v1/dashboard/orders` route
 
 ---
 
-## Firmware — File Inventory (Satu-Vending-Firmware repo)
-
-| File | Status | Notes |
-|------|--------|-------|
-| satu_vending.ino | ✅ R2 | Compile error fixed, full state machine |
-| config.h | ⚠️ | Complete BUT lane count = 10 — needs update to 21 |
-| state_machine.h | ✅ | All states defined |
-| network.h | ✅ COMPLETE | /hello, /heartbeat, /commands, createOrder, checkPayment, reportCompletion |
-| hardware.h | ⚠️ WRITTEN | Full MCP23017 + IR + LED + door logic — written for OLD 10-lane / 2-MCP design |
-| ui.h | ✅ WRITTEN | Full TFT display, product grid, QR, water countdown, service mode |
-
-**Next firmware action:** Validate display + touch on real board FIRST, then update config.h + hardware.h for 21-lane / 3-MCP layout.
-
----
-
-## Hardware — Design Status (Satu-vending-hardware repo)
-
-| Item | Status |
-|------|--------|
-| Wiring diagram | ⚠️ Needs revision (21-lane, 3-MCP, 24-relay) |
-| BOM (bom_2025_04.csv) | ⚠️ Needs update for 21-lane counts |
-| Frame spec | ✅ |
-| Spring spec | ✅ LOCKED: 4.0×65×340×13 (wire/OD/length/coils) |
-| Physical build | 🔵 Not started — components arrived |
-
-**Key hardware decisions locked:**
-- 7 cols × 3 rows = 21 lanes
-- 3× MCP23017 at 0x20 / 0x21 / 0x22
-- 3× 8-channel relay boards (21 motor + door + pump + spare)
-- 12V separate supply for relays
-- IR sensor: E18-D80NK, SENSOR_TRIGGERED = LOW, mount 5-8cm below shelf
-- Board: ESP32-8048S070C, display driver EK9716, touch GT911 I2C
-
----
-
-## Dashboard — Temple Owner (backend repo dashboard/)
-
-| File | Status |
-|------|--------|
-| dashboard/login.html | ✅ Built — Thai mobile-first, correct API URL |
-| dashboard/claim.html | ✅ Built — 3-step claim wizard |
-| dashboard/index.html | ✅ Built — 4-tab dashboard |
-| BACKEND_PATCH.js | ⚠️ Written but NOT applied to backend yet |
-
-**Backend patches still needed before dashboard works:**
-1. `ALTER TABLE users ADD COLUMN password_hash TEXT;` in D1 console
-2. Add `signJWT()` to jwt.js
-3. Add `/v1/dashboard/orders` route
-4. Set `ALLOW_REGISTRATION=true`, create first user, set back to false
-
----
-
-## Known Broken / Risks (priority order)
+## Known Risks (priority order)
 
 | Item | Severity | Owner |
 |------|----------|-------|
-| Omise KYC incomplete | 🔴 BLOCKS LAUNCH | You — pursue Omise |
-| config.h / hardware.h lane count = 10 (not 21) | 🔴 MUST FIX before build | CC |
+| Omise KYC incomplete | 🔴 BLOCKS LAUNCH | You |
 | Heartbeat HTTP 500 | 🟡 | CC |
 | /v1/machine/completion missing | 🟡 | CC |
+| machine_slots table not yet created | 🟡 | CC |
 | PDPA consent incomplete | 🔴 Legal risk | Before any live install |
 | Dashboard backend patches not applied | 🟡 | CC |
 | IP (utility model) not filed | 🔴 File before public demo | You |
-| PAYMENT_MODE secret not yet deleted from Cloudflare | 🟡 | You (1-min task) |
+| hardware.h still R2 (10-lane) | ✅ Correct for now | Update when scaling to 21 |
 
 ---
 
 ## Next 3 Actions (in order)
-1. **Test LCD panel** — connect ESP32-S3 board, confirm display + touch work
-2. **Fix config.h + hardware.h** — update from 10-lane to 21-lane / 3-MCP
-3. **Cloudflare secret cleanup** — delete PAYMENT_MODE, set PAYMENT_GATEWAY=fake_omise, SYSTEM_MODE=online
 
----
-
-## CC Prompt Archive
-Stored in `docs/prompts/` — format `CC_PROMPT_001_description.md`
-*(none yet — starting fresh)*
+1. **Cloudflare** — convert FAKE_OMISE_URL, PAYMENT_GATEWAY, SYSTEM_MODE from Secret → Variable. Delete PAYMENT_MODE if still present.
+2. **Flash firmware R3** — edit config.h WiFi credentials → replace 5 files → compile → flash
+3. **Validate board** — confirm display shows boot screen, touch responds on product grid
 
 ---
 
@@ -156,4 +241,7 @@ Stored in `docs/prompts/` — format `CC_PROMPT_001_description.md`
 - Revenue model: 15% revenue share (beats outright sale 5.4× over 3 years)
 - Company registration: Thai Ltd. target May 2026 (may be delayed)
 - BOI application: Category 4.1, target June 2026
-- Omise: Test keys active, API testing ongoing, KYC meeting not yet held
+- Omise: Test keys active, real QR confirmed via curl, KYC meeting not yet held
+- Single vs dual ESP32: still undecided — does not block current work
+- PDPA legal review: not started
+- Utility model (IP): not filed — file before any public demo
