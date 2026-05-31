@@ -5,19 +5,31 @@
 // CHANGE LOG:
 //   R3   — Added: MCP3_ADDR, WATER_PUMP_RELAY, DOOR_LOCK_RELAY, VEND_PULSE_MS
 //          Fixed: API_BASE_URL to api.janishammer.com
-//   R3.1 — Restored: NUM_SLOTS=10, NUM_COLS=5 (network.h needs NUM_SLOTS)
-//           Grid config belongs to ui.h only (GRID_COLS × GRID_ROWS).
-//           config.h was redefining NUM_SLOTS=10 while ui.h set it to 21
-//           causing array-size mismatch between files. ui.h is the
-//           single source of truth for slot count. hardware.h uses
-//           MAX_SLOTS_HW for its own array sizing.
+//   R3.1 — Restored: NUM_SLOTS=10, NUM_COLS=5
+//   R4   — NUM_SLOTS 10→21 (max 3×7 grid support)
+//          NUM_COLS 5→7 (max columns)
+//          Added NVS key reference block
+// ============================================================
+// NVS KEYS (“satu” namespace, max 15 chars each, max 17 keys):
+//   device_id     — assigned device ID (string)
+//   dev_secret    — device auth secret (string)
+//   svc_pin       — 4-digit service PIN (string)
+//   svc_pin_en    — service PIN enabled (bool)
+//   boot_pin      — require PIN at boot (bool)
+//   lang          — UI language: 0=EN, 1=TH (int)
+//   cfg_idle      — idle timeout seconds (int)
+//   cfg_sel       — selection timeout seconds (int)
+//   cfg_water     — sacred water feature enabled (bool)
+//   cfg_lucky     — lucky number feature enabled (bool)
+//   nvs_grow      — grid rows from /hello (int)
+//   nvs_gcol      — grid cols from /hello (int)
 // ============================================================
 
 #ifndef CONFIG_H
 #define CONFIG_H
 
 // ============================================================
-// WiFi — edit these before flashing
+// WiFi — edit these before flashing (file is gitignored)
 // ============================================================
 const char* WIFI_SSID     = "Jaydahome2.4G";
 const char* WIFI_PASSWORD = "Jeda2322";
@@ -28,12 +40,11 @@ const char* WIFI_PASSWORD = "Jeda2322";
 const char* API_BASE_URL = "https://api.janishammer.com";
 
 // ============================================================
-// Hardware slot ceiling (for array sizing in hardware.h only)
-// This is NOT the displayed grid count — that comes from ui.h
-// and is set remotely by /hello response from backend.
+// Slot count — must match max grid (3 rows × 7 cols = 21)
+// Runtime grid is set by /hello config{} → NVS → ui.h globals
 // ============================================================
-#define NUM_SLOTS   10
-#define NUM_COLS     5
+#define NUM_SLOTS      21   // R4: max supported slots (3×7)
+#define NUM_COLS        7   // R4: max columns
 #define MAX_SLOTS_HW   21   // physical max lanes this board supports
 
 // ============================================================
@@ -54,7 +65,7 @@ const char* API_BASE_URL = "https://api.janishammer.com";
 // ============================================================
 #define MCP1_ADDR  0x20
 #define MCP2_ADDR  0x21
-#define MCP3_ADDR  0x22   // stub — only wired when physical lanes > 12
+#define MCP3_ADDR  0x22
 
 // ============================================================
 // MCP Pin Declarations (defined in hardware.h)
@@ -72,12 +83,6 @@ extern const int mcp2_relays[6];
 #define SENSOR_TRIGGERED  LOW    // IR beam broken = item present
 #define SENSOR_CLEAR      HIGH   // IR beam open   = nothing
 
-// Water pump and door lock are always the last two relay channels
-// regardless of how many vend lanes are active
-// RELAY_PUMP and RELAY_LOCK defined in hardware.h
-
-
-// Motor pulse duration
 #define VEND_PULSE_MS  800    // ms to hold relay ON for one vend
 
 // ============================================================

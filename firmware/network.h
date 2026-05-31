@@ -1,24 +1,18 @@
 // ============================================================
-// network.h — Satu Vending Machine Network Layer  R3
+// network.h — Satu Vending Machine Network Layer  R4
 // Board: ESP32-S3 (ESP32-8048S070C)
 // ============================================================
 // CHANGE LOG:
-//   R3 — initWiFi(JsonDocument&) now passes back full /hello
-//          response so satu_vending.ino can call loadSlotsFromJson()
-//        createOrder() accepts sacredWater bool, passes to backend
-//        reloadHello() added — called on "reload_slots" command
-//        donor_name + donor_id added to createOrder payload
-//        Firmware version string moved to constant FW_VERSION
-// ============================================================
-// RESPONSIBILITIES:
-//   WiFi connect with retry → STATE_OFFLINE fallback
-//   NVS: device_id + device_secret survive reboot
-//   POST /v1/machine/hello      → boot + returns slot config
-//   POST /v1/machine/heartbeat  → every 5 min
-//   GET  /v1/machine/commands   → every 30s
-//   POST /v1/order              → creates PromptPay order
-//   GET  /v1/order/{id}/status  → payment poll fallback
-//   POST /v1/machine/completion → vend complete report
+//   R3  — initWiFi(JsonDocument&) passes back full /hello response
+//          createOrder() accepts sacredWater bool
+//          reloadHello() added for reload_slots command
+//   R4  — FW_VERSION → v1.0.0-r4
+//          Added: fetchImageBytes() — downloads PNG QR to PSRAM buffer
+//          Added: loadConfigFromNVS() — restores grid/config from NVS
+//          Added: factoryResetBackend() — POST /v1/machine/factory-reset
+//          Updated: _sendHello() caches config{} block to NVS
+//          Updated: initWiFi() calls loadConfigFromNVS() before hello
+//          Updated: reportCompletion() adds slotIdx param
 // SECURITY:
 //   device_secret in NVS only — never hardcoded
 //   X-Device-Secret header on all authenticated calls
@@ -32,20 +26,29 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <Preferences.h>
+#include <PNGdec.h>
 #include "config.h"
 
-// ── Firmware version ─────────────────────────────────────────────────────────
-#define FW_VERSION  "v1.0.0-r3"
+// ── Firmware version ────────────────────────────────────────────────────────────────
+#define FW_VERSION  "v1.0.0-r4"
 
-// ── NVS keys ─────────────────────────────────────────────────────────────────
+// ── NVS keys ──────────────────────────────────────────────────────────────────
 #define NVS_NAMESPACE         "satu"
 #define NVS_KEY_DEVICE_ID     "device_id"
 #define NVS_KEY_DEVICE_SECRET "dev_secret"
 
-// ── Runtime globals ───────────────────────────────────────────────────────────
+// ── Runtime globals ─────────────────────────────────────────────────────────────
 static String      g_deviceId     = "";
 static String      g_deviceSecret = "";
 static Preferences g_prefs;
+
+// ── Extern declarations for ui.h runtime grid globals ─────────────────────
+extern int  g_grid_rows;
+extern int  g_grid_cols;
+extern int  g_cfg_idle;
+extern int  g_cfg_sel;
+extern bool g_cfg_water;
+extern bool g_cfg_lucky;
 
 // ── Command list ──────────────────────────────────────────────────────────────
 #define MAX_COMMANDS 8
@@ -108,18 +111,45 @@ static void loadCredentialsFromNVS() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  SEND /hello  (internal — fills outDoc with full response)
-//  R3: returns full JsonDocument so caller can extract slots[]
+//  LOAD CONFIG FROM NVS  (R4)
+//  Restores grid dimensions and feature flags from NVS so the
+//  machine boots with the correct grid if /hello is unreachable.
+// ════════════════════════════════════════════════════════════════════════════
+void loadConfigFromNVS() {
+  Preferences prefs;
+  prefs.begin(NVS_NAMESPACE, true);
+  int rows = prefs.getInt("nvs_grow", 2);
+  int cols = prefs.getInt("nvs_gcol", 5);
+  int idle = prefs.getInt("cfg_idle", 60);
+  int sel  = prefs.getInt("cfg_sel",  15);
+  bool water = prefs.getBool("cfg_water", true);
+  bool lucky = prefs.getBool("cfg_lucky", true);
+  prefs.end();
+
+  if (rows >= 1 && rows <= 3) g_grid_rows = rows;
+  if (cols >= 1 && cols <= 7) g_grid_cols = cols;
+  if (idle > 0)  g_cfg_idle  = idle;
+  if (sel  > 0)  g_cfg_sel   = sel;
+  g_cfg_water = water;
+  g_cfg_lucky = lucky;
+
+  Serial.printf("[NET] Config from NVS: grid=%dx%d idle=%d sel=%d\n",
+                g_grid_cols, g_grid_rows, g_cfg_idle, g_cfg_sel);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  SEND /hello  (internal)
+//  R4: also caches config{} block to NVS
 // ════════════════════════════════════════════════════════════════════════════
 static bool _sendHello(JsonDocument& outDoc) {
   String mac = WiFi.macAddress();
   Serial.printf("[NET] /hello — MAC: %s  FW: %s\n", mac.c_str(), FW_VERSION);
 
   JsonDocument reqDoc;
-  reqDoc["mac"]              = mac;
-  reqDoc["firmware"] = FW_VERSION;
-  reqDoc["num_slots"]        = NUM_SLOTS;
-  reqDoc["capabilities"]     = "qr,water,ir,led";
+  reqDoc["mac"]          = mac;
+  reqDoc["firmware"]     = FW_VERSION;
+  reqDoc["num_slots"]    = NUM_SLOTS;
+  reqDoc["capabilities"] = "qr,water,ir,led";
   String body;
   serializeJson(reqDoc, body);
 
@@ -146,20 +176,43 @@ static bool _sendHello(JsonDocument& outDoc) {
   }
 
   saveCredentialsToNVS(deviceId, deviceSecret);
-  Serial.printf("[NET] /hello OK: device_id=%s status=%s slots=%d\n",
+
+  // Cache config{} block to NVS so it survives reboot without WiFi
+  if (outDoc.containsKey("config") && !outDoc["config"].isNull()) {
+    JsonObject cfg = outDoc["config"];
+    Preferences prefs;
+    prefs.begin(NVS_NAMESPACE, false);
+    prefs.putInt( "cfg_idle",  cfg["idle_timeout"]      | 60);
+    prefs.putInt( "cfg_sel",   cfg["selection_timeout"] | 15);
+    prefs.putBool("cfg_water", cfg["sacred_water"]      | true);
+    prefs.putBool("cfg_lucky", cfg["lucky_number"]      | true);
+    if (cfg.containsKey("grid_rows")) {
+      int rows = (int)(cfg["grid_rows"] | 2);
+      int cols = (int)(cfg["grid_cols"] | 5);
+      if (rows >= 1 && rows <= 3) prefs.putInt("nvs_grow", rows);
+      if (cols >= 1 && cols <= 7) prefs.putInt("nvs_gcol", cols);
+    }
+    prefs.end();
+    Serial.println("[NET] Config cached to NVS");
+  }
+
+  Serial.printf("[NET] /hello OK: device_id=%s status=%s\n",
                 deviceId.c_str(),
-                (const char*)(outDoc["status"] | "unknown"),
-                outDoc["slots"].size());
+                (const char*)(outDoc["status"] | "unknown"));
   return true;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 //  INIT WiFi
-//  R3: accepts JsonDocument& — passes back full /hello response
-//      so satu_vending.ino can call loadSlotsFromJson(doc["slots"])
+//  R4: calls loadConfigFromNVS() BEFORE /hello so grid is
+//      available immediately even if network is slow
 // ════════════════════════════════════════════════════════════════════════════
 void initWiFi(JsonDocument& helloDoc) {
   Serial.printf("[NET] Connecting WiFi: %s\n", WIFI_SSID);
+
+  // Load cached config first so grid is available before /hello
+  loadConfigFromNVS();
+
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
@@ -173,7 +226,7 @@ void initWiFi(JsonDocument& helloDoc) {
 
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("[NET] WiFi failed — entering OFFLINE state");
-    return;   // state machine handles STATE_OFFLINE
+    return;
   }
 
   Serial.printf("[NET] WiFi OK — IP: %s\n", WiFi.localIP().toString().c_str());
@@ -182,13 +235,12 @@ void initWiFi(JsonDocument& helloDoc) {
   bool ok = _sendHello(helloDoc);
   if (!ok) {
     Serial.println("[NET] /hello failed — using cached credentials");
-    // populate helloDoc minimally so caller doesn't crash
     helloDoc["device_id"] = g_deviceId;
   }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  RELOAD HELLO  (called on "reload_slots" command from backend)
+//  RELOAD HELLO  (called on reload_slots command)
 // ════════════════════════════════════════════════════════════════════════════
 void reloadHello(JsonDocument& outDoc) {
   Serial.println("[NET] reloadHello called");
@@ -243,7 +295,6 @@ CommandList pollCommands() {
 // ════════════════════════════════════════════════════════════════════════════
 //  CREATE ORDER
 //  R3: added sacredWater, donorName, donorId parameters
-//      slot is 0-indexed (backend receives 1-indexed product_id)
 // ════════════════════════════════════════════════════════════════════════════
 bool createOrder(int slotIdx, bool sacredWater,
                  String& outQrUrl, int& outAmount, String& outOrderId,
@@ -251,9 +302,9 @@ bool createOrder(int slotIdx, bool sacredWater,
   if (g_deviceId.isEmpty()) { Serial.println("[NET] createOrder: no device_id"); return false; }
 
   JsonDocument reqDoc;
-  reqDoc["device_id"]   = g_deviceId;
-  reqDoc["product_id"]  = slotIdx + 1;   // 1-indexed
-  reqDoc["sacred_water"]= sacredWater;
+  reqDoc["device_id"]    = g_deviceId;
+  reqDoc["product_id"]   = slotIdx + 1;
+  reqDoc["sacred_water"] = sacredWater;
   if (donorName.length()) reqDoc["donor_name"] = donorName;
   if (donorId.length())   reqDoc["donor_id"]   = donorId;
   String body;
@@ -285,7 +336,7 @@ bool createOrder(int slotIdx, bool sacredWater,
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  CHECK PAYMENT STATUS  (fallback poll — primary is webhook→command)
+//  CHECK PAYMENT STATUS  (fallback poll)
 // ════════════════════════════════════════════════════════════════════════════
 String checkPaymentStatus(String orderId) {
   if (orderId.isEmpty()) return "pending";
@@ -305,20 +356,92 @@ String checkPaymentStatus(String orderId) {
 
 // ════════════════════════════════════════════════════════════════════════════
 //  REPORT COMPLETION
+//  R4: slotIdx added (sent as slot 1-indexed to backend)
 // ════════════════════════════════════════════════════════════════════════════
-void reportCompletion(String orderId, bool success) {
+void reportCompletion(String orderId, bool success, int slotIdx = -1) {
   if (orderId.isEmpty() || g_deviceId.isEmpty()) return;
 
   JsonDocument doc;
   doc["device_id"] = g_deviceId;
   doc["order_id"]  = orderId;
   doc["success"]   = success;
+  if (slotIdx >= 0) doc["slot"] = slotIdx + 1;
   String body;
   serializeJson(doc, body);
 
   String resp;
   int code = doPost(String(API_BASE_URL) + "/v1/machine/completion", body, resp);
   Serial.printf("[NET] Completion report: HTTP %d\n", code);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  FACTORY RESET BACKEND  (R4)
+//  Calls /v1/machine/factory-reset. Returns true on HTTP 200.
+//  Machine MUST receive true before wiping NVS — R-74 compliance.
+// ════════════════════════════════════════════════════════════════════════════
+bool factoryResetBackend() {
+  if (g_deviceId.isEmpty()) {
+    Serial.println("[NET] factoryReset: no device_id");
+    return false;
+  }
+
+  JsonDocument doc;
+  doc["device_id"] = g_deviceId;
+  String body;
+  serializeJson(doc, body);
+
+  String resp;
+  int code = doPost(String(API_BASE_URL) + "/v1/machine/factory-reset", body, resp);
+  Serial.printf("[NET] Factory reset backend: HTTP %d\n", code);
+  return (code == 200);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  FETCH IMAGE BYTES  (R4)
+//  Downloads a PNG from url into a caller-provided PSRAM buffer.
+//  Returns byte count on success, 0 on failure.
+//  Caller must ps_malloc(200*1024) and free after use.
+// ════════════════════════════════════════════════════════════════════════════
+size_t fetchImageBytes(const String& url, uint8_t* buf, size_t bufSize) {
+  if (WiFi.status() != WL_CONNECTED || !buf || bufSize == 0) return 0;
+
+  HTTPClient http;
+  http.begin(url);
+  http.setTimeout(15000);
+  int code = http.GET();
+
+  if (code != 200) {
+    Serial.printf("[NET] fetchImageBytes: HTTP %d\n", code);
+    http.end();
+    return 0;
+  }
+
+  int contentLen = http.getSize();
+  if (contentLen > 0 && (size_t)contentLen > bufSize) {
+    Serial.printf("[NET] fetchImageBytes: image too large (%d > %u)\n", contentLen, bufSize);
+    http.end();
+    return 0;
+  }
+
+  WiFiClient* stream = http.getStreamPtr();
+  size_t bytesRead   = 0;
+  unsigned long t0   = millis();
+
+  while (http.connected() && bytesRead < bufSize) {
+    size_t avail = stream->available();
+    if (avail) {
+      size_t toRead = min(avail, bufSize - bytesRead);
+      bytesRead    += stream->readBytes(buf + bytesRead, toRead);
+    } else {
+      if (millis() - t0 > 15000) break;
+      delay(1);
+    }
+    if (contentLen > 0 && bytesRead >= (size_t)contentLen) break;
+  }
+
+  http.end();
+  Serial.printf("[NET] fetchImageBytes: %u bytes\n", bytesRead);
+  return bytesRead;
 }
 
 #endif // NETWORK_H
