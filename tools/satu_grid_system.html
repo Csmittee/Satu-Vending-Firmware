@@ -1,0 +1,137 @@
+
+<style>
+.grid-demo{display:flex;gap:8px;margin-bottom:6px;align-items:stretch}
+.side-tabs{display:flex;flex-direction:column;gap:4px;width:44px;flex-shrink:0}
+.stab{flex:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;cursor:pointer;min-height:36px;border:1.5px solid;transition:all .15s}
+.stab.active{background:var(--color-background-info);border-color:var(--color-border-info);color:var(--color-text-info)}
+.stab.inactive{background:var(--color-background-secondary);border-color:var(--color-border-tertiary);color:var(--color-text-tertiary)}
+.btn-grid{flex:1;display:grid;gap:5px}
+.slot-btn{border-radius:8px;border:1px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;min-height:36px;padding:4px}
+.slot-btn.enabled{background:var(--color-background-primary);border-color:var(--color-border-secondary)}
+.slot-btn.enabled:hover{border-color:var(--color-border-info);background:var(--color-background-info)}
+.slot-btn.disabled{background:var(--color-background-secondary);border-color:var(--color-border-tertiary);opacity:.5}
+.price{font-size:15px;font-weight:500;line-height:1}
+.pname{font-size:9px;color:var(--color-text-tertiary);margin-top:2px;text-align:center;line-height:1.2}
+.pbadge{font-size:8px;color:var(--color-text-tertiary);margin-bottom:2px}
+.teal{color:#1D9E75}.gold{color:#BA7517}.amber{color:#854F0B}.orange{color:#633806}
+.scenario-label{font-size:11px;font-weight:500;color:var(--color-text-secondary);margin:10px 0 4px}
+.dim-note{font-size:10px;color:var(--color-text-tertiary);margin-bottom:8px}
+</style>
+
+<h2 style="font-size:15px;font-weight:500;margin:0 0 2px">Grid system — R rows × Out outputs</h2>
+<p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 14px">Click A / B / C tabs on 3-row configs to see row switching</p>
+
+<!-- R=2, Out=5 -->
+<div class="scenario-label">R=2  Out=5 → 10 slots total — full frame, no tabs</div>
+<div class="dim-note">Button size: 150×95px — comfortable</div>
+<div class="grid-demo" id="g25">
+<div class="btn-grid" style="grid-template-columns:repeat(5,1fr)">
+<div class="slot-btn enabled"><span class="pbadge">A1</span><span class="price teal">50</span><span class="pname">Blessing Card</span></div>
+<div class="slot-btn enabled"><span class="pbadge">A2</span><span class="price gold">100</span><span class="pname">Small Amulet</span></div>
+<div class="slot-btn enabled"><span class="pbadge">A3</span><span class="price amber">200</span><span class="pname">Large Amulet</span></div>
+<div class="slot-btn disabled"><span class="pbadge">A4</span><span class="price" style="color:var(--color-text-tertiary)">—</span></div>
+<div class="slot-btn disabled"><span class="pbadge">A5</span><span class="price" style="color:var(--color-text-tertiary)">—</span></div>
+<div class="slot-btn disabled"><span class="pbadge">B1</span><span class="price" style="color:var(--color-text-tertiary)">—</span></div>
+<div class="slot-btn disabled"><span class="pbadge">B2</span><span class="price" style="color:var(--color-text-tertiary)">—</span></div>
+<div class="slot-btn disabled"><span class="pbadge">B3</span><span class="price" style="color:var(--color-text-tertiary)">—</span></div>
+<div class="slot-btn disabled"><span class="pbadge">B4</span><span class="price" style="color:var(--color-text-tertiary)">—</span></div>
+<div class="slot-btn disabled"><span class="pbadge">B5</span><span class="price" style="color:var(--color-text-tertiary)">—</span></div>
+</div>
+</div>
+
+<!-- R=2, Out=7 -->
+<div class="scenario-label">R=2  Out=7 → 14 slots total — full frame, no tabs</div>
+<div class="dim-note">Button size: 105×95px — still ok, name text tight</div>
+<div class="grid-demo">
+<div class="btn-grid" style="grid-template-columns:repeat(7,1fr)">
+<div class="slot-btn enabled"><span class="pbadge">A1</span><span class="price teal">50</span><span class="pname">Blessing</span></div>
+<div class="slot-btn enabled"><span class="pbadge">A2</span><span class="price gold">100</span><span class="pname">Sm Amulet</span></div>
+<div class="slot-btn enabled"><span class="pbadge">A3</span><span class="price amber">200</span><span class="pname">Lg Amulet</span></div>
+<div class="slot-btn disabled"><span class="pbadge">A4</span><span class="price" style="color:var(--color-text-tertiary)">—</span></div>
+<div class="slot-btn disabled"><span class="pbadge">A5</span><span class="price" style="color:var(--color-text-tertiary)">—</span></div>
+<div class="slot-btn disabled"><span class="pbadge">A6</span><span class="price" style="color:var(--color-text-tertiary)">—</span></div>
+<div class="slot-btn disabled"><span class="pbadge">A7</span><span class="price" style="color:var(--color-text-tertiary)">—</span></div>
+<div class="slot-btn disabled"><span class="pbadge">B1</span><span class="price" style="color:var(--color-text-tertiary)">—</span></div>
+<div class="slot-btn disabled"><span class="pbadge">B2</span><span class="price" style="color:var(--color-text-tertiary)">—</span></div>
+<div class="slot-btn disabled"><span class="pbadge">B3</span><span class="price" style="color:var(--color-text-tertiary)">—</span></div>
+<div class="slot-btn disabled"><span class="pbadge">B4</span><span class="price" style="color:var(--color-text-tertiary)">—</span></div>
+<div class="slot-btn disabled"><span class="pbadge">B5</span><span class="price" style="color:var(--color-text-tertiary)">—</span></div>
+<div class="slot-btn disabled"><span class="pbadge">B6</span><span class="price" style="color:var(--color-text-tertiary)">—</span></div>
+<div class="slot-btn disabled"><span class="pbadge">B7</span><span class="price" style="color:var(--color-text-tertiary)">—</span></div>
+</div>
+</div>
+
+<!-- R=3, Out=7 — with side tabs -->
+<div class="scenario-label">R=3  Out=7 → 21 slots total — side tabs A/B/C, 7 buttons visible</div>
+<div class="dim-note">Button size: 96×360px (full height per tab) — large, clear</div>
+<div class="grid-demo" id="g37">
+<div class="side-tabs">
+<div class="stab active" id="t37a" onclick="switchTab37('a')">A</div>
+<div class="stab inactive" id="t37b" onclick="switchTab37('b')">B</div>
+<div class="stab inactive" id="t37c" onclick="switchTab37('c')">C</div>
+</div>
+<div class="btn-grid" id="bg37" style="grid-template-columns:repeat(7,1fr)">
+</div>
+</div>
+
+<!-- R=3, Out=5 — with side tabs -->
+<div class="scenario-label">R=3  Out=5 → 15 slots total — side tabs A/B/C, 5 buttons visible</div>
+<div class="dim-note">Button size: 138×360px — excellent readability per tab</div>
+<div class="grid-demo" id="g35">
+<div class="side-tabs">
+<div class="stab active" id="t35a" onclick="switchTab35('a')">A</div>
+<div class="stab inactive" id="t35b" onclick="switchTab35('b')">B</div>
+<div class="stab inactive" id="t35c" onclick="switchTab35('c')">C</div>
+</div>
+<div class="btn-grid" id="bg35" style="grid-template-columns:repeat(5,1fr)">
+</div>
+</div>
+
+<div style="margin-top:14px;padding:10px;background:var(--color-background-secondary);border-radius:8px;border:0.5px solid var(--color-border-tertiary)">
+<p style="font-size:11px;font-weight:500;margin:0 0 6px;color:var(--color-text-primary)">Key insight: when R≥3, the screen shows ONE row's buttons at full height</p>
+<p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 4px">A/B/C are physical shelf labels too — donor looks at shelf label A, taps A tab, selects from numbered buttons. Matches physical machine layout exactly.</p>
+<p style="font-size:11px;color:var(--color-text-secondary);margin:0">R=2,Out=7 shows same count as R=3,Out=5 — but all visible at once vs. tab-switched. Screen decides which is better UX for that temple.</p>
+</div>
+
+<script>
+const slots37 = {
+  a: [{id:'A1',price:50,name:'Blessing',en:true},{id:'A2',price:100,name:'Sm Amulet',en:true},{id:'A3',price:200,name:'Lg Amulet',en:true},{id:'A4',price:0,name:'',en:false},{id:'A5',price:0,name:'',en:false},{id:'A6',price:0,name:'',en:false},{id:'A7',price:0,name:'',en:false}],
+  b: [{id:'B1',price:150,name:'Merit Set',en:true},{id:'B2',price:300,name:'Buddha Set',en:true},{id:'B3',price:0,name:'',en:false},{id:'B4',price:0,name:'',en:false},{id:'B5',price:0,name:'',en:false},{id:'B6',price:0,name:'',en:false},{id:'B7',price:0,name:'',en:false}],
+  c: [{id:'C1',price:500,name:'Gold Leaf',en:true},{id:'C2',price:0,name:'',en:false},{id:'C3',price:0,name:'',en:false},{id:'C4',price:0,name:'',en:false},{id:'C5',price:0,name:'',en:false},{id:'C6',price:0,name:'',en:false},{id:'C7',price:0,name:'',en:false}],
+};
+const slots35 = {
+  a: [{id:'A1',price:50,name:'Blessing',en:true},{id:'A2',price:100,name:'Sm Amulet',en:true},{id:'A3',price:200,name:'Lg Amulet',en:true},{id:'A4',price:0,name:'',en:false},{id:'A5',price:0,name:'',en:false}],
+  b: [{id:'B1',price:150,name:'Merit Set',en:true},{id:'B2',price:300,name:'Buddha Set',en:true},{id:'B3',price:0,name:'',en:false},{id:'B4',price:0,name:'',en:false},{id:'B5',price:0,name:'',en:false}],
+  c: [{id:'C1',price:500,name:'Gold Leaf',en:true},{id:'C2',price:0,name:'',en:false},{id:'C3',price:0,name:'',en:false},{id:'C4',price:0,name:'',en:false},{id:'C5',price:0,name:'',en:false}],
+};
+
+function priceClass(p){if(p<=50)return'teal';if(p<=100)return'gold';if(p<=200)return'amber';return'orange';}
+
+function renderGrid(slots, gridId, row){
+  const g = document.getElementById(gridId);
+  g.innerHTML='';
+  slots[row].forEach(s=>{
+    const d = document.createElement('div');
+    d.className='slot-btn '+(s.en?'enabled':'disabled');
+    d.style.minHeight='70px';
+    d.innerHTML=`<span class="pbadge">${s.id}</span>`+(s.en?`<span class="price ${priceClass(s.price)}">${s.price}</span><span class="pname">${s.name}</span>`:`<span class="price" style="color:var(--color-text-tertiary)">—</span>`);
+    g.appendChild(d);
+  });
+}
+
+function switchTab37(row){
+  ['a','b','c'].forEach(r=>{
+    document.getElementById('t37'+r).className='stab '+(r===row?'active':'inactive');
+  });
+  renderGrid(slots37,'bg37',row);
+}
+function switchTab35(row){
+  ['a','b','c'].forEach(r=>{
+    document.getElementById('t35'+r).className='stab '+(r===row?'active':'inactive');
+  });
+  renderGrid(slots35,'bg35',row);
+}
+
+renderGrid(slots37,'bg37','a');
+renderGrid(slots35,'bg35','a');
+</script>
