@@ -26,7 +26,8 @@
 
 #ifndef NETWORK_H
 #define NETWORK_H
-
+#include "esp_event.h"
+#include <esp_wifi.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
@@ -116,7 +117,7 @@ static bool _sendHello(JsonDocument& outDoc) {
 
   JsonDocument reqDoc;
   reqDoc["mac"]              = mac;
-  reqDoc["firmware_version"] = FW_VERSION;
+  reqDoc["firmware"] = FW_VERSION;
   reqDoc["num_slots"]        = NUM_SLOTS;
   reqDoc["capabilities"]     = "qr,water,ir,led";
   String body;

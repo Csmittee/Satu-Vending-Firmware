@@ -39,8 +39,7 @@ extern String         currentOrderId;
 extern int            selectedSlot;       // R3: was selectedProduct
 extern bool           wantSacredWater;    // R3: gift option flag
 extern String         currentUserId;
-extern int            laneErrorCount[NUM_SLOTS];   // R3: was [10]
-extern bool           laneDisabled[NUM_SLOTS];     // R3: was [10]
+
 
 // ── State transition helper (defined in satu_vending.ino) ────────────────────
 void setState(MachineState newState);

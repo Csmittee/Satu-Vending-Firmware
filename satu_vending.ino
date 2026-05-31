@@ -6,6 +6,8 @@
 // CHANGE LOG:
 //   R2 — Fixed compile error (variable declaration in switch/case)
 //         Full state machine, command polling, heartbeat, NVS
+//   R3.2 — laneErrorCount/laneDisabled use MAX_SLOTS_HW (config.h)
+//           to avoid array mismatch with ui.h NUM_SLOTS
 //   R3 — ui.h rewrite: TFT_eSPI → Arduino_GFX
 //         getTouchedProduct() → getTouchedSlot()
 //         laneDisabled[] / laneErrorCount[] → NUM_SLOTS (21)
@@ -364,7 +366,9 @@ void _onPaymentConfirmed() {
   drawVendingScreen(selectedSlot);
   vendProduct(selectedSlot);
   if (wantSacredWater) {
-    activateWaterPump();   // hardware.h — fires water pump relay
+    setRelay(RELAY_PUMP, true);
+    delay(3000);
+    setRelay(RELAY_PUMP, false);  // hardware.h — fires water pump relay
   }
 }
 
