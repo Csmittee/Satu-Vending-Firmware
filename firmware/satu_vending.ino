@@ -4,20 +4,18 @@
 // Flash: 16MB | PSRAM: 8MB OPI — NEVER change PSRAM setting
 // ============================================================
 // CHANGE LOG:
-//   R2 — Fixed compile error (variable declaration in switch/case)
-//         Full state machine, command polling, heartbeat, NVS
-//   R3.2 — laneErrorCount/laneDisabled use MAX_SLOTS_HW (config.h)
-//           to avoid array mismatch with ui.h NUM_SLOTS
-//   R3 — ui.h rewrite: TFT_eSPI → Arduino_GFX
-//         getTouchedProduct() → getTouchedSlot()
-//         laneDisabled[] / laneErrorCount[] → NUM_SLOTS (21)
-//         drawQrScreen() / drawVendingScreen() / drawCompletionScreen()
-//           updated signatures
-//         Added: STATE_GIFT_OPTION, STATE_ID_SCAN
-//         Added: loadSlotsFromJson() called after /hello
-//         Added: updateQrTimer() called every second in payment
-//         sacredWater flag passed through to completion screen
-//         Lucky number generated locally (random 10-99)
+//   R2   — Fixed compile error, full state machine, NVS
+//   R3   — Arduino_GFX, slot config, gift option, sacred water
+//   R3.2 — laneErrorCount/laneDisabled use MAX_SLOTS_HW
+//   R4   — Runtime grid: recalcGrid() after /hello
+//          Setup code screen: polling loop when status==pending
+//          Boot PIN: drawBootPinScreen() if NVS boot_pin set
+//          Service mode: 5-tab dispatch, settings actions 401/402
+//          Factory reset: factoryResetBackend() → NVS wipe on HTTP 200 only
+//          nuke command: wipes NVS, restarts
+//          Debug screen: 5s hold bottom-left in idle
+//          _onItemRemoved: esp_random(), reportCompletion with slotIdx
+//          Payment timeout: reportCompletion false
 // ============================================================
 
 #include "config.h"
@@ -26,34 +24,35 @@
 #include "network.h"
 #include "ui.h"
 
-// ── State machine globals ────────────────────────────────────────────────────
+// ── State machine globals ──────────────────────────────────────────────
 MachineState  currentState    = STATE_STARTUP;
 MachineState  lastState       = STATE_STARTUP;
 unsigned long stateStartTime  = 0;
 String        currentOrderId  = "";
-int           selectedSlot    = -1;      // R3: was selectedProduct
-bool          wantSacredWater = false;   // R3: gift option flag
+int           selectedSlot    = -1;
+bool          wantSacredWater = false;
 String        currentUserId   = "";
+int           g_service_tab   = 0;
 
-// ── Lane error tracking — now sized for NUM_SLOTS (max 21) ──────────────────
+// ── Lane error tracking ───────────────────────────────────────────────────────────
 int  laneErrorCount[NUM_SLOTS] = {0};
 bool laneDisabled[NUM_SLOTS]   = {false};
 
-// ── QR / payment globals ─────────────────────────────────────────────────────
+// ── QR / payment globals ────────────────────────────────────────────────────────
 String currentQrData  = "";
 int    currentAmount  = 0;
 
-// ── Timing ──────────────────────────────────────────────────────────────────
+// ── Timing ────────────────────────────────────────────────────────────────────
 static unsigned long lastHeartbeatMs   = 0;
 static unsigned long lastCommandPollMs = 0;
 static unsigned long paymentPollTimer  = 0;
-static unsigned long paymentStartMs    = 0;   // for countdown timer
+static unsigned long paymentStartMs    = 0;
 
-#define COMMAND_POLL_INTERVAL  30000   // 30 seconds
-#define PAYMENT_POLL_INTERVAL   3000   // 3 seconds
-#define PAYMENT_TIMER_INTERVAL  1000   // update countdown every 1s
+#define COMMAND_POLL_INTERVAL  30000
+#define PAYMENT_POLL_INTERVAL   3000
+#define PAYMENT_TIMER_INTERVAL  1000
 
-// ── setState ─────────────────────────────────────────────────────────────────
+// ── setState ───────────────────────────────────────────────────────────────────
 void setState(MachineState newState) {
   lastState      = currentState;
   currentState   = newState;
@@ -65,6 +64,129 @@ void setState(MachineState newState) {
 void handleCommands();
 void runStateMachine();
 void runTimers();
+void _proceedToPayment();
+void _onPaymentConfirmed();
+void _onItemRemoved();
+
+// ── PIN validation ──────────────────────────────────────────────────────────────
+static bool _validatePin(String entered) {
+  Preferences prefs;
+  prefs.begin("satu", true);
+  String stored = prefs.getString("svc_pin", "");
+  bool enabled  = prefs.getBool("svc_pin_en", false);
+  prefs.end();
+  if (!enabled || stored.isEmpty()) return true;  // no PIN set = always pass
+  return entered == stored;
+}
+
+// Blocking PIN entry loop. Returns true if PIN accepted, false if cancelled (timeout).
+static bool _runPinEntryLoop(unsigned long timeoutMs = 30000) {
+  // Draw overlay
+  int boxW = 360, boxH = 360;
+  int boxX = SCR_W/2 - boxW/2;
+  int boxY = SCR_H/2 - boxH/2;
+  _fillRoundRect(boxX, boxY, boxW, boxH, 12, gfx->color565(10, 8, 18));
+  _drawRoundRect(boxX, boxY, boxW, boxH, 12, C_GOLD);
+  gfx->setTextColor(C_GOLD); gfx->setTextSize(2);
+  const char* title = "Service PIN";
+  gfx->setCursor(boxX + boxW/2 - strlen(title)*12/2, boxY + 12);
+  gfx->print(title);
+
+  int npX = boxX + 20;
+  int npY = boxY + 78;
+  _drawNumpad(npX, npY);
+
+  // PIN display
+  int pdX = npX, pdY = boxY + 46;
+  int pdW = NP_COLS * (NP_KEY_W + NP_GAP) - NP_GAP;
+  gfx->fillRect(pdX, pdY, pdW, 26, gfx->color565(20,16,30));
+  gfx->drawRect(pdX, pdY, pdW, 26, C_GOLD);
+
+  String entered = "";
+  unsigned long startMs = millis();
+
+  while (millis() - startMs < timeoutMs) {
+    int key = getTouchedNumpad(npX, npY);
+    if (key == -1) { delay(20); continue; }
+
+    if (key == 10) {  // DEL
+      if (entered.length() > 0) entered.remove(entered.length() - 1);
+    } else if (key == 11) {  // OK
+      if (_validatePin(entered)) return true;
+      // Wrong PIN — flash red
+      gfx->fillRect(pdX, pdY, pdW, 26, C_RED);
+      delay(400);
+      gfx->fillRect(pdX, pdY, pdW, 26, gfx->color565(20,16,30));
+      gfx->drawRect(pdX, pdY, pdW, 26, C_GOLD);
+      entered = "";
+    } else if (entered.length() < 8) {
+      entered += String(key);
+    }
+
+    // Redraw PIN display (masked)
+    gfx->fillRect(pdX + 2, pdY + 2, pdW - 4, 22, gfx->color565(20,16,30));
+    gfx->setTextColor(C_WHITE); gfx->setTextSize(2);
+    String masked = "";
+    for (size_t i = 0; i < entered.length(); i++) masked += "*";
+    gfx->setCursor(pdX + 8, pdY + 5);
+    gfx->print(masked.c_str());
+  }
+  return false;  // timed out
+}
+
+// ── Boot PIN entry loop ───────────────────────────────────────────────────────────
+static void _runBootPinLoop() {
+  Preferences prefs;
+  prefs.begin("satu", true);
+  bool bootPinEnabled = prefs.getBool("boot_pin", false);
+  prefs.end();
+  if (!bootPinEnabled) return;
+
+  drawBootPinScreen();
+
+  int npX = SCR_W/2 - (NP_COLS * (NP_KEY_W + NP_GAP))/2 + 60;
+  int npY = STATUS_H + 40;
+  int pdX = npX, pdY = npY - 36;
+  int pdW = NP_COLS * (NP_KEY_W + NP_GAP) - NP_GAP;
+
+  String entered = "";
+  bool   unlocked = false;
+
+  while (!unlocked) {
+    int key = getTouchedNumpad(npX, npY);
+    if (key == -1) { delay(20); continue; }
+    if (key == 10) {
+      if (entered.length() > 0) entered.remove(entered.length() - 1);
+    } else if (key == 11) {
+      if (_validatePin(entered)) {
+        unlocked = true;
+      } else {
+        gfx->fillRect(pdX + 2, pdY + 2, pdW - 4, 24, C_RED);
+        delay(400);
+        gfx->fillRect(pdX + 2, pdY + 2, pdW - 4, 24, gfx->color565(20,16,30));
+        entered = "";
+      }
+    } else if (entered.length() < 8) {
+      entered += String(key);
+    }
+    // Update PIN display
+    gfx->fillRect(pdX + 2, pdY + 2, pdW - 4, 24, gfx->color565(20,16,30));
+    gfx->setTextColor(C_WHITE); gfx->setTextSize(2);
+    String masked = "";
+    for (size_t i = 0; i < entered.length(); i++) masked += "*";
+    gfx->setCursor(pdX + 8, pdY + 6);
+    gfx->print(masked.c_str());
+  }
+}
+
+// ── NVS wipe ───────────────────────────────────────────────────────────────────────────
+static void _clearNVS() {
+  Preferences prefs;
+  prefs.begin("satu", false);
+  prefs.clear();
+  prefs.end();
+  Serial.println("[NVS] Cleared");
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 //  SETUP
@@ -72,36 +194,68 @@ void runTimers();
 void setup() {
   Serial.begin(115200);
   delay(500);
-  Serial.println("\n[SATU] Booting R3...");
+  Serial.println("\n[SATU] Booting R4...");
 
-  // 1. Hardware (relays, sensors, LEDs)
   initHardware();
   Serial.println("[SATU] Hardware OK");
 
-  // 2. Display — boot screen first, then WiFi
   initUI();
   drawBootScreen("Connecting to WiFi...");
   Serial.println("[SATU] Display OK");
 
-  // 3. Network — WiFi connect + /hello (blocks until connected or reboots)
-  //    initWiFi() populates g_deviceId, g_deviceSecret
-  //    Returns JsonDocument with slots[] array from backend
   JsonDocument helloDoc;
-  initWiFi(helloDoc);   // NOTE: network.h must pass hello response back
+  initWiFi(helloDoc);
 
-  // 4. Load slot config from /hello response
-  if (helloDoc.containsKey("slots")) {
-    loadSlotsFromJson(helloDoc["slots"].as<JsonArray>());
-    Serial.println("[SATU] Slots loaded from backend");
-  } else {
-    Serial.println("[SATU] No slots in /hello — using defaults");
+  String machineStatus = helloDoc["status"] | "";
+  Serial.printf("[SATU] Machine status: %s\n", machineStatus.c_str());
+
+  // Pending: show setup code and poll until active
+  if (machineStatus == "pending") {
+    extern String g_setupCode;
+    String code = helloDoc["setup_code"] | g_setupCode;
+    if (code.isEmpty()) code = g_setupCode;
+
+    unsigned long pendingStart = millis();
+    const unsigned long POLL_INTERVAL = 30000;
+    const unsigned long MAX_PENDING   = 30UL * 60UL * 1000UL;  // 30 min
+
+    while (machineStatus == "pending" && millis() - pendingStart < MAX_PENDING) {
+      unsigned long nextPollIn = POLL_INTERVAL - ((millis() - pendingStart) % POLL_INTERVAL);
+      String countdown = String(nextPollIn / 1000) + "s";
+      drawSetupCodeScreen(code, countdown);
+      delay(5000);
+
+      // Re-poll /hello
+      helloDoc.clear();
+      reloadHello(helloDoc);
+      machineStatus = helloDoc["status"] | "";
+      if (machineStatus == "active") break;
+    }
+
+    if (machineStatus != "active") {
+      drawErrorScreen("Setup timeout\nRestart device");
+      delay(10000);
+      ESP.restart();
+    }
   }
 
-  Serial.println("[SATU] Network OK");
+  // Active: load config and slots
+  if (helloDoc.containsKey("slots")) {
+    loadSlotsFromJson(helloDoc["slots"].as<JsonArray>());
+    Serial.println("[SATU] Slots loaded");
+  }
 
-  // 5. Boot animation + idle
+  // Apply runtime grid from NVS (populated by _sendHello in network.h)
+  loadConfigFromNVS();
+  recalcGrid();
+
+  // Boot PIN gate
+  _runBootPinLoop();
+
+  // Ready
   setState(STATE_IDLE);
-  idleAnimation();
+  idleAnimationUI();   // screen gold flash
+  idleAnimation();     // LED breathing (hardware.h)
   drawIdleScreen();
 
   Serial.println("[SATU] Ready");
@@ -125,12 +279,48 @@ void runStateMachine() {
 
   switch (currentState) {
 
-    // ── IDLE ─────────────────────────────────────────────────────────────
+    // ── IDLE ───────────────────────────────────────────────────────────────────────
     case STATE_IDLE: {
-      // Service mode: 3× tap top-right within 2 seconds
+      // Debug screen: hold bottom-left (x<80, y>400) for 5 seconds
+      {
+        static unsigned long debugHoldStart = 0;
+        static bool          debugHolding   = false;
+        _touch.read();
+        if (_touch.isTouched &&
+            _touch.points[0].x < 80 &&
+            _touch.points[0].y > 400) {
+          if (!debugHolding) {
+            debugHolding   = true;
+            debugHoldStart = millis();
+          } else if (millis() - debugHoldStart > 5000) {
+            debugHolding = false;
+            drawDebugScreen();
+            // Wait for tap to dismiss
+            unsigned long dbgWait = millis();
+            while (millis() - dbgWait < 15000) {
+              _touch.read();
+              if (_touch.isTouched) break;
+              delay(50);
+            }
+            g_idleDrawn = false;
+            drawIdleScreen();
+          }
+        } else {
+          debugHolding = false;
+        }
+      }
+
+      // Service mode: gesture check, then PIN if set
       if (checkServiceGesture()) {
-        setState(STATE_SERVICE);
-        // drawServiceScreen(); // implement in service mode session
+        bool enter = _runPinEntryLoop(30000);
+        if (enter) {
+          g_service_tab = 0;
+          setState(STATE_SERVICE);
+          drawServiceScreen(g_service_tab);
+        } else {
+          g_idleDrawn = false;
+          drawIdleScreen();
+        }
         break;
       }
 
@@ -143,53 +333,37 @@ void runStateMachine() {
       break;
     }
 
-    // ── PRODUCT_SELECTION ────────────────────────────────────────────────
-    // First tap selects + highlights. Second tap confirms → gift option.
-    // 3s timeout returns to idle.
+    // ── PRODUCT_SELECTION ──────────────────────────────────────────────────────────
     case STATE_PRODUCT_SELECTION: {
       int touched = getTouchedSlot();
-
       if (touched >= 0) {
         if (touched == selectedSlot) {
-          // Second tap on same slot — confirm → gift option
           setState(STATE_GIFT_OPTION);
           wantSacredWater = false;
           drawGiftOptionScreen(selectedSlot);
         } else {
-          // Tapped different slot — re-select
           selectedSlot = touched;
           drawProductSelection(selectedSlot);
-          stateStartTime = millis();  // reset timeout
+          stateStartTime = millis();
         }
       }
-
-      // 5s idle → back to grid
-      if (elapsed > 5000) {
+      if (elapsed > (unsigned long)(g_cfg_sel * 1000)) {
         setState(STATE_IDLE);
         drawIdleScreen();
       }
       break;
     }
 
-    // ── GIFT_OPTION ───────────────────────────────────────────────────────
-    // Donor chooses: Item Only (0) or +Sacred Water (1)
+    // ── GIFT_OPTION ──────────────────────────────────────────────────────────────────
     case STATE_GIFT_OPTION: {
       int choice = getTouchedGiftOption();
-
       if (choice == 0) {
-        // Item only → skip ID scan for now, go straight to payment
         wantSacredWater = false;
-        Serial.println("[STATE] Gift: Item Only");
         _proceedToPayment();
-      }
-      else if (choice == 1) {
-        // Sacred water → go to ID scan (or skip if no reader fitted)
+      } else if (choice == 1) {
         wantSacredWater = true;
-        Serial.println("[STATE] Gift: +Sacred Water");
         _proceedToPayment();
       }
-
-      // 10s timeout → back to idle
       if (elapsed > 10000) {
         setState(STATE_IDLE);
         drawIdleScreen();
@@ -197,9 +371,8 @@ void runStateMachine() {
       break;
     }
 
-    // ── AWAITING_PAYMENT ──────────────────────────────────────────────────
+    // ── AWAITING_PAYMENT ───────────────────────────────────────────────────────────
     case STATE_AWAITING_PAYMENT: {
-      // Update countdown timer every second
       static unsigned long lastTimerUpdate = 0;
       if (millis() - lastTimerUpdate >= PAYMENT_TIMER_INTERVAL) {
         lastTimerUpdate = millis();
@@ -207,10 +380,9 @@ void runStateMachine() {
         if (secsLeft < 0) secsLeft = 0;
         updateQrTimer(secsLeft);
       }
-
-      // Timeout
       if (elapsed > PAYMENT_TIMEOUT) {
         Serial.println("[STATE] Payment timeout");
+        reportCompletion(currentOrderId, false, selectedSlot);
         setState(STATE_ERROR);
         drawErrorScreen("Payment timeout\nPlease try again");
         delay(3000);
@@ -218,8 +390,6 @@ void runStateMachine() {
         drawIdleScreen();
         break;
       }
-
-      // Poll backend every 3s as fallback (webhook/command is primary path)
       if (millis() - paymentPollTimer > PAYMENT_POLL_INTERVAL) {
         paymentPollTimer = millis();
         String status = checkPaymentStatus(currentOrderId);
@@ -231,13 +401,13 @@ void runStateMachine() {
       break;
     }
 
-    // ── VENDING ───────────────────────────────────────────────────────────
+    // ── VENDING ────────────────────────────────────────────────────────────────────────
     case STATE_VENDING: {
       setState(STATE_WAITING_DROP);
       break;
     }
 
-    // ── WAITING_DROP ──────────────────────────────────────────────────────
+    // ── WAITING_DROP ───────────────────────────────────────────────────────────────────
     case STATE_WAITING_DROP: {
       bool dropped = readSensor(selectedSlot);
       if (!dropped) {
@@ -245,17 +415,15 @@ void runStateMachine() {
         unlockDoor();
         Serial.println("[STATE] Item dropped, door unlocked");
       }
-
       if (elapsed > DROP_TIMEOUT) {
         laneErrorCount[selectedSlot]++;
         Serial.printf("[STATE] Drop timeout lane %d (errors: %d)\n",
                       selectedSlot, laneErrorCount[selectedSlot]);
         if (laneErrorCount[selectedSlot] >= 3) {
           laneDisabled[selectedSlot] = true;
-          // Also mark slot as disabled in g_slots so UI greys it out
           g_slots[selectedSlot].enabled = false;
-          Serial.printf("[STATE] Slot %d disabled\n", selectedSlot);
         }
+        reportCompletion(currentOrderId, false, selectedSlot);
         setState(STATE_ERROR);
         drawErrorScreen("Please contact staff\nSlot " + String(selectedSlot + 1) + " error");
         delay(3000);
@@ -265,13 +433,13 @@ void runStateMachine() {
       break;
     }
 
-    // ── DISPENSING ────────────────────────────────────────────────────────
+    // ── DISPENSING ─────────────────────────────────────────────────────────────────────
     case STATE_DISPENSING: {
       setState(STATE_WAITING_REMOVAL);
       break;
     }
 
-    // ── WAITING_REMOVAL ───────────────────────────────────────────────────
+    // ── WAITING_REMOVAL ───────────────────────────────────────────────────────────────
     case STATE_WAITING_REMOVAL: {
       bool itemGone = readSensor(selectedSlot);
       if (itemGone) {
@@ -280,28 +448,82 @@ void runStateMachine() {
       }
       if (elapsed > REMOVAL_TIMEOUT) {
         lockDoor();
-        Serial.println("[STATE] Removal timeout — locking door");
         _onItemRemoved();
       }
       break;
     }
 
-    // ── COMPLETING ────────────────────────────────────────────────────────
+    // ── COMPLETING ─────────────────────────────────────────────────────────────────────
     case STATE_COMPLETING: {
-      if (elapsed > 6000) {   // 6s on completion screen
+      if (elapsed > 6000) {
         currentOrderId    = "";
         currentQrData     = "";
         currentAmount     = 0;
         selectedSlot      = -1;
         wantSacredWater   = false;
         setState(STATE_IDLE);
+        idleAnimationUI();
         idleAnimation();
         drawIdleScreen();
       }
       break;
     }
 
-    // ── ERROR ─────────────────────────────────────────────────────────────
+    // ── SERVICE ────────────────────────────────────────────────────────────────────────
+    case STATE_SERVICE: {
+      if (checkServiceExit()) {
+        setState(STATE_IDLE);
+        g_idleDrawn = false;
+        drawIdleScreen();
+        break;
+      }
+
+      int newTab = getTouchedServiceTab();
+      if (newTab >= 0 && newTab != g_service_tab) {
+        g_service_tab = newTab;
+        drawServiceScreen(g_service_tab);
+        break;
+      }
+
+      int action = getTouchedServiceContent(g_service_tab);
+      if (action > 0) {
+        if (action == 401) {
+          // Factory reset — must call backend first (R-74)
+          svcLog("Calling backend factory-reset...");
+          bool ok = factoryResetBackend();
+          if (ok) {
+            svcLog("Backend OK — wiping NVS...");
+            delay(500);
+            _clearNVS();
+            delay(200);
+            ESP.restart();
+          } else {
+            svcLog("Backend refused reset — NVS untouched");
+          }
+        } else if (action == 402) {
+          // Toggle boot PIN
+          Preferences prefs;
+          prefs.begin("satu", false);
+          bool cur = prefs.getBool("boot_pin", false);
+          prefs.putBool("boot_pin", !cur);
+          prefs.end();
+          svcLog(String("Boot PIN: ") + (!cur ? "ENABLED" : "DISABLED"));
+          delay(1000);
+          drawServiceScreen(g_service_tab);
+        } else if (action >= 301 && action <= 321) {
+          int slotToTest = action - 301;
+          svcLog("Testing slot " + String(slotToTest + 1) + "...");
+          if (g_service_tab == TAB_SELFTEST) {
+            vendProduct(slotToTest);
+          } else if (g_service_tab == TAB_FREEPLAY) {
+            vendProduct(slotToTest);
+          }
+        }
+      }
+      break;
+    }
+
+    // ── ERROR ─────────────────────────────────────────────────────────────────────────
     case STATE_ERROR: {
       if (elapsed > 10000) {
         setState(STATE_IDLE);
@@ -310,10 +532,9 @@ void runStateMachine() {
       break;
     }
 
-    // ── OFFLINE ───────────────────────────────────────────────────────────
+    // ── OFFLINE ─────────────────────────────────────────────────────────────────────
     case STATE_OFFLINE: {
       if (elapsed > 30000) {
-        Serial.println("[STATE] Attempting reconnect...");
         if (WiFi.status() == WL_CONNECTED) {
           setState(STATE_IDLE);
           drawIdleScreen();
@@ -330,15 +551,14 @@ void runStateMachine() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  HELPER: proceed to payment (create order, show QR)
+//  HELPER: proceed to payment
 // ════════════════════════════════════════════════════════════════════════════
 void _proceedToPayment() {
-  String qrUrl = "";
+  String qrUrl  = "";
   int    amount = 0;
   bool   ordered = createOrder(selectedSlot, wantSacredWater, qrUrl, amount, currentOrderId);
 
   if (!ordered || qrUrl.isEmpty()) {
-    Serial.println("[STATE] Order creation failed");
     setState(STATE_ERROR);
     drawErrorScreen("Cannot create order\nPlease try again");
     delay(3000);
@@ -359,7 +579,7 @@ void _proceedToPayment() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  HELPER: payment confirmed (from poll or command)
+//  HELPER: payment confirmed
 // ════════════════════════════════════════════════════════════════════════════
 void _onPaymentConfirmed() {
   setState(STATE_VENDING);
@@ -368,7 +588,7 @@ void _onPaymentConfirmed() {
   if (wantSacredWater) {
     setRelay(RELAY_PUMP, true);
     delay(3000);
-    setRelay(RELAY_PUMP, false);  // hardware.h — fires water pump relay
+    setRelay(RELAY_PUMP, false);
   }
 }
 
@@ -376,10 +596,10 @@ void _onPaymentConfirmed() {
 //  HELPER: item removed from tray
 // ════════════════════════════════════════════════════════════════════════════
 void _onItemRemoved() {
-  int lucky = random(10, 100);   // lucky number 10-99
+  int lucky = 10 + (int)(esp_random() % 90);  // 10-99, hardware RNG
   setState(STATE_COMPLETING);
   drawCompletionScreen(selectedSlot, lucky, wantSacredWater);
-  reportCompletion(currentOrderId, true);
+  reportCompletion(currentOrderId, true, selectedSlot);
   Serial.printf("[STATE] Complete — lucky=%d water=%d\n", lucky, wantSacredWater);
 }
 
@@ -395,7 +615,6 @@ void handleCommands() {
 
     if (cmd == "payment_confirmed") {
       if (currentState == STATE_AWAITING_PAYMENT) {
-        Serial.println("[CMD] Payment confirmed via command");
         _onPaymentConfirmed();
       }
     }
@@ -410,18 +629,24 @@ void handleCommands() {
       }
     }
     else if (cmd == "reboot") {
-      Serial.println("[CMD] Rebooting...");
       delay(500);
       ESP.restart();
     }
+    else if (cmd == "nuke") {
+      // Wipe NVS and restart (admin emergency command)
+      Serial.println("[CMD] NUKE: wiping NVS");
+      drawErrorScreen("Factory reset\nErasing device...");
+      delay(1000);
+      _clearNVS();
+      delay(200);
+      ESP.restart();
+    }
     else if (cmd == "reload_slots") {
-      // Backend has updated slot config — re-fetch via /hello
-      Serial.println("[CMD] Reloading slot config...");
       JsonDocument doc;
-      reloadHello(doc);   // network.h — re-calls /hello endpoint
+      reloadHello(doc);
       if (doc.containsKey("slots")) {
         loadSlotsFromJson(doc["slots"].as<JsonArray>());
-        g_idleDrawn = false;   // force grid redraw
+        g_idleDrawn = false;
         if (currentState == STATE_IDLE) drawIdleScreen();
       }
     }
@@ -437,9 +662,8 @@ void handleCommands() {
 void runTimers() {
   unsigned long now = millis();
 
-  // WiFi watchdog
   if (WiFi.status() != WL_CONNECTED) {
-    if (currentState != STATE_OFFLINE) {
+    if (currentState != STATE_OFFLINE && currentState != STATE_SERVICE) {
       setState(STATE_OFFLINE);
       drawErrorScreen("No internet connection");
     }
@@ -449,13 +673,11 @@ void runTimers() {
     drawIdleScreen();
   }
 
-  // Heartbeat
   if (now - lastHeartbeatMs > HEARTBEAT_INTERVAL) {
     sendHeartbeat();
     lastHeartbeatMs = now;
   }
 
-  // Command poll
   if (now - lastCommandPollMs > COMMAND_POLL_INTERVAL) {
     handleCommands();
     lastCommandPollMs = now;
