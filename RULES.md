@@ -14,6 +14,7 @@
 - R-79: Service mode Settings shows lane prices as READ-ONLY from g_slots[] — edit via dashboard only (backend = single source of truth)
 - R-80: Service mode Settings has Volume slider (NVS key: vol, 0-100), ID Card Reader toggle (nvs_idc)
 - R-81: Simulator is the UI spec for service mode — match it exactly, then add R4 additions on top
+- R-68: PNGdec = v1.1.6 (Larry Bank) — do not upgrade without testing, pin this version
 
 ## Session Protocol
 - R-01: CC reads CLAUDE.md + RULES.md + PROJECT_STATE.md before touching any file — state names aloud
