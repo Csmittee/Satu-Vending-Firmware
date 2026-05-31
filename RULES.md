@@ -1,16 +1,19 @@
 # RULES.md — Satu Lessons (newest at TOP)
 <!-- CC prepends new rule after every session · Chat adds from design decisions · stays scannable -->
 
-New Rules — prepend these to TOP of RULES.md in firmware repo
-
-R-00: Display library = Arduino_GFX NOT TFT_eSPI — TFT_eSPI does not support RGB panel interface
-R-01: PSRAM setting in Arduino IDE must be OPI PSRAM — if set to Disabled, display crashes with "no mem for frame buffer"
-R-02: Upload speed = 460800 on Mac Big Sur — 921600 causes "chip stopped responding" error
-R-03: Touch rotation = ROTATION_INVERTED for ESP32-8048S070C — default orientation is mirrored
-R-04: Display init requires Wire.begin(19,20) called BEFORE touch.begin() — order matters
-R-05: Arduino IDE sometimes resets PSRAM to Disabled when other settings change — always verify before upload
-
-
+## R4 Firmware Rules (added 2026-05-31)
+- R-70: hardware.h is R2 LOCKED — never open, modify, or redeclare anything it owns (idleAnimation, mcp2_sensors, RELAY_PUMP, RELAY_DOOR_LOCK)
+- R-71: idleAnimation() = LED breathing (hardware.h) · idleAnimationUI() = screen gold flash (ui.h) — two different functions, never alias or merge
+- R-72: NUM_SLOTS defined in config.h ONLY — ui.h reads it, never redefines it; same for RELAY_PUMP and RELAY_DOOR_LOCK
+- R-73: NVS keys: use ONLY approved keys in UI_SPEC.md NVS table — no new keys, all must be ≤15 chars
+- R-74: Factory reset MUST call /v1/machine/factory-reset backend first — only wipe NVS on HTTP 200 — offline reset is BLOCKED
+- R-75: config.h is in .gitignore — WiFi credentials NEVER in git — use config.h.example template in repo
+- R-76: PNG for QR display via PNGdec library (bitbank2) — buffer in PSRAM via ps_malloc(200*1024) — never on stack
+- R-77: Grid system = runtime variables g_grid_rows + g_grid_cols from /hello config — NOT compile-time constants
+- R-78: Side tabs A/B/C appear only when g_grid_rows >= 3 — slot labels A1-A7, B1-B7, C1-C7
+- R-79: Service mode Settings shows lane prices as READ-ONLY from g_slots[] — edit via dashboard only (backend = single source of truth)
+- R-80: Service mode Settings has Volume slider (NVS key: vol, 0-100), ID Card Reader toggle (nvs_idc)
+- R-81: Simulator is the UI spec for service mode — match it exactly, then add R4 additions on top
 
 ## Session Protocol
 - R-01: CC reads CLAUDE.md + RULES.md + PROJECT_STATE.md before touching any file — state names aloud
@@ -37,12 +40,15 @@ R-05: Arduino IDE sometimes resets PSRAM to Disabled when other settings change 
 ## Hardware Rules
 - R-30: Relay board needs separate 12V supply — NOT from ESP32-S3 5V (max 500mA)
 - R-31: Touch controller GT911 — may need separate library, NOT TFT_eSPI built-in
-- R-32: Display driver EK9716 — confirm in TFT_eSPI User_Setup.h before flashing
+- R-32: Display driver EK9716 — Arduino_GFX RGB panel only — TFT_eSPI is incompatible, remove if installed
 
 ## Security Rules
 - R-40: ADMIN_SECRET + ADMIN_PATH are secrets — never in source code or logs
 - R-41: All device auth uses device_id + device_secret pair — validate both on every call
 - R-42: PDPA consent flow is incomplete — legal review required before any live donor data collected
+- R-43: Factory reset = call backend first · ownership = AirTag-style binding · nuke = remote NVS wipe via command
+- R-44: Four security layers: L1 machine PIN (owner) · L2 dashboard login (owner) · L3 device_secret (us) · L4 admin (us only)
+- R-45: device_events D1 table required for audit trail — log: claimed, released, suspended, nuked, factory_reset
 
 ## Workflow Rules
 - R-50: CC instructions use `CC_PROMPT_xxx` naming — archived in `docs/prompts/` after execution
@@ -58,8 +64,9 @@ R-05: Arduino IDE sometimes resets PSRAM to Disabled when other settings change 
 - R-64: /hello body field = "firmware" NOT "firmware_version" — backend expects exact name
 - R-65: Omise gateway = 3 modes: fake_omise (dev) / omise_test (real QR) / omise_live (KYC done)
 - R-66: PAYMENT_GATEWAY + SYSTEM_MODE + FAKE_OMISE_URL = plain Variables not Secrets
-- R-67: Slot grid default = 10 (5×2) · max 21 (7×3) · scrollable if >10 · never tiny cells
+- R-67: Slot grid default = 10 (5×2) · max 21 (7×3) · R×Out system · A/B/C tabs when R≥3
+- R-68: PNGdec library (bitbank2) required for R4 — install via Library Manager before flashing
 
-## Firmware Arduino IDE Settings (add to CLAUDE.md stack section)
+## Firmware Arduino IDE Settings
 Board: ESP32S3 Dev Module · Flash: 16MB · Partition: 16M Flash (3MB APP/9.9MB FATFS)
 PSRAM: OPI PSRAM (CRITICAL — never change) · Upload: 460800 · Port: /dev/cu.usbserial-1420

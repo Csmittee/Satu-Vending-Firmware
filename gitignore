@@ -1,0 +1,50 @@
+# ============================================================
+# SATU Project — .gitignore
+# Covers: firmware repo, backend repo, hardware repo
+# ============================================================
+
+# ── FIRMWARE — Arduino secrets (CRITICAL — never commit WiFi creds) ──────────
+config.h
+config.h.bak
+
+# ── NODE / Cloudflare Workers ────────────────────────────────────────────────
+node_modules/
+.wrangler/
+dist/
+
+# ── Cloudflare secrets (never commit these) ──────────────────────────────────
+.env
+.env.local
+.dev.vars
+
+# ── macOS system files ───────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V8
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
+
+# ── Arduino IDE build artifacts ──────────────────────────────────────────────
+build/
+*.elf
+*.bin
+*.map
+*.hex
+
+# ── Editor / IDE ─────────────────────────────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+
+# ── Temp / working files ─────────────────────────────────────────────────────
+*.tmp
+*.bak

@@ -20,6 +20,8 @@
 - `RULES.md` — lessons learned · read every session
 - `PROJECT_STATE.md` — phase status · roadmap · what's broken
 - `CHAT_HANDOFF.md` — last session summary · read at session start
+- `UI_SPEC.md` — screen inventory · grid system · service mode tabs · NVS key table · read before any ui.h change
+- `SECURITY.md` — auth layers · ownership model · security gaps · read before any auth/ownership/reset code
 
 ## Repos
 - Backend: `Csmittee/Satu-vending-backend`
