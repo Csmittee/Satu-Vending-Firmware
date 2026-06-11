@@ -1,6 +1,16 @@
 # RULES.md — Satu Lessons (newest at TOP)
 <!-- CC prepends new rule after every session · Chat adds from design decisions · stays scannable -->
 
+## Three-Repo + Session Closing Rules (added 2026-06-11)
+- R-83: Three-repo system — Chat and CC must read all three repos before any decision:
+         backend (Satu-vending-backend), firmware (Satu-Vending-Firmware),
+         hardware (Satu-vending-hardware). Hardware repo = wiring + BOM reference only.
+         Never modify hardware repo wiring/BOM files. hardware.h R2 LOCKED in all contexts.
+- R-84: Session closing discipline — every CC session ends:
+         archive prompt → append RULES.md → update PROJECT_STATE.md →
+         overwrite CHAT_HANDOFF.md → commit all docs → merge to main.
+         No session closes without this sequence complete.
+
 ## R4 Firmware Rules (added 2026-05-31)
 - R-70: hardware.h is R2 LOCKED — never open, modify, or redeclare anything it owns (idleAnimation, mcp2_sensors, RELAY_PUMP, RELAY_DOOR_LOCK)
 - R-71: idleAnimation() = LED breathing (hardware.h) · idleAnimationUI() = screen gold flash (ui.h) — two different functions, never alias or merge

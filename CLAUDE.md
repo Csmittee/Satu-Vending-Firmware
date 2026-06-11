@@ -7,7 +7,11 @@
 - **Hardware**: ESP32-S3 (ESP32-8048S070C) · MCP23017 ×2 · relays · IR sensors (E18-D80NK)
 - **Firmware**: Arduino/C++ · satu_vending.ino + .h headers
 - **Frontend**: Vanilla HTML/JS · Cloudflare Pages
-- **Firmware IDE**: Arduino 1.8.19 · ESP32 core 2.0.17 · GFX lib 1.4.9
+- **Firmware IDE**: Arduino 1.8.19 · ESP32 core **2.0.17 ONLY** · GFX lib **1.4.9 ONLY** · PNGdec 1.1.6
+- **Arduino IDE settings**: Board=ESP32S3 Dev Module · Flash=16MB · Partition=16M(3MB APP/9.9MB FATFS)
+  PSRAM=**OPI PSRAM** (CRITICAL — never change) · Upload=460800 · Port=/dev/cu.usbserial-1420
+- **TFT_eSPI**: REMOVE if installed — incompatible with RGB panel
+- **hardware.h**: R2 LOCKED — never open, modify, or redeclare anything it owns
 
 ## 5 Rules (non-negotiable)
 1. **Never hardcode secrets** — always Cloudflare secrets manager
@@ -19,11 +23,13 @@
 ## Key Files (read before touching anything)
 - `RULES.md` — lessons learned · read every session
 - `PROJECT_STATE.md` — phase status · roadmap · what's broken
-- `CHAT_HANDOFF.md` — last session summary · read at session start
+- `CHAT_HANDOFF.md` — last session summary · read at session start · overwrite each session
+- `WORKFLOW_SKILL.md` — how Chat + CC + Owner work together · Loop A (cloud) + Loop B (firmware)
 - `UI_SPEC.md` — screen inventory · grid system · service mode tabs · NVS key table · read before any ui.h change
 - `SECURITY.md` — auth layers · ownership model · security gaps · read before any auth/ownership/reset code
+- `KNOWLEDGE_MAP.md` (backend repo) — navigation guide · what to read for each task
 
 ## Repos
 - Backend: `Csmittee/Satu-vending-backend`
 - Firmware: `Csmittee/Satu-Vending-Firmware`
-- Hardware: `Csmittee/Satu-vending-hardware`
+- Hardware: `Csmittee/Satu-vending-hardware` — wiring diagrams, BOM — read before any hardware decision
