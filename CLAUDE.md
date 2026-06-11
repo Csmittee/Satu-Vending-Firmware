@@ -28,6 +28,7 @@
 - `UI_SPEC.md` — screen inventory · grid system · service mode tabs · NVS key table · read before any ui.h change
 - `SECURITY.md` — auth layers · ownership model · security gaps · read before any auth/ownership/reset code
 - `KNOWLEDGE_MAP.md` (backend repo) — navigation guide · what to read for each task
+- - `KNOWN_GOOD.md` — timestamped test snapshots, last confirmed working state
 
 ## Repos
 - Backend: `Csmittee/Satu-vending-backend`
