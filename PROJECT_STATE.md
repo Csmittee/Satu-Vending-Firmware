@@ -5,6 +5,15 @@
 
 ## SESSION LOG (newest first)
 
+### 2026-06-12 — CC Compile Error Fix (CC_PROMPT_fix_compile_errors)
+- **FIXED:** 7 compile errors from first R5 build attempt — R5 now ready to flash
+- **ui.h:** g_grid_rows, g_grid_cols, g_cfg_idle, g_cfg_sel, g_cfg_water, g_cfg_lucky —
+  removed `static` keyword (now plain globals, resolved at link time)
+- **network.h:** removed 6 `extern` re-declarations — not needed in Arduino sketch compilation
+- **ui.h:** `_pngDrawRow` return type changed `void` → `int` (PNGdec v1.1.6 requires int callback)
+- **RULES.md:** R-88 (shared globals pattern) + R-89 (PNGdec callback type) appended
+- **Branch:** claude/loving-bohr-t3n3yf · pushed to PR #4
+
 ### 2026-06-12 — CC R5 WiFi Provisioning (CC_PROMPT_fix_wifi_credentials)
 - **RESOLVED:** WiFi credential security risk — credentials no longer in source files or git
 - **network.h R5:** initWiFi() NVS-first (nvs_ssid/nvs_pass) → config.h fallback → setup screen

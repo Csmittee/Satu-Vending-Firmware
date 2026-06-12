@@ -31,6 +31,15 @@
   .gitignore entry remains as the accidental-credential safety net — this is sufficient.
   No config.h.example needed. Arduino IDE reads config.h directly without any copy step.
   Supersedes R-86: there is no .example file. config.h is the repo file. .gitignore protects it.
+- **R-88 SHARED GLOBALS: define in ui.h, NOT extern in network.h (2026-06-12):**
+  g_grid_rows, g_grid_cols, g_cfg_idle, g_cfg_sel, g_cfg_water, g_cfg_lucky are plain globals
+  defined in ui.h (no static keyword). network.h must NOT redeclare them extern — Arduino sketch
+  compilation links all .h files together, globals resolve at link time without extern declarations.
+  Declaring extern in network.h and static in ui.h is a hard compile error in ESP32 2.0.17.
+- **R-89 PNGdec v1.1.6 callback returns int NOT void (2026-06-12):**
+  PNG_DRAW_CALLBACK signature: `int (*)(PNGDRAW*)` — return type is int, not void.
+  Always write: `static int _pngDrawRow(PNGDRAW* pDraw) { ... return 0; }`
+  Passing a void callback to PNG::openRAM() is a compile error (-fpermissive).
 
 ---
 

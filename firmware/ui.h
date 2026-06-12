@@ -69,18 +69,18 @@ static uint16_t C_PRICE_ORANGE, C_PRICE_DEEPORANGE;
 #define GRID_Y     (STATUS_H + 4)
 #define SIDE_TAB_W  40   // width of A/B/C row-selector strip when rows>=3
 
-static int g_grid_rows  = 2;
-static int g_grid_cols  = 5;
-static int CELL_W       = 152;   // recalculated by recalcGrid()
-static int CELL_H       = 212;
-static int g_active_tab = 0;     // active row tab (0=A,1=B,2=C)
+int g_grid_rows  = 2;    // plain globals — shared with network.h via link-time resolution
+int g_grid_cols  = 5;
+int CELL_W       = 152;  // recalculated by recalcGrid()
+int CELL_H       = 212;
+static int g_active_tab = 0;  // ui.h-private
 
 // Config globals (populated from NVS by loadConfigFromNVS())
-static int  g_cfg_idle    = 60;
-static int  g_cfg_sel     = 15;
-static bool g_cfg_water   = true;
-static bool g_cfg_lucky   = true;
-static bool g_lang_th     = false;
+int  g_cfg_idle    = 60;
+int  g_cfg_sel     = 15;
+bool g_cfg_water   = true;
+bool g_cfg_lucky   = true;
+static bool g_lang_th = false;  // ui.h-private
 
 void recalcGrid() {
   int gridAreaW = SCR_W - GRID_X * 2;
@@ -154,10 +154,11 @@ static uint8_t* g_pngBuf   = nullptr;
 static int      _pngDrawX  = 0;
 static int      _pngDrawY  = 0;
 
-static void _pngDrawRow(PNGDRAW* pDraw) {
+static int _pngDrawRow(PNGDRAW* pDraw) {
   uint16_t lineBuf[800];
   _png.getLineAsRGB565(pDraw, lineBuf, PNG_RGB565_LITTLE_ENDIAN, 0xFFFFFFFF);
   gfx->draw16bitRGBBitmap(_pngDrawX, _pngDrawY + pDraw->y, lineBuf, pDraw->iWidth, 1);
+  return 0;
 }
 
 void drawQrFromBytes(uint8_t* buf, size_t len, int x, int y) {
