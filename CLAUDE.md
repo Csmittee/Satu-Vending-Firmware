@@ -21,9 +21,9 @@
 5. **Document every decision** — this must be handoff-ready at all times
 
 ## Key Files (read before touching anything)
-- `RULES.md` — lessons learned · read every session
-- `PROJECT_STATE.md` — phase status · roadmap · what's broken
-- `CHAT_HANDOFF.md` — last session summary · read at session start · overwrite each session
+- `RULES.md` — 10 universal rules · read every session · domain rules in `.claude/rules/`
+- `PROJECT_STATE.md` — phase status · roadmap · CC updates after every fix/PR
+- `KNOWN_GOOD.md` — last confirmed test snapshot · updated by Chat/owner after each test session
 - `WORKFLOW_SKILL.md` — how Chat + CC + Owner work together · Loop A (cloud) + Loop B (firmware)
 - `UI_SPEC.md` — screen inventory · grid system · service mode tabs · NVS key table · read before any ui.h change
 - `SECURITY.md` — auth layers · ownership model · security gaps · read before any auth/ownership/reset code
