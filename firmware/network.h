@@ -49,6 +49,7 @@
 // ── Runtime globals ─────────────────────────────────────────────────────────────
 static String      g_deviceId     = "";
 static String      g_deviceSecret = "";
+String             g_setupCode    = "";   // setup code from /hello (status=pending)
 static Preferences g_prefs;
 
 // ── UI runtime grid globals (defined in ui.h, declared here so network.h
@@ -196,6 +197,9 @@ static bool _sendHello(JsonDocument& outDoc) {
 
   String deviceId     = outDoc["device_id"]     | "";
   String deviceSecret = outDoc["device_secret"] | "";
+  String setupCode    = outDoc["setup_code"]    | "";
+
+  if (!setupCode.isEmpty()) g_setupCode = setupCode;  // cache for debug screen
 
   if (deviceId.isEmpty()) {
     Serial.println("[NET] /hello: no device_id in response");
