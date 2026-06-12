@@ -51,8 +51,14 @@ static String      g_deviceId     = "";
 static String      g_deviceSecret = "";
 static Preferences g_prefs;
 
-// g_grid_rows, g_grid_cols, g_cfg_idle, g_cfg_sel, g_cfg_water, g_cfg_lucky
-// are defined as plain globals in ui.h — resolved at link time, no extern needed.
+// ── UI runtime grid globals (defined in ui.h, declared here so network.h
+//    functions can use them — network.h is included before ui.h) ──────────
+extern int  g_grid_rows;
+extern int  g_grid_cols;
+extern int  g_cfg_idle;
+extern int  g_cfg_sel;
+extern bool g_cfg_water;
+extern bool g_cfg_lucky;
 
 // ── Command list ──────────────────────────────────────────────────────────────
 #define MAX_COMMANDS 8
