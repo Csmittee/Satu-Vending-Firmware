@@ -1,5 +1,5 @@
 // ============================================================
-// network.h — Satu Vending Machine Network Layer  R4
+// network.h — Satu Vending Machine Network Layer  R5
 // Board: ESP32-S3 (ESP32-8048S070C)
 // ============================================================
 // CHANGE LOG:
@@ -13,8 +13,15 @@
 //          Updated: _sendHello() caches config{} block to NVS
 //          Updated: initWiFi() calls loadConfigFromNVS() before hello
 //          Updated: reportCompletion() adds slotIdx param
+//   R5  — FW_VERSION → v1.0.0-r5
+//          initWiFi() NVS-first: reads nvs_ssid/nvs_pass before config.h
+//          Falls back to config.h WIFI_SSID/WIFI_PASSWORD if NVS empty
+//          Empty credentials → returns without connecting (caller checks
+//          WiFi.status() and transitions to STATE_WIFI_SETUP)
+//          Added: saveWifiAndReboot() — saves to NVS then ESP.restart()
 // SECURITY:
 //   device_secret in NVS only — never hardcoded
+//   WiFi credentials in NVS (nvs_ssid/nvs_pass) — never in git
 //   X-Device-Secret header on all authenticated calls
 // ============================================================
 
@@ -30,12 +37,14 @@
 #include "config.h"
 
 // ── Firmware version ────────────────────────────────────────────────────────────────
-#define FW_VERSION  "v1.0.0-r4"
+#define FW_VERSION  "v1.0.0-r5"
 
 // ── NVS keys ──────────────────────────────────────────────────────────────────
 #define NVS_NAMESPACE         "satu"
 #define NVS_KEY_DEVICE_ID     "device_id"
 #define NVS_KEY_DEVICE_SECRET "dev_secret"
+#define NVS_KEY_WIFI_SSID     "nvs_ssid"
+#define NVS_KEY_WIFI_PASS     "nvs_pass"
 
 // ── Runtime globals ─────────────────────────────────────────────────────────────
 static String      g_deviceId     = "";
@@ -138,6 +147,23 @@ void loadConfigFromNVS() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+//  SAVE WIFI AND REBOOT  (R5)
+//  Saves WiFi credentials to NVS then restarts.
+//  Called by drawWifiSetupScreen() on CONNECT tap.
+//  R-85 compliance: credentials go to NVS, never to source files.
+// ════════════════════════════════════════════════════════════════════════════
+void saveWifiAndReboot(const String& ssid, const String& pass) {
+  Preferences prefs;
+  prefs.begin(NVS_NAMESPACE, false);
+  prefs.putString(NVS_KEY_WIFI_SSID, ssid);
+  prefs.putString(NVS_KEY_WIFI_PASS, pass);
+  prefs.end();
+  Serial.printf("[NET] WiFi credentials saved: ssid=%s — rebooting\n", ssid.c_str());
+  delay(200);
+  ESP.restart();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 //  SEND /hello  (internal)
 //  R4: also caches config{} block to NVS
 // ════════════════════════════════════════════════════════════════════════════
@@ -203,18 +229,42 @@ static bool _sendHello(JsonDocument& outDoc) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  INIT WiFi
-//  R4: calls loadConfigFromNVS() BEFORE /hello so grid is
-//      available immediately even if network is slow
+//  INIT WiFi  (R5 — NVS-first credential resolution)
+//
+//  Priority order:
+//    1. NVS (nvs_ssid / nvs_pass) — set by touchscreen provisioning
+//    2. config.h WIFI_SSID / WIFI_PASSWORD — only if non-empty
+//    3. No credentials → returns without connecting
+//       Caller checks WiFi.status() != WL_CONNECTED and transitions
+//       to STATE_WIFI_SETUP → drawWifiSetupScreen()
 // ════════════════════════════════════════════════════════════════════════════
 void initWiFi(JsonDocument& helloDoc) {
-  Serial.printf("[NET] Connecting WiFi: %s\n", WIFI_SSID);
-
-  // Load cached config first so grid is available before /hello
+  // Load cached grid/config first so UI is ready before network
   loadConfigFromNVS();
 
+  // 1. Read credentials from NVS
+  Preferences prefs;
+  prefs.begin(NVS_NAMESPACE, true);
+  String ssid = prefs.getString(NVS_KEY_WIFI_SSID, "");
+  String pass = prefs.getString(NVS_KEY_WIFI_PASS, "");
+  prefs.end();
+
+  // 2. Fall back to config.h if NVS is empty
+  if (ssid.isEmpty() && strlen(WIFI_SSID) > 0) {
+    ssid = String(WIFI_SSID);
+    pass = String(WIFI_PASSWORD);
+    Serial.println("[NET] WiFi: using config.h credentials");
+  }
+
+  // 3. No credentials available → signal caller to show setup screen
+  if (ssid.isEmpty()) {
+    Serial.println("[NET] No WiFi credentials — setup screen required");
+    return;  // WiFi.status() != WL_CONNECTED, caller handles
+  }
+
+  Serial.printf("[NET] Connecting WiFi: %s\n", ssid.c_str());
   WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  WiFi.begin(ssid.c_str(), pass.c_str());
 
   int attempts = 0;
   while (WiFi.status() != WL_CONNECTED && attempts < 20) {
