@@ -1,38 +1,52 @@
 // ============================================================
-// config.h — Satu Vending Machine Configuration
-// Board: ESP32-S3 (ESP32-8048S070C)
+// config.h.example — Satu Vending Machine Configuration Template
+// ============================================================
+// SETUP: Copy this file to config.h and fill in your values.
+//        config.h is gitignored — credentials NEVER enter git.
+//        WIFI_SSID and WIFI_PASSWORD left empty here — intentional.
+//        On first boot with empty credentials the machine shows
+//        the WiFi Setup touchscreen and saves to NVS automatically.
 // ============================================================
 // CHANGE LOG:
-//   R3   — Added: MCP3_ADDR, WATER_PUMP_RELAY, DOOR_LOCK_RELAY, VEND_PULSE_MS
-//          Fixed: API_BASE_URL to api.janishammer.com
-//   R3.1 — Restored: NUM_SLOTS=10, NUM_COLS=5
+//   R3   — Added MCP3_ADDR, WATER_PUMP_RELAY, DOOR_LOCK_RELAY, VEND_PULSE_MS
+//          Fixed API_BASE_URL to api.janishammer.com
+//   R3.1 — Restored NUM_SLOTS=10, NUM_COLS=5
 //   R4   — NUM_SLOTS 10→21 (max 3×7 grid support)
 //          NUM_COLS 5→7 (max columns)
 //          Added NVS key reference block
+//   R5   — WIFI_SSID/WIFI_PASSWORD EMPTY — credentials now entered
+//          via touchscreen provisioning, stored in NVS (nvs_ssid / nvs_pass)
 // ============================================================
-// NVS KEYS (“satu” namespace, max 15 chars each, max 17 keys):
-//   device_id     — assigned device ID (string)
-//   dev_secret    — device auth secret (string)
-//   svc_pin       — 4-digit service PIN (string)
-//   svc_pin_en    — service PIN enabled (bool)
-//   boot_pin      — require PIN at boot (bool)
-//   lang          — UI language: 0=EN, 1=TH (int)
-//   cfg_idle      — idle timeout seconds (int)
-//   cfg_sel       — selection timeout seconds (int)
-//   cfg_water     — sacred water feature enabled (bool)
-//   cfg_lucky     — lucky number feature enabled (bool)
-//   nvs_grow      — grid rows from /hello (int)
-//   nvs_gcol      — grid cols from /hello (int)
+// NVS KEYS ("satu" namespace, all ≤15 chars):
+//   device_id  — assigned device ID (string)
+//   dev_secret — device auth secret (string)
+//   nvs_ssid   — WiFi SSID saved by provisioning screen (string)
+//   nvs_pass   — WiFi password saved by provisioning screen (string)
+//   svc_pin    — service PIN (string)
+//   svc_pin_en — service PIN enabled (bool)
+//   boot_pin   — require PIN at boot (bool)
+//   lang       — UI language: 0=EN, 1=TH (int)
+//   cfg_idle   — idle timeout seconds (int)
+//   cfg_sel    — selection timeout seconds (int)
+//   cfg_water  — sacred water feature enabled (bool)
+//   cfg_lucky  — lucky number feature enabled (bool)
+//   nvs_grow   — grid rows from /hello (int)
+//   nvs_gcol   — grid cols from /hello (int)
+//   vol        — speaker volume 0-100 (int)
+//   nvs_idc    — ID card reader enabled (bool)
 // ============================================================
 
 #ifndef CONFIG_H
 #define CONFIG_H
 
 // ============================================================
-// WiFi — edit these before flashing (file is gitignored)
+// WiFi — intentionally empty (R5)
+// Credentials are entered via the touchscreen WiFi Setup screen
+// on first boot and persisted to NVS (nvs_ssid / nvs_pass).
+// You may leave these empty for NVS-provisioned machines.
 // ============================================================
-const char* WIFI_SSID     = "Jaydahome2.4G";
-const char* WIFI_PASSWORD = "Jeda2322";
+const char* WIFI_SSID     = "";
+const char* WIFI_PASSWORD = "";
 
 // ============================================================
 // Backend API

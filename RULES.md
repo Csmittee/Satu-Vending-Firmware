@@ -26,6 +26,11 @@
   config.h = gitignored local file for pin constants and build config only.
   config.h.example = tracked template in git — WIFI_SSID="" WIFI_PASSWORD="" intentional.
   On new machine: copy config.h.example → config.h, leave WiFi empty, flash, enter on screen.
+- **R-87 config.h IS the repo file — NO .example pattern (2026-06-12):**
+  firmware/config.h is tracked in git with empty WIFI_SSID="" WIFI_PASSWORD="" permanently.
+  .gitignore entry remains as the accidental-credential safety net — this is sufficient.
+  No config.h.example needed. Arduino IDE reads config.h directly without any copy step.
+  Supersedes R-86: there is no .example file. config.h is the repo file. .gitignore protects it.
 
 ---
 
