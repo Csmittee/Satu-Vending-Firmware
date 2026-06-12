@@ -1,7 +1,21 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Last updated: 2026-06-11
+> Last updated: 2026-06-12
 > Compiled by: Chat S15 (chaijohn-personal session — first proper STATE doc for Satu)
-> Status: Phase 1 active — ~45% complete
+> Status: Phase 1 active — ~48% complete
+
+## SESSION LOG (newest first)
+
+### 2026-06-12 — CC R5 WiFi Provisioning (CC_PROMPT_fix_wifi_credentials)
+- **RESOLVED:** WiFi credential security risk — credentials no longer in source files or git
+- **network.h R5:** initWiFi() NVS-first (nvs_ssid/nvs_pass) → config.h fallback → setup screen
+- **network.h R5:** saveWifiAndReboot() — saves credentials to NVS, calls ESP.restart()
+- **ui.h R5:** drawWifiSetupScreen() — blocking QWERTY touchscreen keyboard, SSID + masked password, CONNECT button
+- **state_machine.h R5:** STATE_WIFI_SETUP added between STATE_STARTUP and STATE_IDLE
+- **satu_vending.ino R5:** WiFi.status() check after initWiFi() → STATE_WIFI_SETUP if not connected
+- **config.h.example:** Created — WIFI_SSID="" WIFI_PASSWORD="" intentionally empty, R5 NVS note
+- **RULES.md:** R-85 + R-86 appended (permanent: no hardcoded credentials, config.h workflow)
+- **Branch:** claude/loving-bohr-t3n3yf · PR created
+- **Self-check:** hardware.h untouched ✅ · NVS keys nvs_ssid/nvs_pass approved ✅ · FW_VERSION=v1.0.0-r5 ✅
 
 ---
 
@@ -76,11 +90,13 @@ Thai temples.
 - [ ] satu-admin.html CORS/401 — /v1/admin-data/:table route missing (JWT admin version, not X-Admin-Token)
 
 #### Firmware ⚠️ IN PROGRESS
-- [x] State machine architecture (state_machine.h) — IDLE, PRODUCT_SELECTION, AWAITING_PAYMENT, VENDING, COMPLETING, ERROR
-- [x] config.h — pin constants, NUM_SLOTS, timeouts, NVS key constants
+- [x] State machine architecture (state_machine.h) — all states incl. STATE_WIFI_SETUP (R5)
+- [x] config.h — pin constants, NUM_SLOTS, timeouts, NVS key constants (gitignored)
+- [x] config.h.example — tracked template, WIFI_SSID="" WIFI_PASSWORD="" intentional (R5)
 - [x] hardware.h R2 — MCP23017, relays, IR sensors, LED breathing, idleAnimation() — LOCKED, never modify
-- [x] network.h — WiFi, NVS, /hello, /order, /completion, /factory-reset, fetchImageBytes()
-- [x] satu_vending.ino — main loop, state machine branches, boot PIN, slot loading
+- [x] network.h R5 — NVS-first WiFi, saveWifiAndReboot(), /hello, /order, /completion, /factory-reset, fetchImageBytes()
+- [x] satu_vending.ino R5 — STATE_WIFI_SETUP guard, WiFi.status() check after initWiFi()
+- [x] ui.h R5 — drawWifiSetupScreen() QWERTY keyboard (blocking, restarts on CONNECT)
 - [ ] ui.h — service mode 5 tabs NOT COMPLETE — last CC build attempted, status unclear ⚠️
 - [ ] Full end-to-end test on real hardware — BLOCKED (hardware arriving)
 - [ ] OTA firmware update — explicitly deferred (not in Phase 1 scope)
@@ -137,6 +153,7 @@ Thai temples.
 | Factory reset: offline wipe blocked | 🟢 Mitigated | R-74: must call backend first, only wipe NVS on HTTP 200 |
 | D1 database_id in wrangler.toml | 🟢 Low | Public repo — low risk, worth noting |
 | /v1/admin-data/:table CORS/401 | 🟡 UX | satu-admin.html JWT admin route missing |
+| WiFi credentials in config.h | 🟢 RESOLVED | R5 2026-06-12: NVS provisioning screen eliminates this permanently |
 
 ---
 

@@ -16,6 +16,9 @@
 //          Debug screen: 5s hold bottom-left in idle
 //          _onItemRemoved: esp_random(), reportCompletion with slotIdx
 //          Payment timeout: reportCompletion false
+//   R5   — WiFi NVS provisioning: STATE_WIFI_SETUP + drawWifiSetupScreen()
+//          initWiFi() NVS-first (nvs_ssid/nvs_pass), config.h fallback
+//          No credentials → WiFi setup touchscreen, restart after save
 // ============================================================
 
 #include "config.h"
@@ -194,7 +197,7 @@ static void _clearNVS() {
 void setup() {
   Serial.begin(115200);
   delay(500);
-  Serial.println("\n[SATU] Booting R4...");
+  Serial.println("\n[SATU] Booting R5...");
 
   initHardware();
   Serial.println("[SATU] Hardware OK");
@@ -205,6 +208,16 @@ void setup() {
 
   JsonDocument helloDoc;
   initWiFi(helloDoc);
+
+  // R5: if no WiFi credentials in NVS, show provisioning screen.
+  // drawWifiSetupScreen() is blocking — calls saveWifiAndReboot()
+  // which restarts the device after persisting credentials to NVS.
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("[SATU] No WiFi — showing setup screen");
+    setState(STATE_WIFI_SETUP);
+    drawWifiSetupScreen();  // never returns — device restarts on CONNECT
+    ESP.restart();          // safety fallback
+  }
 
   String machineStatus = helloDoc["status"] | "";
   Serial.printf("[SATU] Machine status: %s\n", machineStatus.c_str());

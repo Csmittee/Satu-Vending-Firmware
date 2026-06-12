@@ -1312,4 +1312,263 @@ void idleAnimationUI() {
   }
 }
 
+// ============================================================
+//  WIFI SETUP SCREEN  (R5 — blocking, calls saveWifiAndReboot)
+//  Shown on first boot when NVS has no WiFi credentials.
+//  Owner enters SSID + password via touchscreen keyboard.
+//  On CONNECT tap: credentials saved to NVS, device restarts.
+//  Pattern: same touch-detect/debounce structure as _drawNumpad().
+// ============================================================
+
+// Forward declare — defined in network.h (included before ui.h)
+void saveWifiAndReboot(const String& ssid, const String& pass);
+
+// ── Keyboard layout constants ────────────────────────────────
+#define _WKB_KEY_W   68   // key width
+#define _WKB_KEY_H   46   // key height
+#define _WKB_GAP      4   // gap between keys
+#define _WKB_X       42   // left edge for 10-key rows
+#define _WKB_Y      228   // keyboard top (leaves ~184px for fields)
+
+// Characters per row and centering offsets (to align shorter rows under row 0)
+static const int _wkbCnt[4]   = { 10, 10, 9, 7 };
+static const int _wkbOff[4]   = { 0, 0,
+  (_WKB_KEY_W + _WKB_GAP) / 2,        // row 2: 9 keys, offset 1 half-key
+  3 * (_WKB_KEY_W + _WKB_GAP) / 2 };  // row 3: 7 keys, offset 3 half-keys
+
+// Upper/lower case rows (row 0 = digits, always same)
+static const char* _wkbUpper[4] = { "1234567890", "QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM" };
+static const char* _wkbLower[4] = { "1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm" };
+
+// Row 4 special key bounds (all at row y = _WKB_Y + 4*(key+gap))
+// CAPS: x=42  w=100   → x range [42,142)
+// SPACE: x=146 w=310  → x range [146,456)
+// DEL: x=460 w=100   → x range [460,560)
+// CONNECT: x=564 w=194 → x range [564,758)
+#define _WKB4_CAPS_X    42
+#define _WKB4_CAPS_W   100
+#define _WKB4_SPC_X    146
+#define _WKB4_SPC_W    310
+#define _WKB4_DEL_X    460
+#define _WKB4_DEL_W    100
+#define _WKB4_CON_X    564
+#define _WKB4_CON_W    194
+
+static void _wkbDrawKeys(bool caps) {
+  const char** rows = caps ? _wkbUpper : _wkbLower;
+  for (int r = 0; r < 4; r++) {
+    int rx = _WKB_X + _wkbOff[r];
+    int ry = _WKB_Y + r * (_WKB_KEY_H + _WKB_GAP);
+    for (int k = 0; k < _wkbCnt[r]; k++) {
+      int kx = rx + k * (_WKB_KEY_W + _WKB_GAP);
+      uint16_t bg = (r == 0) ? gfx->color565(15, 25, 50) : gfx->color565(30, 22, 55);
+      _fillRoundRect(kx, ry, _WKB_KEY_W, _WKB_KEY_H, 6, bg);
+      _drawRoundRect(kx, ry, _WKB_KEY_W, _WKB_KEY_H, 6, C_GOLD);
+      char ch[2] = { rows[r][k], 0 };
+      gfx->setTextColor(C_WHITE); gfx->setTextSize(2);
+      gfx->setCursor(kx + _WKB_KEY_W/2 - 6, ry + _WKB_KEY_H/2 - 8);
+      gfx->print(ch);
+    }
+  }
+  // Row 4 special keys
+  int ry4 = _WKB_Y + 4 * (_WKB_KEY_H + _WKB_GAP);
+  // CAPS — highlighted when active
+  _fillRoundRect(_WKB4_CAPS_X, ry4, _WKB4_CAPS_W, _WKB_KEY_H, 6,
+                 caps ? C_GOLD : gfx->color565(30, 22, 55));
+  _drawRoundRect(_WKB4_CAPS_X, ry4, _WKB4_CAPS_W, _WKB_KEY_H, 6, C_GOLD);
+  gfx->setTextColor(caps ? C_BLACK : C_WHITE); gfx->setTextSize(1);
+  gfx->setCursor(_WKB4_CAPS_X + 28, ry4 + _WKB_KEY_H/2 - 4);
+  gfx->print("CAPS");
+  // SPACE
+  _fillRoundRect(_WKB4_SPC_X, ry4, _WKB4_SPC_W, _WKB_KEY_H, 6, gfx->color565(30, 22, 55));
+  _drawRoundRect(_WKB4_SPC_X, ry4, _WKB4_SPC_W, _WKB_KEY_H, 6, C_GOLD);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
+  gfx->setCursor(_WKB4_SPC_X + _WKB4_SPC_W/2 - 22, ry4 + _WKB_KEY_H/2 - 4);
+  gfx->print("SPACE");
+  // DEL
+  _fillRoundRect(_WKB4_DEL_X, ry4, _WKB4_DEL_W, _WKB_KEY_H, 6, C_RED);
+  _drawRoundRect(_WKB4_DEL_X, ry4, _WKB4_DEL_W, _WKB_KEY_H, 6, C_GOLD);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
+  gfx->setCursor(_WKB4_DEL_X + 28, ry4 + _WKB_KEY_H/2 - 4);
+  gfx->print("DEL");
+  // CONNECT
+  _fillRoundRect(_WKB4_CON_X, ry4, _WKB4_CON_W, _WKB_KEY_H, 6, C_GREEN);
+  _drawRoundRect(_WKB4_CON_X, ry4, _WKB4_CON_W, _WKB_KEY_H, 6, C_GOLD);
+  gfx->setTextColor(C_BLACK); gfx->setTextSize(1);
+  gfx->setCursor(_WKB4_CON_X + 38, ry4 + _WKB_KEY_H/2 - 4);
+  gfx->print("CONNECT");
+}
+
+// Returns char value for letter/digit tap, or special codes:
+//   1 = CAPS, 2 = SPACE, 3 = DEL, 4 = CONNECT, 0 = no tap
+static int _wkbGetKey(bool caps) {
+  _touch.read();
+  if (!_touch.isTouched) return 0;
+  int tx = _touch.points[0].x;
+  int ty = _touch.points[0].y;
+  static unsigned long _wkbLastMs = 0;
+  if (millis() - _wkbLastMs < 120) return 0;
+
+  const char** rows = caps ? _wkbUpper : _wkbLower;
+
+  // Letter / digit rows
+  for (int r = 0; r < 4; r++) {
+    int rx = _WKB_X + _wkbOff[r];
+    int ry = _WKB_Y + r * (_WKB_KEY_H + _WKB_GAP);
+    if (ty < ry || ty > ry + _WKB_KEY_H) continue;
+    for (int k = 0; k < _wkbCnt[r]; k++) {
+      int kx = rx + k * (_WKB_KEY_W + _WKB_GAP);
+      if (tx >= kx && tx <= kx + _WKB_KEY_W) {
+        _wkbLastMs = millis();
+        return (int)(unsigned char)rows[r][k];
+      }
+    }
+  }
+
+  // Row 4 special keys
+  int ry4 = _WKB_Y + 4 * (_WKB_KEY_H + _WKB_GAP);
+  if (ty >= ry4 && ty <= ry4 + _WKB_KEY_H) {
+    if (tx >= _WKB4_CAPS_X && tx < _WKB4_CAPS_X + _WKB4_CAPS_W) { _wkbLastMs = millis(); return 1; }
+    if (tx >= _WKB4_SPC_X  && tx < _WKB4_SPC_X  + _WKB4_SPC_W)  { _wkbLastMs = millis(); return 2; }
+    if (tx >= _WKB4_DEL_X  && tx < _WKB4_DEL_X  + _WKB4_DEL_W)  { _wkbLastMs = millis(); return 3; }
+    if (tx >= _WKB4_CON_X  && tx < _WKB4_CON_X  + _WKB4_CON_W)  { _wkbLastMs = millis(); return 4; }
+  }
+  return 0;
+}
+
+static void _wkbDrawFields(int activeField, const String& ssid, const String& pass) {
+  int fY1 = STATUS_H + 20;
+  int fY2 = STATUS_H + 88;
+  int fW  = SCR_W - 40;
+
+  // SSID field
+  uint16_t c1 = (activeField == 0) ? C_GOLD : C_MIDGREY;
+  gfx->fillRect(0, STATUS_H + 8, SCR_W, 130, C_BG);  // clear field area
+  gfx->setTextColor(c1); gfx->setTextSize(1);
+  gfx->setCursor(20, fY1 - 12);
+  gfx->print("WiFi Network Name (SSID):");
+  _fillRoundRect(20, fY1, fW, 36, 6, gfx->color565(15, 12, 28));
+  _drawRoundRect(20, fY1, fW, 36, 6, c1);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(2);
+  gfx->setCursor(28, fY1 + 10);
+  gfx->print(ssid.length() > 0 ? ssid.c_str() : " ");
+
+  // Password field
+  uint16_t c2 = (activeField == 1) ? C_GOLD : C_MIDGREY;
+  gfx->setTextColor(c2); gfx->setTextSize(1);
+  gfx->setCursor(20, fY2 - 12);
+  gfx->print("Password:");
+  _fillRoundRect(20, fY2, fW, 36, 6, gfx->color565(15, 12, 28));
+  _drawRoundRect(20, fY2, fW, 36, 6, c2);
+  String masked = "";
+  for (size_t i = 0; i < pass.length(); i++) masked += '*';
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(2);
+  gfx->setCursor(28, fY2 + 10);
+  gfx->print(masked.length() > 0 ? masked.c_str() : " ");
+
+  // Hint
+  gfx->setTextColor(C_DARKGOLD); gfx->setTextSize(1);
+  gfx->setCursor(20, STATUS_H + 145);
+  gfx->print("Tap field to switch. CONNECT to save and restart.");
+}
+
+// Blocking — returns only via ESP.restart() inside saveWifiAndReboot()
+void drawWifiSetupScreen() {
+  gfx->fillScreen(C_BG);
+
+  // Header bar
+  gfx->fillRect(0, 0, SCR_W, STATUS_H, C_DARKGOLD);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(3);
+  gfx->setCursor(10, 8);
+  gfx->print("SATU");
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(2);
+  gfx->setCursor(SCR_W/2 - 88, 12);
+  gfx->print("WiFi Setup");
+
+  String ssid = "";
+  String pass = "";
+  int    activeField = 0;  // 0 = SSID, 1 = password
+  bool   caps = true;
+
+  _wkbDrawKeys(caps);
+  _wkbDrawFields(activeField, ssid, pass);
+
+  int fY1 = STATUS_H + 20;
+  int fY2 = STATUS_H + 88;
+
+  while (true) {
+    // Field selection tap (above keyboard)
+    _touch.read();
+    if (_touch.isTouched) {
+      int tx = _touch.points[0].x;
+      int ty = _touch.points[0].y;
+      if (ty >= fY1 && ty <= fY1 + 36 && activeField != 0) {
+        activeField = 0;
+        _wkbDrawFields(activeField, ssid, pass);
+        delay(150);
+        continue;
+      }
+      if (ty >= fY2 && ty <= fY2 + 36 && activeField != 1) {
+        activeField = 1;
+        _wkbDrawFields(activeField, ssid, pass);
+        delay(150);
+        continue;
+      }
+    }
+
+    int key = _wkbGetKey(caps);
+    if (key == 0) { delay(10); continue; }
+
+    if (key == 1) {
+      // CAPS toggle
+      caps = !caps;
+      _wkbDrawKeys(caps);
+
+    } else if (key == 2) {
+      // SPACE
+      String& cur = (activeField == 0) ? ssid : pass;
+      int maxLen  = (activeField == 0) ? 32 : 63;
+      if ((int)cur.length() < maxLen) {
+        cur += ' ';
+        _wkbDrawFields(activeField, ssid, pass);
+      }
+
+    } else if (key == 3) {
+      // DEL
+      String& cur = (activeField == 0) ? ssid : pass;
+      if (cur.length() > 0) {
+        cur.remove(cur.length() - 1);
+        _wkbDrawFields(activeField, ssid, pass);
+      }
+
+    } else if (key == 4) {
+      // CONNECT
+      if (ssid.length() == 0) {
+        // Flash SSID border red to indicate required
+        _drawRoundRect(20, fY1, SCR_W - 40, 36, 6, C_RED);
+        delay(400);
+        _wkbDrawFields(activeField, ssid, pass);
+      } else {
+        // Show saving message then reboot
+        gfx->fillRect(0, STATUS_H, SCR_W, 130, C_BG);
+        gfx->setTextColor(C_GOLD); gfx->setTextSize(2);
+        gfx->setCursor(SCR_W/2 - 150, STATUS_H + 50);
+        gfx->print("Saving & Restarting...");
+        delay(500);
+        saveWifiAndReboot(ssid, pass);  // defined in network.h — never returns
+      }
+
+    } else {
+      // Regular character
+      char ch = (char)key;
+      String& cur = (activeField == 0) ? ssid : pass;
+      int maxLen  = (activeField == 0) ? 32 : 63;
+      if ((int)cur.length() < maxLen) {
+        cur += ch;
+        _wkbDrawFields(activeField, ssid, pass);
+      }
+    }
+  }
+}
+
 #endif // UI_H

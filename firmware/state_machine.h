@@ -6,6 +6,7 @@
 //        Changed: laneErrorCount/laneDisabled arrays → NUM_SLOTS
 //        Changed: selectedProduct extern → selectedSlot
 //        Added: wantSacredWater extern
+//   R5 — Added: STATE_WIFI_SETUP (first-boot NVS provisioning)
 // ============================================================
 
 #ifndef STATE_MACHINE_H
@@ -15,6 +16,7 @@
 
 enum MachineState {
   STATE_STARTUP,
+  STATE_WIFI_SETUP,  // R5: first boot — no credentials in NVS
   STATE_IDLE,
   STATE_ID_SCANNING,        // waiting for ID card insert
   STATE_AUTHENTICATING,     // reading ID card
