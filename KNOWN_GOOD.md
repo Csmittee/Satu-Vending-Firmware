@@ -1,153 +1,92 @@
-# KNOWN_GOOD.md — Satu Test Result Snapshots
-<!-- Updated by human after every test/flash session — never by CC alone -->
-<!-- Format: newest snapshot at TOP -->
-<!-- Serial output = paste verbatim, never paraphrase — saves one full flash cycle -->
+# KNOWN_GOOD.md
+> Human updates only — after every confirmed flash or test
+> Never overwrite — always append new snapshots at TOP
 
 ---
 
-## Snapshot: 2026-06-11
+## Snapshot: 2026-06-12 — R5 First Flash ✅
 
 ### Backend
 ```
-Commit:      PENDING — run satu-system-tester.html after R4 merge and paste hash here
-Test suite:  NOT YET RUN after R4 backend merge (machine.js + index.js changed)
-Result:      ⬜ Unknown — must verify before flash
-Last known:  14/14 passing (pre-R4, exact commit unknown)
+Endpoint:    https://api.janishammer.com
+Test suite:  NOT RUN post-R4 — no backend changes today
+Last known:  14/14 passing (pre-R4, date unknown)
+Commit:      check backend repo main branch
 ```
 
 ### Firmware
 ```
-Build:       R4 — written by CC, merged to main via PR #1
-Flash:       NOT YET — first flash pending
+Build:       R5
 Board:       SATU-4R473R (MAC: 3C:DC:75:5D:DD:2C)
-Compile:     NOT YET VERIFIED — run Arduino Verify before flash
-Last flash:  R3 (pre-R4 build, date unknown)
+Flash:       ✅ CONFIRMED clean — 2026-06-12
+Compile:     ✅ Clean after 3 fix loops:
+             - extern/static conflict (6 globals)
+             - PNGdec callback void→int
+             - g_setupCode undefined reference
+             - loadConfigFromNVS() extern scope
 ```
 
-### Action required before next snapshot is valid
-- [ ] Run satu-system-tester.html → paste result + commit hash below
-- [ ] Arduino IDE Verify → paste any errors verbatim below
-- [ ] Flash R4 → paste Serial Monitor output (first 50 lines) below
-- [ ] Run smoke test → update firmware status below
-
-### Serial output (paste verbatim when available)
+### Serial output confirmed (2026-06-12 ~17:00)
 ```
-(paste here — do not paraphrase errors)
-```
-
----
-
-## Snapshot: PRE-R4 (last known good — date unknown)
-
-### Backend
-```
-Commit:      unknown — not recorded at time
-Test suite:  14/14 PASS
-Result:      ✅ All passing
-Endpoints verified:
-  ✅ POST /v1/machine/hello
-  ✅ POST /v1/machine/heartbeat
-  ✅ GET  /v1/machine/commands
-  ✅ POST /v1/order
-  ✅ GET  /v1/order/:id/status
-  ✅ POST /v1/webhook/omise
-  ✅ POST /v1/auth/login
-  ✅ POST /v1/auth/register
-  ✅ GET  /v1/dashboard/slots
-  ✅ PUT  /v1/dashboard/slots
-  ✅ POST /v1/machine/claim
-  ✅ GET  /health
-  ✅ Rate limiting
-  ✅ JWT auth
+[NET] WiFi OK — IP: 192.168.1.171
+[NET] NVS loaded: device_id=SATU-4R473R FW: v1.0.0-r3  ← r3 in NVS, ok
+[NET] /hello OK: device_id=SATU-4R473R status=active slots=3
+[UI]  Slot 1: Small Amulet 100 THB en=1
+[UI]  Slot 2: Blessing Card 50 THB en=1
+[UI]  Slot 3: Large Amulet 200 THB en=1
+[SATU] Network OK
+[STATE] 0 → 1
+[UI]  Idle screen drawn (10-slot grid 5x2)
+[SATU] Ready
+[NET] Heartbeat: HTTP 200
+[UI]  Touch: col=1 row=0 → slot 1 (Blessing Card 50THB)
+[STATE] 1 → 4
+[UI]  Product selection: slot 1
+[UI]  Gift option screen: slot 1
+[STATE] 4 → 5 → Gift: Item Only
+[NET]  Order SATU-20260612-001635 — 20 THB — water=0
+[STATE] 5 → 6
+[UI]  QR screen drawn
+[NET]  Order polling: pending (every 3s)
 ```
 
-### Firmware
+### Confirmed WORKING ✅
+- WiFi connects via NVS
+- /hello handshake with backend
+- Heartbeat every 5 min
+- Touch → product selection → gift option → QR screen
+- Order creation and polling
+- State machine 0→1→4→5→6
+
+### Confirmed NOT WORKING ❌
+- QR PNG: green box shown, no PNG renders
+  fetchImageBytes() silent fail — qr_code_url format unknown
+- Service mode: not tested (stubs only)
+- WiFi setup screen keyboard: missing . @ - _ characters
+
+### Confirmed DESIGNED but not tested ⬜
+- WiFi setup screen (appears on empty NVS — confirmed logic correct)
+- Countdown visual timer
+- Service mode 5 tabs
+- Factory reset flow
+- Completion/dispensing flow
+
+### Arduino IDE settings used (confirmed working)
 ```
-Build:       R3
-Board:       SATU-4R473R (MAC: 3C:DC:75:5D:DD:2C)
-WiFi:        ✅ connects (Jaydahome2.4G)
-/hello:      ✅ HTTP 200, status=active, 3 slots returned
-Heartbeat:   ✅ HTTP 200
-Grid:        ✅ 3 coloured slots showing (Small Amulet 100, Blessing Card 50, Large Amulet 200)
-Gift screen: ✅ Item Only / +Sacred Water works
-QR screen:   ✅ placeholder + 120s countdown (PNG not loaded — white box)
-Service mode:❌ gesture detected, nothing draws
-/completion: ❌ 404 (not built until R4)
-```
-
----
-
-## How to Update This File
-
-### After backend test run — paste this block:
-```
-## Snapshot: YYYY-MM-DD
-
-### Backend
-Commit:      [git short hash from GitHub — top of commits page]
-Test suite:  14/14 PASS  ← or X/14 with failures listed
-Result:      ✅ / ❌
-Failed:      [list any failed test names]
-```
-
-### After firmware flash — paste this block:
-```
-### Firmware
-Build:       R4 (or whatever version)
-Board:       SATU-4R473R
-Compile:     ✅ zero errors / ❌ [paste exact error line]
-Flash:       ✅ success / ❌ [paste exact error]
-Boot:        ✅ SATU screen shows / ❌ black screen
-WiFi:        ✅ connects / ❌ timeout
-/hello:      ✅ HTTP 200 / ❌ [paste response]
-Grid:        ✅ slots showing / ❌ [describe]
-Service mode:✅ PIN overlay + 5 tabs / ❌ [describe]
-QR PNG:      ✅ real QR image shows / ❌ white box
-
-Serial output (first boot, verbatim):
-[PASTE HERE]
+Board:     ESP32S3 Dev Module
+PSRAM:     OPI PSRAM ← CRITICAL — black screen if changed
+Flash:     16MB
+Partition: 16M Flash (3MB APP/9.9MB FATFS)
+Upload:    460800
+Port:      /dev/cu.usbserial-1420
+Core:      2.0.17
 ```
 
 ---
 
-## Serial Output Rules
-<!-- Reinforced every session — this saves flash cycles -->
-
-1. **Paste verbatim — never paraphrase errors**
-   - Wrong: "it said something about JSON"
-   - Right: `[NET] /hello JSON error: InvalidInput`
-
-2. **Paste the first 50 lines of Serial Monitor on first boot**
-   - Set baud rate 115200 before flashing
-   - Copy from Arduino IDE Serial Monitor → paste into this file
-
-3. **If compile error: paste the entire red block**
-   - Include file name + line number
-   - One paraphrased error = one wasted flash cycle
-
-4. **Target: ≤3 flash cycles per feature**
-   - Cycle 1: first flash, observe serial output
-   - Cycle 2: fix identified issue, reflash
-   - Cycle 3: confirm fix — if still broken, stop and bring full serial log to chat
-
----
-
-## Endpoint Status (updated each session)
-
-| Endpoint | Pre-R4 | R4 built | R4 tested |
-|----------|--------|----------|-----------|
-| POST /v1/machine/hello | ✅ | ✅ +config{} | ⬜ |
-| POST /v1/machine/heartbeat | ✅ | ✅ | ⬜ |
-| GET /v1/machine/commands | ✅ | ✅ | ⬜ |
-| POST /v1/machine/completion | ❌ 404 | ✅ built | ⬜ |
-| POST /v1/machine/factory-reset | ❌ missing | ✅ built | ⬜ |
-| POST /v1/order | ✅ | ✅ | ⬜ |
-| GET /v1/order/:id/status | ✅ | ✅ | ⬜ |
-| POST /v1/webhook/omise | ✅ | ✅ | ⬜ |
-| POST /v1/auth/login | ✅ | ✅ | ⬜ |
-| GET /v1/dashboard/slots | ✅ | ✅ | ⬜ |
-| PUT /v1/dashboard/slots | ✅ | ✅ | ⬜ |
-| GET /v1/admin-data/:table | ❌ missing | ✅ built | ⬜ |
-| GET /health | ✅ | ✅ | ⬜ |
-
-Legend: ✅ confirmed working | ❌ broken/missing | ⬜ not yet tested
+## Snapshot: PRE-R4 (date unknown) — Backend only
+```
+Test suite: 14/14 passing
+Backend:    all endpoints responding
+Payment:    PAYMENT_MODE=fake confirmed
+```
