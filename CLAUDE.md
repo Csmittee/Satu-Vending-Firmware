@@ -24,11 +24,12 @@
 - `RULES.md` — 10 universal rules · read every session · domain rules in `.claude/rules/`
 - `PROJECT_STATE.md` — phase status · roadmap · CC updates after every fix/PR
 - `KNOWN_GOOD.md` — last confirmed test snapshot · updated by Chat/owner after each test session
-- `WORKFLOW_SKILL.md` — how Chat + CC + Owner work together · Loop A (cloud) + Loop B (firmware)
+- `WORKFLOW_SKILL.md` — NOT in this repo. Single source of truth = Satu-vending-backend/WORKFLOW_SKILL.md.
+  Owner downloads from backend repo → Claude project knowledge folder. Chat reads it. CC does not need it.
 - `UI_SPEC.md` — screen inventory · grid system · service mode tabs · NVS key table · read before any ui.h change
 - `SECURITY.md` — auth layers · ownership model · security gaps · read before any auth/ownership/reset code
 - `KNOWLEDGE_MAP.md` (backend repo) — navigation guide · what to read for each task
-- - `KNOWN_GOOD.md` — timestamped test snapshots, last confirmed working state
+- `KNOWN_GOOD.md` — timestamped test snapshots, last confirmed working state
 
 ## Repos
 - Backend: `Csmittee/Satu-vending-backend`
