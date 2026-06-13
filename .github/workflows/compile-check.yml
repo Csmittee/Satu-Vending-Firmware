@@ -32,11 +32,11 @@ jobs:
 
       - name: Install libraries (locked versions)
         run: |
-          arduino-cli lib install "Arduino_GFX_Library"@1.4.9
+          arduino-cli lib install "GFX Library for Arduino"@1.4.9
           arduino-cli lib install "PNGdec"@1.1.6
           arduino-cli lib install "TAMC_GT911"
           arduino-cli lib install "ArduinoJson"
-          arduino-cli lib install "Adafruit MCP23X17"
+          arduino-cli lib install "Adafruit MCP23X17 Arduino Library"
           arduino-cli lib install "FastLED"
 
       - name: Create config.h for CI (empty credentials — compile only)
