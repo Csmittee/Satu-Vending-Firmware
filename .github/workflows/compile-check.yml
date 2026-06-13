@@ -24,6 +24,7 @@ jobs:
           arduino-cli config init
           arduino-cli config set board_manager.additional_urls \
             https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+          arduino-cli config set library.enable_unsafe_install true
 
       - name: Install ESP32 core 2.0.17 (locked — never change)
         run: |
@@ -37,7 +38,7 @@ jobs:
           arduino-cli lib install "PNGdec"@1.1.6
           arduino-cli lib install "TAMC_GT911"
           arduino-cli lib install "ArduinoJson"
-          arduino-cli lib install "Adafruit MCP23X17 Arduino Library"
+          arduino-cli lib install --git-url https://github.com/adafruit/Adafruit-MCP23017-Arduino-Library
           arduino-cli lib install "FastLED"
 
       - name: Create config.h for CI (empty credentials — compile only)
