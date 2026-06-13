@@ -25,6 +25,9 @@
 //   R5.2 — fetchImageBytes() chunked-safe read loop — R-103
 //          Detects stream close (!http.connected()) for chunked EOF
 //          Per-packet idle timeout 5000ms replaces 15s global wall-clock
+//   R5.3 — fetchImageBytes() blocking readBytes() loop — R-105
+//          available()=0 between TCP packets fires 5s idle timer at 497 bytes
+//          readBytes() blocks until data arrives, stream closes, or 10s timeout
 // SECURITY:
 //   device_secret in NVS only — never hardcoded
 //   WiFi credentials in NVS (nvs_ssid/nvs_pass) — never in git
@@ -459,14 +462,15 @@ bool factoryResetBackend() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  FETCH IMAGE BYTES  (R5.2 — chunked-safe read loop)
+//  FETCH IMAGE BYTES  (R5.3 — blocking readBytes() loop)
 //  Downloads a PNG from url into a caller-provided PSRAM buffer.
 //  Returns byte count on success, 0 on failure.
 //  Caller must ps_malloc(200*1024) and free after use.
 //
-//  R-97: Uses WiFiClientSecure + setInsecure() for external HTTPS URLs.
+//  R-97:  Uses WiFiClientSecure + setInsecure() for external HTTPS URLs.
 //  R-103: Handles chunked transfer encoding (Content-Length=-1).
-//         Uses !http.connected() to detect EOF. Per-packet idle timeout 5s.
+//  R-105: stream->available() returns 0 between TCP packets — never use as
+//         sole read condition. Use blocking readBytes() instead.
 // ════════════════════════════════════════════════════════════════════════════
 size_t fetchImageBytes(const String& url, uint8_t* buf, size_t bufSize) {
   Serial.printf("[NET] fetchImageBytes: url=%s\n", url.c_str());
@@ -505,29 +509,20 @@ size_t fetchImageBytes(const String& url, uint8_t* buf, size_t bufSize) {
     return 0;
   }
 
+  // R-105: available()=0 between TCP packets — blocking readBytes() waits for data.
   WiFiClient* stream = http.getStreamPtr();
-  size_t bytesRead = 0;
-  unsigned long lastDataMs = millis();
-  const unsigned long IDLE_TIMEOUT_MS = 5000;
+  stream->setTimeout(10000);  // 10s per-read block — generous for slow TCP
 
+  size_t bytesRead = 0;
+  const size_t CHUNK = 512;
   while (bytesRead < bufSize) {
-    if (stream->available()) {
-      size_t toRead = min((size_t)stream->available(), bufSize - bytesRead);
-      size_t got    = stream->readBytes(buf + bytesRead, toRead);
-      bytesRead    += got;
-      lastDataMs    = millis();
-    } else {
-      if (!http.connected()) {
-        Serial.println("[NET] fetchImageBytes: stream closed — transfer complete");
-        break;
-      }
-      if (millis() - lastDataMs > IDLE_TIMEOUT_MS) {
-        Serial.printf("[NET] fetchImageBytes: idle timeout after %ums — %u bytes so far\n",
-                      IDLE_TIMEOUT_MS, bytesRead);
-        break;
-      }
-      delay(5);
+    size_t toRead = min(CHUNK, bufSize - bytesRead);
+    size_t got    = stream->readBytes(buf + bytesRead, toRead);
+    if (got == 0) {
+      Serial.println("[NET] fetchImageBytes: stream closed — transfer complete");
+      break;
     }
+    bytesRead += got;
     if (contentLen > 0 && bytesRead >= (size_t)contentLen) break;
   }
 
