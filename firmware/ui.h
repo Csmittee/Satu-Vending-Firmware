@@ -1342,18 +1342,22 @@ static const char* _wkbUpper[4] = { "1234567890", "QWERTYUIOP", "ASDFGHJKL", "ZX
 static const char* _wkbLower[4] = { "1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm" };
 
 // Row 4 special key bounds (all at row y = _WKB_Y + 4*(key+gap))
-// CAPS: x=42  w=100   → x range [42,142)
-// SPACE: x=146 w=310  → x range [146,456)
-// DEL: x=460 w=100   → x range [460,560)
-// CONNECT: x=564 w=194 → x range [564,758)
+// CAPS: x=42  w=80    → [42,122)
+// '.': x=126  w=48    → [126,174)   '@': x=178 → [178,226)
+// '-': x=230  w=48    → [230,278)   '_': x=282 → [282,330)
+// SPACE: x=334 w=186  → [334,520)
+// DEL: x=524 w=80    → [524,604)
+// CONNECT: x=608 w=150 → [608,758)
 #define _WKB4_CAPS_X    42
-#define _WKB4_CAPS_W   100
-#define _WKB4_SPC_X    146
-#define _WKB4_SPC_W    310
-#define _WKB4_DEL_X    460
-#define _WKB4_DEL_W    100
-#define _WKB4_CON_X    564
-#define _WKB4_CON_W    194
+#define _WKB4_CAPS_W    80
+#define _WKB4_SYM_X    126   // first symbol key (. @ - _), each 48px wide with 4px gap
+#define _WKB4_SYM_W     48
+#define _WKB4_SPC_X    334
+#define _WKB4_SPC_W    186
+#define _WKB4_DEL_X    524
+#define _WKB4_DEL_W     80
+#define _WKB4_CON_X    608
+#define _WKB4_CON_W    150
 
 static void _wkbDrawKeys(bool caps) {
   const char** rows = caps ? _wkbUpper : _wkbLower;
@@ -1380,6 +1384,17 @@ static void _wkbDrawKeys(bool caps) {
   gfx->setTextColor(caps ? C_BLACK : C_WHITE); gfx->setTextSize(1);
   gfx->setCursor(_WKB4_CAPS_X + 28, ry4 + _WKB_KEY_H/2 - 4);
   gfx->print("CAPS");
+  // Symbol keys: . @ - _
+  static const char _wkbSyms[4] = { '.', '@', '-', '_' };
+  for (int s = 0; s < 4; s++) {
+    int sx = _WKB4_SYM_X + s * (_WKB4_SYM_W + _WKB_GAP);
+    _fillRoundRect(sx, ry4, _WKB4_SYM_W, _WKB_KEY_H, 6, gfx->color565(15, 25, 50));
+    _drawRoundRect(sx, ry4, _WKB4_SYM_W, _WKB_KEY_H, 6, C_GOLD);
+    char sl[2] = { _wkbSyms[s], 0 };
+    gfx->setTextColor(C_WHITE); gfx->setTextSize(2);
+    gfx->setCursor(sx + _WKB4_SYM_W/2 - 6, ry4 + _WKB_KEY_H/2 - 8);
+    gfx->print(sl);
+  }
   // SPACE
   _fillRoundRect(_WKB4_SPC_X, ry4, _WKB4_SPC_W, _WKB_KEY_H, 6, gfx->color565(30, 22, 55));
   _drawRoundRect(_WKB4_SPC_X, ry4, _WKB4_SPC_W, _WKB_KEY_H, 6, C_GOLD);
@@ -1430,6 +1445,13 @@ static int _wkbGetKey(bool caps) {
   int ry4 = _WKB_Y + 4 * (_WKB_KEY_H + _WKB_GAP);
   if (ty >= ry4 && ty <= ry4 + _WKB_KEY_H) {
     if (tx >= _WKB4_CAPS_X && tx < _WKB4_CAPS_X + _WKB4_CAPS_W) { _wkbLastMs = millis(); return 1; }
+    { // symbol keys . @ - _
+      static const char _wkbSyms2[4] = { '.', '@', '-', '_' };
+      for (int s = 0; s < 4; s++) {
+        int sx = _WKB4_SYM_X + s * (_WKB4_SYM_W + _WKB_GAP);
+        if (tx >= sx && tx < sx + _WKB4_SYM_W) { _wkbLastMs = millis(); return (int)(unsigned char)_wkbSyms2[s]; }
+      }
+    }
     if (tx >= _WKB4_SPC_X  && tx < _WKB4_SPC_X  + _WKB4_SPC_W)  { _wkbLastMs = millis(); return 2; }
     if (tx >= _WKB4_DEL_X  && tx < _WKB4_DEL_X  + _WKB4_DEL_W)  { _wkbLastMs = millis(); return 3; }
     if (tx >= _WKB4_CON_X  && tx < _WKB4_CON_X  + _WKB4_CON_W)  { _wkbLastMs = millis(); return 4; }
