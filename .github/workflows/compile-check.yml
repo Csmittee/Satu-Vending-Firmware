@@ -89,10 +89,11 @@ jobs:
 
       - name: Compile firmware
         run: |
+          cp -r firmware satu_vending
           arduino-cli compile \
             --fqbn esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,PSRAM=opi,UploadSpeed=460800 \
             --warnings default \
-            firmware/satu_vending.ino
+            satu_vending/
 
       - name: Compile result
         if: always()
