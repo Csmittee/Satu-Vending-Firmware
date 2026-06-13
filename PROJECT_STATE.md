@@ -5,6 +5,19 @@
 
 ## SESSION LOG (newest first)
 
+### 2026-06-13 — QR Chunked Read Fix + Timeout (CC_PROMPT_firmware_qr_chunked_fix)
+- **PR #12 CONFIRMED FLASH:** HTTP 200 ✅ but 502 bytes truncated — chunked stream exits early
+- **ROOT CAUSE:** stream.available()=0 between TCP packets → 15s wall-clock timer triggers early
+  Content-Length=-1 (chunked encoding) — stream close detection was missing
+- **FIX:** `network.h fetchImageBytes()` — chunked-safe loop: !http.connected() detects EOF
+  Per-packet idle timeout 5000ms replaces broken global 15s wall-clock
+- **FIX:** `config.h PAYMENT_TIMEOUT`: 120000 → 30000 (30s, was 2 min — R-102)
+- **RULES.md:** R-102 (QR timeout 30s) + R-103 (chunked HTTP read) appended
+- **KNOWN_GOOD.md:** PR #12 confirmed flash snapshot + R5.2 snapshot both appended at TOP
+- **Flash status:** PENDING — owner to flash, look for "stream closed — transfer complete" + 2000+ bytes
+- **Branch:** claude/vibrant-cray-cqp2em · CI pending
+- **Next if still fails:** report byte count — PNG decode investigation
+
 ### 2026-06-13 — QR PNG Fetch Fix (CC_PROMPT_firmware_qr_png_fetch)
 - **ROOT CAUSE:** Plain `HTTPClient.begin(url)` silently fails on ESP32 for external HTTPS — no cert chain
 - **FIX:** `network.h fetchImageBytes()` — replaced with `WiFiClientSecure + setInsecure()` + `HTTPC_STRICT_FOLLOW_REDIRECTS`

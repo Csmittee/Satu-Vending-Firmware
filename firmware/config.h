@@ -102,7 +102,7 @@ extern const int mcp2_relays[6];
 // ============================================================
 // Timeouts (milliseconds)
 // ============================================================
-#define PAYMENT_TIMEOUT      120000   // 2 min QR window
+#define PAYMENT_TIMEOUT       30000   // 30s QR window (R-102, was 120s)
 #define VEND_TIMEOUT          10000   // 10s relay watchdog
 #define DROP_TIMEOUT           5000   // 5s for item to fall through IR
 #define REMOVAL_TIMEOUT       30000   // 30s for user to take item

@@ -22,6 +22,9 @@
 //   R5.1 — fetchImageBytes() upgraded to WiFiClientSecure + setInsecure()
 //          External HTTPS (e.g. api.qrserver.com) now works — R-97
 //          Added entry serial log and HTTPC_STRICT_FOLLOW_REDIRECTS
+//   R5.2 — fetchImageBytes() chunked-safe read loop — R-103
+//          Detects stream close (!http.connected()) for chunked EOF
+//          Per-packet idle timeout 5000ms replaces 15s global wall-clock
 // SECURITY:
 //   device_secret in NVS only — never hardcoded
 //   WiFi credentials in NVS (nvs_ssid/nvs_pass) — never in git
@@ -456,15 +459,14 @@ bool factoryResetBackend() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  FETCH IMAGE BYTES  (R5.1 — WiFiClientSecure for external HTTPS)
+//  FETCH IMAGE BYTES  (R5.2 — chunked-safe read loop)
 //  Downloads a PNG from url into a caller-provided PSRAM buffer.
 //  Returns byte count on success, 0 on failure.
 //  Caller must ps_malloc(200*1024) and free after use.
 //
-//  R-97: Uses WiFiClientSecure + setInsecure() for external HTTPS URLs
-//  (e.g. api.qrserver.com). Plain HTTPClient silently fails on ESP32
-//  for external HTTPS — no cert chain available. setInsecure() is
-//  acceptable here: QR image is not sensitive auth data.
+//  R-97: Uses WiFiClientSecure + setInsecure() for external HTTPS URLs.
+//  R-103: Handles chunked transfer encoding (Content-Length=-1).
+//         Uses !http.connected() to detect EOF. Per-packet idle timeout 5s.
 // ════════════════════════════════════════════════════════════════════════════
 size_t fetchImageBytes(const String& url, uint8_t* buf, size_t bufSize) {
   Serial.printf("[NET] fetchImageBytes: url=%s\n", url.c_str());
@@ -504,20 +506,27 @@ size_t fetchImageBytes(const String& url, uint8_t* buf, size_t bufSize) {
   }
 
   WiFiClient* stream = http.getStreamPtr();
-  size_t bytesRead   = 0;
-  unsigned long t0   = millis();
+  size_t bytesRead = 0;
+  unsigned long lastDataMs = millis();
+  const unsigned long IDLE_TIMEOUT_MS = 5000;
 
-  while (http.connected() && bytesRead < bufSize) {
-    size_t avail = stream->available();
-    if (avail) {
-      size_t toRead = min(avail, bufSize - bytesRead);
-      bytesRead    += stream->readBytes(buf + bytesRead, toRead);
+  while (bytesRead < bufSize) {
+    if (stream->available()) {
+      size_t toRead = min((size_t)stream->available(), bufSize - bytesRead);
+      size_t got    = stream->readBytes(buf + bytesRead, toRead);
+      bytesRead    += got;
+      lastDataMs    = millis();
     } else {
-      if (millis() - t0 > 15000) {
-        Serial.println("[NET] fetchImageBytes: timeout");
+      if (!http.connected()) {
+        Serial.println("[NET] fetchImageBytes: stream closed — transfer complete");
         break;
       }
-      delay(1);
+      if (millis() - lastDataMs > IDLE_TIMEOUT_MS) {
+        Serial.printf("[NET] fetchImageBytes: idle timeout after %ums — %u bytes so far\n",
+                      IDLE_TIMEOUT_MS, bytesRead);
+        break;
+      }
+      delay(5);
     }
     if (contentLen > 0 && bytesRead >= (size_t)contentLen) break;
   }
