@@ -74,7 +74,12 @@ Owner describes firmware behavior needed
         ↓
 Chat reads firmware files → writes CC_PROMPT_firmware_xxx → owner pushes to repo
         ↓
-CC writes complete firmware files → commits to firmware repo
+CC writes complete firmware files → commits to firmware repo → pushes branch
+        ↓
+CC waits for GitHub Actions compile check (3-5 min) ← NEW STEP (R-90)
+        ↓
+If red → CC fixes and pushes again → waits for green
+If green → CC opens PR, states "GitHub Actions compile: ✅ GREEN" in PR body
         ↓
 Owner uploads local .h files (fresh from repo) → opens Arduino IDE
         ↓
@@ -90,6 +95,9 @@ Iterate until behavior matches spec
 **Firmware flash constraint:** Chat and CC cannot compile, flash, or read serial output.
 The physical flash step always requires the owner. Design firmware prompts to minimize
 the number of flash cycles needed (write complete, correct files the first time).
+
+**GitHub Actions compile:** Catches most compile errors before owner touches Arduino IDE.
+CC must never open a firmware PR until the Actions check shows green ✅ (R-90).
 
 ---
 
@@ -111,6 +119,22 @@ Firmware fix: Owner → Chat → CC → Owner (compile+flash+serial) → 2-4 cyc
 5. **Never re-explain project history in CC prompts** — CC reads CLAUDE.md + RULES.md
 6. **Firmware: state the flash constraint** — always tell owner how many flash cycles to expect
 7. **Payment mode warning** — any CC prompt touching payment must explicitly state PAYMENT_MODE=fake
+8. **KNOWN_GOOD.md update block** — every firmware CC prompt MUST include this section:
+
+```markdown
+## UPDATE KNOWN_GOOD.md
+Append at TOP (never overwrite existing entries):
+- Build/session date: [YYYY-MM-DD]
+- Files changed this session: [list]
+- Compile status: ✅ clean / ❌ errors found
+- Flash status: ✅ flashed / ⬜ not yet (CC cannot flash)
+- Owner observation: "[exact words from owner/chat after flash]"
+- Known issues remaining: [list or none]
+```
+
+   KNOWN_GOOD.md = firmware only (compile + flash status). PROJECT_STATE.md = everything else.
+   Chat includes this block in every firmware CC prompt. CC includes it in non-firmware CC prompts
+   ONLY if firmware files were touched that session. CC appends to TOP — never overwrites.
 
 ---
 
@@ -176,12 +200,22 @@ Then execute this prompt.
 [always include: hardware.h — R2 LOCKED]
 [always include: config.h NUM_SLOTS definition]
 
+## UPDATE KNOWN_GOOD.md (firmware CC prompts only)
+Append at TOP (never overwrite):
+- Build/session date: [YYYY-MM-DD]
+- Files changed this session: [list]
+- Compile status: ✅ clean / ❌ errors found
+- Flash status: ✅ flashed / ⬜ not yet (CC cannot flash)
+- Owner observation: "[exact words from owner/chat after flash]"
+- Known issues remaining: [list or none]
+
 ## MANDATORY (end of every session)
 1. Run 14-test suite reminder to owner (backend changes only)
 2. Archive this prompt → docs/prompts/ stamped ✅ COMPLETE — [date] — [summary]
 3. Append new rules to RULES.md (newest at TOP) with next R-number
 4. Update PROJECT_STATE.md — mark completed items, add new known issues
-5. Commit in correct order, merge to main
+5. Append to TOP of KNOWN_GOOD.md (firmware sessions only — never overwrite)
+6. Commit in correct order, merge to main
 
 ## PAYMENT MODE REMINDER
 PAYMENT_MODE must remain = fake for this session.
