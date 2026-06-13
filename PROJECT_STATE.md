@@ -13,7 +13,10 @@
 - **RULES.md:** R-90 (GitHub Actions compile) + R-91 (CI config) + R-92 (KNOWN_GOOD.md scope) appended
 - **WORKFLOW_SKILL.md:** CC firmware loop updated with CI check step; KNOWN_GOOD.md update block rule added
 - **Cleaned up:** CC_BUILD_PROMPT_R4.md + CC_BUILD_PROMPT_github_actions_compile.md archived to docs/prompts/ · removed from repo root
-- **Branch:** claude/pensive-heisenberg-1sf4c1
+- **CI status:** ✅ GREEN — runs #15 and #16 passed (commit 8c21d78)
+- **Fix loops:** 6 iterations to resolve workflow config errors (all CI infra — no firmware bugs)
+- **Lessons → RULES.md:** R-93 (arduino-cli install), R-94 (library registry names), R-95 (lib update-index), R-96 (sketch folder convention)
+- **Branch:** claude/pensive-heisenberg-1sf4c1 · PR #10 ✅ ready to merge
 
 ### 2026-06-12 — CC Compile Error Fix (CC_PROMPT_fix_compile_errors)
 - **FIXED:** 7 compile errors from first R5 build attempt — R5 now ready to flash

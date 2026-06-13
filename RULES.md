@@ -38,6 +38,32 @@
   network.h is included before ui.h in satu_vending.ino — extern is required so network.h
   functions can reference the variables before ui.h is parsed.
   NEVER use `static` on shared globals — static makes them translation-unit-private, breaking extern.
+- **R-96 ARDUINO-CLI SKETCH FOLDER — CI RULE (2026-06-13):**
+  arduino-cli REQUIRES the sketch folder name to match the .ino filename exactly.
+  If repo folder is `firmware/` but sketch is `satu_vending.ino`, CI must:
+    `cp -r firmware satu_vending` then compile from `satu_vending/`
+  Passing the .ino file path directly does NOT bypass this — arduino-cli still
+  uses the parent folder name. Always compile from a correctly named folder.
+- **R-95 ARDUINO-CLI LIBRARY INDEX — CI RULE (2026-06-13):**
+  `arduino-cli core update-index` only refreshes board packages — NOT libraries.
+  Always run `arduino-cli lib update-index` separately before any `lib install`.
+  Omitting this causes "Library not found" even for valid library names.
+- **R-94 ARDUINO-CLI LIBRARY REGISTRY NAMES — CI RULE (2026-06-13):**
+  arduino-cli lib install uses the `Name:` field from library.properties — NOT
+  the GitHub folder name, class name, or Arduino IDE display name. Verified names:
+    "GFX Library for Arduino"          ← NOT Arduino_GFX_Library
+    "PNGdec"
+    "TAMC_GT911"
+    "ArduinoJson"
+    "Adafruit MCP23017 Arduino Library" ← NOT Adafruit MCP23X17, NOT git URL
+    "FastLED"
+  If a library is not found by name, check Arduino Library Registry — do NOT use
+  --git-url as a first resort. The name is almost always a spelling difference.
+- **R-93 ARDUINO-CLI INSTALL METHOD — CI RULE (2026-06-13):**
+  Use `arduino/setup-arduino-cli@v2` GitHub Action — NOT the `curl | sh` method.
+  The curl script installs to the workspace ./bin (CWD), not $HOME/bin, so the
+  PATH export fails and all subsequent steps see "arduino-cli: command not found".
+  The official action handles install + PATH correctly with no extra steps.
 - **R-92 KNOWN_GOOD.md SCOPE — PERMANENT RULE (2026-06-13):**
   KNOWN_GOOD.md = firmware only (compile + flash status). PROJECT_STATE.md = everything else.
   Chat includes UPDATE KNOWN_GOOD.md block in every firmware CC prompt.
