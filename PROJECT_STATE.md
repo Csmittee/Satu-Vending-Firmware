@@ -1,9 +1,19 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Last updated: 2026-06-12
+> Last updated: 2026-06-13
 > Compiled by: Chat S15 (chaijohn-personal session — first proper STATE doc for Satu)
 > Status: Phase 1 active — ~48% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-13 — GitHub Actions Compile Check (CC_BUILD_PROMPT_github_actions_compile)
+- **CREATED:** .github/workflows/compile-check.yml — auto-compile on every push + every PR to main
+- **Board FQBN:** esp32:esp32:esp32s3 with CDCOnBoot=cdc, FlashSize=16M, PartitionScheme=app3M_fat9M_16MB, PSRAM=opi, UploadSpeed=460800
+- **Core locked:** ESP32 2.0.17 · Libraries locked: Arduino_GFX_Library@1.4.9, PNGdec@1.1.6, TAMC_GT911, ArduinoJson, Adafruit MCP23X17, FastLED
+- **Est. CI time:** 3-5 min per run (vs 10+ min local Arduino IDE)
+- **RULES.md:** R-90 (GitHub Actions compile) + R-91 (CI config) + R-92 (KNOWN_GOOD.md scope) appended
+- **WORKFLOW_SKILL.md:** CC firmware loop updated with CI check step; KNOWN_GOOD.md update block rule added
+- **Cleaned up:** CC_BUILD_PROMPT_R4.md + CC_BUILD_PROMPT_github_actions_compile.md archived to docs/prompts/ · removed from repo root
+- **Branch:** claude/pensive-heisenberg-1sf4c1
 
 ### 2026-06-12 — CC Compile Error Fix (CC_PROMPT_fix_compile_errors)
 - **FIXED:** 7 compile errors from first R5 build attempt — R5 now ready to flash
@@ -109,6 +119,13 @@ Thai temples.
 - [ ] ui.h — service mode 5 tabs NOT COMPLETE — last CC build attempted, status unclear ⚠️
 - [ ] Full end-to-end test on real hardware — BLOCKED (hardware arriving)
 - [ ] OTA firmware update — explicitly deferred (not in Phase 1 scope)
+
+#### Infrastructure ✅ ADDED 2026-06-13
+- [x] GitHub Actions compile check: ACTIVE — .github/workflows/compile-check.yml
+- Triggers on: all pushes to any branch + all PRs to main
+- Est. compile time: 3-5 minutes (vs 10+ min local Arduino IDE)
+- Board: ESP32S3 | Core: 2.0.17 LOCKED | Libraries: 6 at locked versions
+- CC waits for green ✅ before opening PR (R-90)
 
 #### Hardware ⚠️ PENDING
 - [ ] ESP32-S3 display board — in transit from China

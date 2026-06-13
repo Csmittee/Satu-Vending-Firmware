@@ -38,6 +38,20 @@
   network.h is included before ui.h in satu_vending.ino — extern is required so network.h
   functions can reference the variables before ui.h is parsed.
   NEVER use `static` on shared globals — static makes them translation-unit-private, breaking extern.
+- **R-92 KNOWN_GOOD.md SCOPE — PERMANENT RULE (2026-06-13):**
+  KNOWN_GOOD.md = firmware only (compile + flash status). PROJECT_STATE.md = everything else.
+  Chat includes UPDATE KNOWN_GOOD.md block in every firmware CC prompt.
+  CC appends to TOP of KNOWN_GOOD.md as instructed — never overwrites existing entries.
+  Owner and Chat read only — never write to KNOWN_GOOD.md manually.
+- **R-91 CI CONFIG — PERMANENT RULE (2026-06-13):**
+  GitHub Actions creates its own config.h at compile time from the locked template in the workflow.
+  Never store real credentials in the workflow file.
+  The CI config.h is identical to the repo config.h (empty creds) — compile only, never flashed.
+- **R-90 GITHUB ACTIONS COMPILE — PERMANENT RULE (2026-06-13):**
+  Every firmware push and PR triggers automatic compile check via .github/workflows/compile-check.yml.
+  CC must NEVER open a firmware PR without waiting for the GitHub Actions check to go green first.
+  If it goes red: fix the error, push to same branch, wait for green, THEN notify owner the PR is ready.
+  Owner should never see a red compile on main.
 - **R-89 PNGdec v1.1.6 callback returns int NOT void (2026-06-12):**
   PNG_DRAW_CALLBACK signature: `int (*)(PNGDRAW*)` — return type is int, not void.
   Always write: `static int _pngDrawRow(PNGDRAW* pDraw) { ... return 0; }`
