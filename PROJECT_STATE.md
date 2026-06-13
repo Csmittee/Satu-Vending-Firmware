@@ -5,6 +5,16 @@
 
 ## SESSION LOG (newest first)
 
+### 2026-06-13 — QR blocking read fix (CC_PROMPT_firmware_qr_blocking_read)
+- **PR #13 CONFIRMED FLASH:** HTTP 200 ✅, Content-Length=-1, idle timeout at 497 bytes — available() root cause confirmed
+- **ROOT CAUSE (R-105):** stream->available()=0 between TCP packets on ESP32 → 5s idle timer fires at 497 bytes
+  QR PNG from api.qrserver.com is ~3KB+. available()-based loop always exits too early.
+- **FIX:** `network.h fetchImageBytes()` — R5.3 — blocking readBytes() with 10s per-read timeout
+  available() poll + idle timer removed entirely. readBytes() blocks until data or stream close.
+- **RULES.md:** R-105 appended at TOP
+- **KNOWN_GOOD.md:** PR #13 confirmed flash snapshot appended at TOP
+- **Files:** firmware/network.h only
+
 ### 2026-06-13 — QR Chunked Read Fix + Timeout (CC_PROMPT_firmware_qr_chunked_fix)
 - **PR #12 CONFIRMED FLASH:** HTTP 200 ✅ but 502 bytes truncated — chunked stream exits early
 - **ROOT CAUSE:** stream.available()=0 between TCP packets → 15s wall-clock timer triggers early

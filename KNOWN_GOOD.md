@@ -4,6 +4,42 @@
 
 ---
 
+## Snapshot: 2026-06-13 — PR #13 QR Chunked Fix flash CONFIRMED (available() root cause confirmed)
+
+### Firmware
+```
+Build:    PR #13 — R5.2 chunked-safe read loop
+Board:    SATU-4R473R (MAC: 3C:DC:75:5D:DD:2C)
+Flash:    CONFIRMED — 2026-06-13 ~22:08
+```
+
+### Serial output confirmed (owner report 2026-06-13 ~22:08)
+```
+[NET] fetchImageBytes: HTTP 200
+[NET] fetchImageBytes: Content-Length=-1
+[NET] fetchImageBytes: idle timeout after 5000ms — 497 bytes so far
+[NET] fetchImageBytes: 497 bytes read
+[UI] QR PNG loaded: 497 bytes - rendering
+[UI] PNG open failed
+```
+
+### Root cause confirmed ✅
+stream->available() = 0 between TCP packets → 5s idle timer fires at 497 bytes.
+QR PNG from api.qrserver.com is ~3KB+. available()-based loop exits too early.
+Fix: blocking readBytes() — R-105 — PR #14 target.
+
+### Confirmed WORKING ✅
+- WiFiClientSecure HTTPS (R-97) — HTTP 200 on external api.qrserver.com
+- Payment timeout 30s (R-102)
+- chunked transfer detection — Content-Length=-1 logged correctly
+
+### Confirmed NOT WORKING ❌
+- QR PNG render: available()-based idle timer exits at 497 bytes
+  Root cause: available()=0 between TCP packets on ESP32 (R-105)
+  Fix: CC_PROMPT_firmware_qr_blocking_read — PR #14
+
+---
+
 ## Snapshot: 2026-06-13 — QR Chunked Fix (CC_PROMPT_firmware_qr_chunked_fix)
 
 ### Firmware

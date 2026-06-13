@@ -38,6 +38,13 @@
   network.h is included before ui.h in satu_vending.ino — extern is required so network.h
   functions can reference the variables before ui.h is parsed.
   NEVER use `static` on shared globals — static makes them translation-unit-private, breaking extern.
+- **R-105 BLOCKING READBYTES FOR HTTP STREAMS — PERMANENT (2026-06-13):**
+  stream->available() returns 0 between TCP packets on ESP32 — never use it
+  as the sole read condition for HTTP streams.
+  Use blocking readBytes() instead: readBytes() blocks until data arrives,
+  the stream closes, or the per-read timeout fires.
+  Confirmed 2026-06-13: available()-based idle timer fired at 497 bytes
+  on a 3KB+ QR PNG from api.qrserver.com (chunked transfer, Content-Length=-1).
 - **R-103 CHUNKED HTTP READ — PERMANENT (2026-06-13):**
   fetchImageBytes() MUST handle chunked transfer encoding (Content-Length=-1).
   Use !http.connected() to detect stream EOF — do NOT rely on Content-Length.
