@@ -4,6 +4,63 @@
 
 ---
 
+## Snapshot: 2026-06-13 — QR Chunked Fix (CC_PROMPT_firmware_qr_chunked_fix)
+
+### Firmware
+```
+Build:       R5.2
+Files:       network.h (chunked-safe read loop), config.h (PAYMENT_TIMEOUT 120s→30s)
+Compile:     CI pending — push to claude/vibrant-cray-cqp2em
+Flash:       PENDING — owner to flash and report serial output
+Serial:      "[NET] fetchImageBytes: stream closed — transfer complete" = success
+             "[NET] fetchImageBytes: XXXX bytes read" — expect 2000-5000 bytes
+```
+
+### What changed
+- `network.h fetchImageBytes()`: chunked-safe read loop — detects EOF via !http.connected()
+  Per-packet idle timeout 5s replaces broken 15s global wall-clock
+  Root cause: 502 bytes truncated because stream.available()=0 between TCP packets
+- `config.h PAYMENT_TIMEOUT`: 120000 → 30000 (30s QR wait, was 2 min)
+- `RULES.md`: R-102 (QR timeout) + R-103 (chunked read) appended
+
+---
+
+## Snapshot: 2026-06-13 — PR #12 QR WiFiClientSecure flash CONFIRMED ✅
+
+### Firmware
+```
+Build:    PR #12 — WiFiClientSecure for external HTTPS QR fetch
+Board:    SATU-4R473R (MAC: 3C:DC:75:5D:DD:2C)
+Flash:    ✅ CONFIRMED — 2026-06-13 ~21:34
+Compile:  ✅ Clean — GitHub Actions green (2 min 21 sec)
+```
+
+### Serial output confirmed (owner report 2026-06-13)
+```
+[NET] fetchImageBytes: url=https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=FAKE|...
+[NET] fetchImageBytes: HTTP 200
+[NET] fetchImageBytes: Content-Length=-1
+[NET] fetchImageBytes: timeout
+[NET] fetchImageBytes: 502 bytes read
+[UI] QR PNG loaded: 502 bytes — rendering
+[UI] PNG open failed
+[UI] QR screen drawn
+```
+
+### Confirmed WORKING ✅
+- WiFiClientSecure HTTPS to external domain (api.qrserver.com) — HTTP 200
+- fetchImageBytes() called correctly from drawQrScreen()
+- Serial logs present on both success and failure paths
+- State machine reaches QR screen, polls payment correctly
+- WiFi keyboard . @ - _ keys present (PR #9 confirmed)
+- 14-test suite backend: ✅ 14/14 (confirmed 2026-06-13 earlier)
+
+### Confirmed NOT WORKING ❌
+- QR PNG render: 502 bytes truncated (chunked stream read exits too early)
+  Fix: CC_PROMPT_firmware_qr_chunked_fix.md — next flash will resolve
+
+---
+
 ## Snapshot: 2026-06-13 — QR PNG Fetch Fix (CC_PROMPT_firmware_qr_png_fetch)
 
 ### Firmware

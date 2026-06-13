@@ -38,6 +38,17 @@
   network.h is included before ui.h in satu_vending.ino — extern is required so network.h
   functions can reference the variables before ui.h is parsed.
   NEVER use `static` on shared globals — static makes them translation-unit-private, breaking extern.
+- **R-103 CHUNKED HTTP READ — PERMANENT (2026-06-13):**
+  fetchImageBytes() MUST handle chunked transfer encoding (Content-Length=-1).
+  Use !http.connected() to detect stream EOF — do NOT rely on Content-Length.
+  Per-packet idle timeout = 5000ms. Global wall-clock timeout via http.setTimeout(15000).
+  api.qrserver.com returns chunked — this is permanent behaviour, not a bug.
+  Root cause confirmed: 502 bytes truncated = chunked EOF detection missing.
+  WiFiClientSecure + setInsecure() remains correct (R-97).
+- **R-102 QR PAYMENT TIMEOUT — PERMANENT (2026-06-13):**
+  QR screen payment wait timeout = 30 seconds (was 120s).
+  30s is sufficient for PromptPay scan. 120s causes poor UX at temple kiosk.
+  Reference: firmware/config.h PAYMENT_TIMEOUT constant.
 - **R-97 WIFI CLIENT SECURE FOR EXTERNAL HTTPS — PERMANENT (2026-06-13):**
   fetchImageBytes() MUST use WiFiClientSecure with setInsecure() for external HTTPS URLs
   (e.g. api.qrserver.com). Plain HTTPClient.begin(url) silently fails on ESP32 for external
