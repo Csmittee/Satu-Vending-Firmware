@@ -19,6 +19,9 @@
 //          Empty credentials → returns without connecting (caller checks
 //          WiFi.status() and transitions to STATE_WIFI_SETUP)
 //          Added: saveWifiAndReboot() — saves to NVS then ESP.restart()
+//   R5.1 — fetchImageBytes() upgraded to WiFiClientSecure + setInsecure()
+//          External HTTPS (e.g. api.qrserver.com) now works — R-97
+//          Added entry serial log and HTTPC_STRICT_FOLLOW_REDIRECTS
 // SECURITY:
 //   device_secret in NVS only — never hardcoded
 //   WiFi credentials in NVS (nvs_ssid/nvs_pass) — never in git
@@ -31,6 +34,7 @@
 #include <esp_wifi.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
 #include <Preferences.h>
 #include <PNGdec.h>
@@ -452,28 +456,49 @@ bool factoryResetBackend() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  FETCH IMAGE BYTES  (R4)
+//  FETCH IMAGE BYTES  (R5.1 — WiFiClientSecure for external HTTPS)
 //  Downloads a PNG from url into a caller-provided PSRAM buffer.
 //  Returns byte count on success, 0 on failure.
 //  Caller must ps_malloc(200*1024) and free after use.
+//
+//  R-97: Uses WiFiClientSecure + setInsecure() for external HTTPS URLs
+//  (e.g. api.qrserver.com). Plain HTTPClient silently fails on ESP32
+//  for external HTTPS — no cert chain available. setInsecure() is
+//  acceptable here: QR image is not sensitive auth data.
 // ════════════════════════════════════════════════════════════════════════════
 size_t fetchImageBytes(const String& url, uint8_t* buf, size_t bufSize) {
-  if (WiFi.status() != WL_CONNECTED || !buf || bufSize == 0) return 0;
+  Serial.printf("[NET] fetchImageBytes: url=%s\n", url.c_str());
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("[NET] fetchImageBytes: WiFi not connected");
+    return 0;
+  }
+  if (!buf || bufSize == 0) {
+    Serial.println("[NET] fetchImageBytes: invalid buffer");
+    return 0;
+  }
+
+  WiFiClientSecure client;
+  client.setInsecure();  // QR image only — not sensitive data — R-97
 
   HTTPClient http;
-  http.begin(url);
+  http.begin(client, url);
   http.setTimeout(15000);
+  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+
   int code = http.GET();
+  Serial.printf("[NET] fetchImageBytes: HTTP %d\n", code);
 
   if (code != 200) {
-    Serial.printf("[NET] fetchImageBytes: HTTP %d\n", code);
     http.end();
     return 0;
   }
 
   int contentLen = http.getSize();
+  Serial.printf("[NET] fetchImageBytes: Content-Length=%d\n", contentLen);
+
   if (contentLen > 0 && (size_t)contentLen > bufSize) {
-    Serial.printf("[NET] fetchImageBytes: image too large (%d > %u)\n", contentLen, bufSize);
+    Serial.printf("[NET] fetchImageBytes: too large (%d > %u)\n", contentLen, bufSize);
     http.end();
     return 0;
   }
@@ -488,14 +513,17 @@ size_t fetchImageBytes(const String& url, uint8_t* buf, size_t bufSize) {
       size_t toRead = min(avail, bufSize - bytesRead);
       bytesRead    += stream->readBytes(buf + bytesRead, toRead);
     } else {
-      if (millis() - t0 > 15000) break;
+      if (millis() - t0 > 15000) {
+        Serial.println("[NET] fetchImageBytes: timeout");
+        break;
+      }
       delay(1);
     }
     if (contentLen > 0 && bytesRead >= (size_t)contentLen) break;
   }
 
   http.end();
-  Serial.printf("[NET] fetchImageBytes: %u bytes\n", bytesRead);
+  Serial.printf("[NET] fetchImageBytes: %u bytes read\n", bytesRead);
   return bytesRead;
 }
 

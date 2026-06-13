@@ -38,6 +38,11 @@
   network.h is included before ui.h in satu_vending.ino — extern is required so network.h
   functions can reference the variables before ui.h is parsed.
   NEVER use `static` on shared globals — static makes them translation-unit-private, breaking extern.
+- **R-97 WIFI CLIENT SECURE FOR EXTERNAL HTTPS — PERMANENT (2026-06-13):**
+  fetchImageBytes() MUST use WiFiClientSecure with setInsecure() for external HTTPS URLs
+  (e.g. api.qrserver.com). Plain HTTPClient.begin(url) silently fails on ESP32 for external
+  HTTPS — no cert chain available. setInsecure() is acceptable for QR image fetch only —
+  not for sensitive auth data. Always add http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS).
 - **R-96 ARDUINO-CLI SKETCH FOLDER — CI RULE (2026-06-13):**
   arduino-cli REQUIRES the sketch folder name to match the .ino filename exactly.
   If repo folder is `firmware/` but sketch is `satu_vending.ino`, CI must:

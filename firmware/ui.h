@@ -778,9 +778,11 @@ void drawQrScreen(String qrUrl, int amount, int slotIdx) {
   if (g_pngBuf && !qrUrl.isEmpty()) {
     size_t pngLen = fetchImageBytes(qrUrl, g_pngBuf, 200 * 1024);
     if (pngLen > 0) {
+      Serial.printf("[UI] QR PNG loaded: %u bytes - rendering\n", pngLen);
       gfx->fillRect(qrAreaX, qrAreaY, 244, 244, C_WHITE);
       drawQrFromBytes(g_pngBuf, pngLen, qrAreaX + 2, qrAreaY + 2);
     } else {
+      Serial.println("[UI] QR PNG failed - showing fallback");
       gfx->setCursor(qrAreaX + 50, qrAreaY + 118);
       gfx->setTextColor(C_RED);
       gfx->print("QR fetch failed");

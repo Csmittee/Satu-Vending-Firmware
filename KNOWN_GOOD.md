@@ -4,6 +4,27 @@
 
 ---
 
+## Snapshot: 2026-06-13 — QR PNG Fetch Fix (CC_PROMPT_firmware_qr_png_fetch)
+
+### Firmware
+```
+Build:       R5.1
+Files:       network.h (fetchImageBytes WiFiClientSecure), ui.h (drawQrScreen logs)
+Compile:     CI pending — push to claude/vibrant-cray-cqp2em
+Flash:       PENDING — owner to flash and report serial output
+Serial:      "[NET] fetchImageBytes: HTTP 200" + "[UI] QR PNG loaded: N bytes" = success
+             "[UI] QR PNG failed — showing fallback" = decode issue (report if seen)
+```
+
+### What changed
+- `network.h fetchImageBytes()`: WiFiClientSecure + setInsecure() replaces plain HTTPClient
+  Plain HTTPClient silently fails on external HTTPS — was root cause of QR not showing
+- `ui.h drawQrScreen()`: Added serial logs on both success and failure paths
+- `RULES.md`: R-97 added — WiFiClientSecure rule for external HTTPS
+- Known remaining: WiFi keyboard missing . @ - _ (batched fix/wifi-keyboard-special-chars)
+
+---
+
 ## Snapshot: 2026-06-12 — R5 First Flash ✅
 
 ### Backend

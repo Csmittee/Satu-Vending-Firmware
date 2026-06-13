@@ -5,6 +5,15 @@
 
 ## SESSION LOG (newest first)
 
+### 2026-06-13 — QR PNG Fetch Fix (CC_PROMPT_firmware_qr_png_fetch)
+- **ROOT CAUSE:** Plain `HTTPClient.begin(url)` silently fails on ESP32 for external HTTPS — no cert chain
+- **FIX:** `network.h fetchImageBytes()` — replaced with `WiFiClientSecure + setInsecure()` + `HTTPC_STRICT_FOLLOW_REDIRECTS`
+- **FIX:** `ui.h drawQrScreen()` — added `[UI] QR PNG loaded` and `[UI] QR PNG failed` serial logs on both paths
+- **RULES.md:** R-97 appended — WiFiClientSecure for external HTTPS is now a permanent rule
+- **Flash status:** PENDING — owner to flash and verify serial shows HTTP 200 + PNG bytes
+- **Branch:** claude/vibrant-cray-cqp2em · CI pending
+- **Next if still fails:** PNG decode investigation (pngLen > 0 but no render = _pngDrawRow issue)
+
 ### 2026-06-13 — GitHub Actions Compile Check (CC_BUILD_PROMPT_github_actions_compile)
 - **CREATED:** .github/workflows/compile-check.yml — auto-compile on every push + every PR to main
 - **Board FQBN:** esp32:esp32:esp32s3 with CDCOnBoot=cdc, FlashSize=16M, PartitionScheme=app3M_fat9M_16MB, PSRAM=opi, UploadSpeed=460800
