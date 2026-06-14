@@ -153,11 +153,13 @@ static PNG      _png;
 static uint8_t* g_pngBuf   = nullptr;
 static int      _pngDrawX  = 0;
 static int      _pngDrawY  = 0;
+static int      _pngRowCount = 0;
 
 static int _pngDrawRow(PNGDRAW* pDraw) {
   uint16_t lineBuf[800];
   _png.getLineAsRGB565(pDraw, lineBuf, PNG_RGB565_LITTLE_ENDIAN, 0xFFFFFFFF);
   gfx->draw16bitRGBBitmap(_pngDrawX, _pngDrawY + pDraw->y, lineBuf, pDraw->iWidth, 1);
+  _pngRowCount++;
   return 0;
 }
 
@@ -165,8 +167,11 @@ void drawQrFromBytes(uint8_t* buf, size_t len, int x, int y) {
   if (!buf || len == 0) return;
   _pngDrawX = x;
   _pngDrawY = y;
+  _pngRowCount = 0;
   if (_png.openRAM(buf, (int32_t)len, _pngDrawRow) == PNG_SUCCESS) {
-    _png.decode(nullptr, 0);
+    int rc = _png.decode(nullptr, 0);
+    Serial.printf("[UI] PNG decode: rc=%d rows=%d w=%d h=%d\n",
+                  rc, _pngRowCount, _png.getWidth(), _png.getHeight());
     _png.close();
   } else {
     Serial.println("[UI] PNG open failed");
