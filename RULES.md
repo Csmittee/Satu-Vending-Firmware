@@ -1,9 +1,16 @@
 # RULES.md — Satu 1.0 Universal Rules
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
-> Last updated: 2026-06-12
+> Last updated: 2026-06-14
 
 ---
+
+- **R-114 FIRMWARE QR USES BITMAP NOT PNG — PERMANENT (2026-06-14):**
+  drawQrScreen() fetches /bitmap endpoint, not PNG.
+  drawQrFromBitmap() draws direct with gfx->fillRect() — no PNGdec.
+  drawQrFromBytes() (PNGdec) remains in ui.h commented out — do not delete.
+  PNGdec 1.1.6 fails on all PNG variants tested (PRs #16–#19): rc=8 or rc=2.
+  Never re-enable PNGdec for QR on this hardware.
 
 ## Universal — Apply to Every Session
 

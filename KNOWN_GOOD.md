@@ -4,6 +4,37 @@
 
 ---
 
+## 2026-06-14 — QR bitmap draw (pending owner flash)
+
+### Firmware
+```
+Build:    R-114 — drawQrFromBitmap() direct pixel draw, no PNGdec
+Branch:   claude/cool-hopper-6owumd
+Files:    ui.h (drawQrFromBitmap added, drawQrFromBytes commented out, drawQrScreen updated)
+Compile:  ⬜ GitHub Actions pending
+Flash:    ⬜ pending owner flash
+```
+
+### What changed
+- drawQrFromBytes() (PNGdec) commented out — library broken on all 4 PNG variants (PRs #16-#19)
+- drawQrFromBitmap() added — direct gfx->fillRect() per pixel, no decode library
+- drawQrScreen() now fetches /bitmap endpoint (qrUrl + "/bitmap") via existing fetchImageBytes()
+- Backend bitmap format: 4-byte header (width+height uint16 BE) + 1 byte/pixel (0x00=black 0xFF=white)
+
+### Expected serial after flash
+```
+[UI] QR bitmap URL: https://api.janishammer.com/v1/qr/fake_chg_xxxxx/bitmap
+[NET] fetchImageBytes: HTTP 200
+[NET] fetchImageBytes: Content-Length=42029
+[NET] fetchImageBytes: 42029 bytes read
+[UI] QR bitmap loaded: 42029 bytes — rendering
+[UI] drawQrFromBitmap: w=205 h=205 dest=(x,y) size=240x240
+[UI] drawQrFromBitmap: done
+[UI] QR screen drawn
+```
+
+---
+
 ## Snapshot: 2026-06-14 — PR #14 R5.3 blocking readBytes CONFIRMED ✅ QR RENDERS
 
 ### Firmware

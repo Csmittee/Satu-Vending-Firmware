@@ -1,23 +1,3 @@
-// ============================================================
-// ui.h — Satu Vending Machine Display Layer  R4
-// Board  : ESP32-8048S070C — 7" 800×480 capacitive touch
-// Driver : Arduino_GFX (RGB panel, EK9716)
-// Touch  : TAMC_GT911  SDA=19 SCL=20 ROTATION_INVERTED
-// ============================================================
-// CHANGE LOG:
-//   R3   — Full rewrite: TFT_eSPI → Arduino_GFX
-//   R3.2 — Fixed grid 5×2, idleAnimationUI() sync
-//   R4   — Runtime grid: removed compile-time GRID_COLS/ROWS macros
-//          recalcGrid() recalculates CELL_W/CELL_H from /hello config
-//          PNGdec QR: fetchImageBytes() + drawQrFromBytes() via PSRAM buf
-//          Service mode: 5-tab drawServiceScreen()
-//          PIN screens: drawBootPinScreen(), drawPinOverlay(), getTouchedNumpad()
-//          Setup code screen: drawSetupCodeScreen()
-//          Debug screen: drawDebugScreen()
-//          Side tabs: _drawSideTabs() for 3-row grid
-//          getTouchedSlotXY() using runtime grid vars
-// ============================================================
-
 #ifndef UI_H
 #define UI_H
 
@@ -163,19 +143,70 @@ static int _pngDrawRow(PNGDRAW* pDraw) {
   return 0;
 }
 
-void drawQrFromBytes(uint8_t* buf, size_t len, int x, int y) {
-  if (!buf || len == 0) return;
-  _pngDrawX = x;
-  _pngDrawY = y;
-  _pngRowCount = 0;
-  if (_png.openRAM(buf, (int32_t)len, _pngDrawRow) == PNG_SUCCESS) {
-    int rc = _png.decode(nullptr, 0);
-    Serial.printf("[UI] PNG decode: rc=%d rows=%d w=%d h=%d\n",
-                  rc, _pngRowCount, _png.getWidth(), _png.getHeight());
-    _png.close();
-  } else {
-    Serial.println("[UI] PNG open failed");
-  }
+// drawQrFromBytes() — DISABLED (R-114): PNGdec 1.1.6 fails on all PNG variants
+// tested across PRs #16-#19. Kept for potential future use with other image types.
+// void drawQrFromBytes(uint8_t* buf, size_t len, int x, int y) {
+//   if (!buf || len == 0) return;
+//   _pngDrawX = x;
+//   _pngDrawY = y;
+//   _pngRowCount = 0;
+//   if (_png.openRAM(buf, (int32_t)len, _pngDrawRow) == PNG_SUCCESS) {
+//     int rc = _png.decode(nullptr, 0);
+//     Serial.printf("[UI] PNG decode: rc=%d rows=%d w=%d h=%d\n",
+//                   rc, _pngRowCount, _png.getWidth(), _png.getHeight());
+//     _png.close();
+//   } else {
+//     Serial.println("[UI] PNG open failed");
+//   }
+// }
+
+// ============================================================
+//  DRAW QR FROM RAW BITMAP BYTES (R-114)
+//  Format: 4-byte header (width uint16 BE + height uint16 BE)
+//          then 1 byte per pixel: 0x00=black 0xFF=white, row by row.
+//  No decoder library — direct gfx->fillRect() per black pixel.
+//  Backend endpoint: GET /v1/qr/:charge_id/bitmap
+// ============================================================
+void drawQrFromBitmap(const uint8_t* buf, size_t len, int destX, int destY, int destW, int destH) {
+    if (!buf || len < 5) {
+        Serial.println("[UI] drawQrFromBitmap: buffer too small");
+        return;
+    }
+
+    uint16_t bmpW = ((uint16_t)buf[0] << 8) | buf[1];
+    uint16_t bmpH = ((uint16_t)buf[2] << 8) | buf[3];
+
+    Serial.printf("[UI] drawQrFromBitmap: w=%u h=%u dest=(%d,%d) size=%dx%d\n",
+                  bmpW, bmpH, destX, destY, destW, destH);
+
+    if (bmpW == 0 || bmpH == 0 || len < (size_t)(4 + bmpW * bmpH)) {
+        Serial.println("[UI] drawQrFromBitmap: invalid dimensions or truncated buffer");
+        return;
+    }
+
+    // Scale to fit destW x destH, integer math — avoid float on inner loop
+    int scale = destW / bmpW;
+    if (scale < 1) scale = 1;
+    int drawW = bmpW * scale;
+    int drawH = bmpH * scale;
+
+    // Centre in destination area
+    int offX = destX + (destW - drawW) / 2;
+    int offY = destY + (destH - drawH) / 2;
+
+    // White background for the draw area
+    gfx->fillRect(destX, destY, destW, destH, 0xFFFF);
+
+    const uint8_t* pixels = buf + 4;
+    for (int y = 0; y < bmpH; y++) {
+        for (int x = 0; x < bmpW; x++) {
+            if (pixels[y * bmpW + x] == 0x00) {
+                gfx->fillRect(offX + x * scale, offY + y * scale, scale, scale, 0x0000);
+            }
+        }
+    }
+
+    Serial.println("[UI] drawQrFromBitmap: done");
 }
 
 // ============================================================
@@ -730,7 +761,7 @@ void drawGiftOptionScreen(int slotIdx) {
 }
 
 // ============================================================
-//  DRAW QR SCREEN  (R4: fetches PNG via fetchImageBytes + PNGdec)
+//  DRAW QR SCREEN  (R4: fetches image · R-114: switched to raw bitmap endpoint)
 // ============================================================
 void drawQrScreen(String qrUrl, int amount, int slotIdx) {
   g_idleDrawn     = false;
@@ -779,18 +810,27 @@ void drawQrScreen(String qrUrl, int amount, int slotIdx) {
   gfx->setCursor(qrAreaX + 80, qrAreaY + 118);
   gfx->print("Loading QR...");
 
-  // Fetch and render PNG
+  // Fetch and render bitmap (R-114) — PNGdec abandoned, raw bitmap endpoint used
   if (g_pngBuf && !qrUrl.isEmpty()) {
-    size_t pngLen = fetchImageBytes(qrUrl, g_pngBuf, 200 * 1024);
-    if (pngLen > 0) {
-      Serial.printf("[UI] QR PNG loaded: %u bytes - rendering\n", pngLen);
+    // Append /bitmap to PNG URL to get raw pixel data — bypasses PNGdec entirely
+    String bitmapUrl = qrUrl;
+    if (!bitmapUrl.endsWith("/bitmap")) {
+      bitmapUrl += "/bitmap";
+    }
+    Serial.printf("[UI] QR bitmap URL: %s\n", bitmapUrl.c_str());
+
+    size_t bmpLen = fetchImageBytes(bitmapUrl, g_pngBuf, 200 * 1024);
+    if (bmpLen > 4) {
+      Serial.printf("[UI] QR bitmap loaded: %u bytes — rendering\n", bmpLen);
       gfx->fillRect(qrAreaX, qrAreaY, 244, 244, C_WHITE);
-      drawQrFromBytes(g_pngBuf, pngLen, qrAreaX + 2, qrAreaY + 2);
+      drawQrFromBitmap(g_pngBuf, bmpLen, qrAreaX + 2, qrAreaY + 2, 240, 240);
     } else {
-      Serial.println("[UI] QR PNG failed - showing fallback");
+      Serial.println("[UI] QR bitmap failed — showing fallback");
+      gfx->fillRect(qrAreaX, qrAreaY, 244, 244, C_WHITE);
+      gfx->setTextColor(C_GREY);
+      gfx->setTextSize(1);
       gfx->setCursor(qrAreaX + 50, qrAreaY + 118);
-      gfx->setTextColor(C_RED);
-      gfx->print("QR fetch failed");
+      gfx->print("QR unavailable");
     }
   }
 

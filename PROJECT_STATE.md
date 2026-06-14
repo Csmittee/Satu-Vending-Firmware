@@ -1,9 +1,22 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Last updated: 2026-06-13
+> Last updated: 2026-06-14
 > Compiled by: Chat S15 (chaijohn-personal session — first proper STATE doc for Satu)
-> Status: Phase 1 active — ~48% complete
+> Status: Phase 1 active — ~50% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-14 — QR bitmap draw firmware (CC_PROMPT_firmware_qr_bitmap)
+- **PNGdec ABANDONED (R-114):** 4 PNG variants tested PRs #16-#19, all fail (rc=8 or rc=2)
+  Library broken on this hardware/core/library version combination — permanent conclusion
+- **FIX:** `ui.h drawQrFromBitmap()` — direct gfx->fillRect() pixel draw from raw bitmap
+  No decode library. Backend /bitmap endpoint: 4-byte header + 1 byte/pixel 0x00=black 0xFF=white
+- **FIX:** `ui.h drawQrScreen()` — appends /bitmap to qrUrl, calls drawQrFromBitmap()
+  drawQrFromBytes() (PNGdec) commented out — kept for future image types
+- **RULES.md:** R-114 prepended at top
+- **KNOWN_GOOD.md:** pending-flash entry prepended at top
+- **CI:** ⬜ GitHub Actions compile pending — waiting for green before PR
+- **Flash status:** ⬜ pending owner flash
+- **QR bitmap firmware:** ⬜ pending flash
 
 ### 2026-06-13 — QR blocking read fix (CC_PROMPT_firmware_qr_blocking_read)
 - **PR #13 CONFIRMED FLASH:** HTTP 200 ✅, Content-Length=-1, idle timeout at 497 bytes — available() root cause confirmed
@@ -115,13 +128,13 @@ Thai temples.
 | IO expander | MCP23017 ×2 | MCP1 0x20 (sensors 1-8, relays 1-6) · MCP2 0x21 (sensors 9-10, relays 7-12) |
 | Firmware IDE | Arduino 1.8.19 | ESP32 core 2.0.17 ONLY — 3.x breaks WiFi |
 | GFX library | moononournation v1.4.9 ONLY | 1.6.5 requires core 3.x |
-| QR display | PNGdec v1.1.6 (Larry Bank) | buffer in PSRAM via ps_malloc(200*1024) |
+| QR display | Raw bitmap via drawQrFromBitmap() | R-114: PNGdec abandoned — direct pixel draw |
 
 ---
 
 ## PHASE STATUS
 
-### Phase 1 — Prototyping (~45% complete) ← CURRENT
+### Phase 1 — Prototyping (~50% complete) ← CURRENT
 
 #### Backend & API ✅ COMPLETE
 - [x] Cloudflare Workers + D1 backend (index.js, machine.js, order.js, webhook.js, admin.js)
@@ -135,6 +148,7 @@ Thai temples.
 - [x] D1 database cleanup — ghost devices purged, test device MACs locked (R-14)
 - [x] /v1/machine/completion endpoint — added, tested
 - [x] /v1/machine/factory-reset endpoint — backend side implemented
+- [x] /v1/qr/:charge_id/bitmap endpoint — raw pixel bitmap, bypasses PNGdec (R-114, PR #20)
 
 #### Backend — Pending / Known Issues
 - [ ] Order expiry / QR timeout — pending orders never expire — needs Cron Trigger ⚠️
@@ -151,6 +165,7 @@ Thai temples.
 - [x] network.h R5 — NVS-first WiFi, saveWifiAndReboot(), /hello, /order, /completion, /factory-reset, fetchImageBytes()
 - [x] satu_vending.ino R5 — STATE_WIFI_SETUP guard, WiFi.status() check after initWiFi()
 - [x] ui.h R5 — drawWifiSetupScreen() QWERTY keyboard (blocking, restarts on CONNECT)
+- [x] ui.h R-114 — drawQrFromBitmap() (pending CI green + owner flash) ⬜
 - [ ] ui.h — service mode 5 tabs NOT COMPLETE — last CC build attempted, status unclear ⚠️
 - [ ] Full end-to-end test on real hardware — BLOCKED (hardware arriving)
 - [ ] OTA firmware update — explicitly deferred (not in Phase 1 scope)
@@ -231,7 +246,8 @@ src/
 │   ├── order.js          — /order, /order/:id/status, PDPA (incomplete)
 │   ├── webhook.js        — Omise webhook, HMAC, idempotency
 │   ├── admin.js          — device management (disable/enable/reassign/reboot/factory-reset)
-│   └── dashboard.js      — temple owner dashboard routes, JWT-protected
+│   ├── dashboard.js      — temple owner dashboard routes, JWT-protected
+│   └── qr.js             — /v1/qr/:charge_id (PNG) + /v1/qr/:charge_id/bitmap (raw bitmap R-114)
 ├── auth/
 │   └── jwt.js            — verifyJWT + signJWT
 ├── middleware/
@@ -265,13 +281,12 @@ state_machine.h     — enum MachineState, extern declarations
 ### Project Knowledge Docs (project folder)
 ```
 CLAUDE.md           — project compass, stack, 5 rules, key files, repos (30 lines max)
-RULES.md            — lessons learned R-01 to R-82+ (newest at top)
+RULES.md            — lessons learned R-01 to R-114 (newest at top)
 PROJECT_STATE.md    — this file
 CHAT_HANDOFF.md     — last session summary (overwrite each session, never append)
 KNOWLEDGE_MAP.md    — what to read for what task (navigation guide)
 UI_SPEC.md          — screen inventory, grid system, 5-tab service mode, NVS key table
 SECURITY.md         — auth layers, ownership model, payment modes, security gaps
-CC_BUILD_PROMPT_SUNDAY.md — last CC build prompt (archive after execution)
 ```
 
 ---
@@ -292,6 +307,8 @@ CC_BUILD_PROMPT_SUNDAY.md — last CC build prompt (archive after execution)
 | POST | /v1/auth/register | ✅ Working | ALLOW_REGISTRATION secret |
 | POST | /v1/admin/device/* | ✅ Working | X-Admin-Token auth |
 | GET | /v1/dashboard/* | ✅ Working | JWT auth |
+| GET | /v1/qr/:charge_id | ✅ Working | PNG endpoint (legacy) |
+| GET | /v1/qr/:charge_id/bitmap | ✅ Working | Raw bitmap R-114 — firmware uses this |
 | GET | /v1/admin-data/:table | ❌ Missing | CORS/401 in satu-admin.html |
 
 ---
@@ -318,7 +335,7 @@ Upload speed:  460800
 Port:          /dev/cu.usbserial-1420 (varies by machine)
 Core:          ESP32 2.0.17 ONLY (3.x breaks WiFi)
 GFX Library:   moononournation v1.4.9 ONLY
-PNGdec:        v1.1.6 (Larry Bank) — pin this version
+PNGdec:        v1.1.6 (kept for non-QR future use — broken for QR R-114)
 TFT_eSPI:      REMOVE if installed — incompatible with RGB panel
 ```
 
@@ -332,15 +349,17 @@ TFT_eSPI:      REMOVE if installed — incompatible with RGB panel
 3. Complete PDPA consent flow + legal review
 
 ### P1 — Unblock hardware test
-4. Complete ui.h service mode (5 tabs) — verify against simulator.html spec
-5. Verify full end-to-end on real hardware when components arrive
-6. Fix /v1/admin-data/:table CORS/401 (add JWT admin route to index.js)
+4. Wait for GitHub Actions CI green on claude/cool-hopper-6owumd — then open firmware PR
+5. Owner flashes R-114 build — verify QR bitmap renders on screen
+6. Complete ui.h service mode (5 tabs) — verify against simulator.html spec
+7. Verify full end-to-end on real hardware when components arrive
+8. Fix /v1/admin-data/:table CORS/401 (add JWT admin route to index.js)
 
 ### P2 — Polish
-7. Implement order expiry (Cron Trigger already configured in wrangler.toml)
-8. Build temple owner claim/onboarding flow (setup code UI)
-9. Temple owner dashboard — complete missing features
+9. Implement order expiry (Cron Trigger already configured in wrangler.toml)
+10. Build temple owner claim/onboarding flow (setup code UI)
+11. Temple owner dashboard — complete missing features
 
 ### P3 — Phase 2 prep
-10. Multi-machine architecture review
-11. Analytics and reconciliation reporting
+12. Multi-machine architecture review
+13. Analytics and reconciliation reporting
