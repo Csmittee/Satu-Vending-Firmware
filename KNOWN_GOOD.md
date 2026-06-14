@@ -4,7 +4,43 @@
 
 ---
 
+## Snapshot: 2026-06-14 — PR #14 R5.3 blocking readBytes CONFIRMED ✅ QR RENDERS
+
+### Firmware
+```
+Build:    PR #14 — R5.3 blocking readBytes() loop (R-105)
+Board:    SATU-4R473R (MAC: 3C:DC:75:5D:DD:2C)
+Flash:    CONFIRMED — 2026-06-14 ~09:50
+```
+
+### Serial output confirmed (owner report 2026-06-14 ~09:50)
+```
+[NET] fetchImageBytes: url=https://api.janishammer.com/v1/qr/fake_chg_pu8wzvoa
+[NET] fetchImageBytes: HTTP 200
+[NET] fetchImageBytes: Content-Length=449
+[NET] fetchImageBytes: 449 bytes read
+[UI] QR PNG loaded: 449 bytes — rendering
+[UI] QR screen drawn
+[STATE] Order SATU-20260614-851453 — 10 THB — water=0
+[NET] Order SATU-20260614-851453: pending
+```
+
+### Test suite
+```
+satu-system-tester.html:  14/14 ✅ ALL PASSING
+Backend PRs:              #12 (QR endpoint), #13 (CORS + HEAD fix) merged/deployed
+Payment mode:             fake_omise
+```
+
+### What changed (vs previous snapshot — 497 bytes / idle timeout)
+- Root cause was available()=0 between TCP packets → 5s idle timer fired at 497 bytes
+- R5.3 fix: stream->readBytes() blocks until data arrives or stream closes
+- Result: full 449-byte PNG received in one clean transfer, QR renders on screen
+
+---
+
 ## Snapshot: 2026-06-13 — PR #13 QR Chunked Fix flash CONFIRMED (available() root cause confirmed)
+
 
 ### Firmware
 ```
