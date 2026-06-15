@@ -1,4 +1,5 @@
 # CC_PROMPT_fix_png_decode_psram_contention.md
+> ✅ COMPLETE — 2026-06-15 — PNG PSRAM contention R-117 — result: [pending flash]
 > Created: 2026-06-15
 > Repo: Satu-Vending-Firmware
 > Loop: B (firmware) — 1 flash cycle expected

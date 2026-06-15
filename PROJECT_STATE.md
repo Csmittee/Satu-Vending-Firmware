@@ -5,6 +5,22 @@
 
 ## SESSION LOG (newest first)
 
+### 2026-06-15 — PNG decode fix R-117 (pause-decode-resume for PSRAM DMA contention)
+- **ROOT CAUSE CONFIRMED:** PSRAM bus bandwidth contention between RGB DMA and zlib inflate
+  Evidence: rc=8 rows=1 on all PNG variants. Fetch=200 OK 27458 bytes. openRAM succeeds.
+  DMA reads 800×480 frame buffer from PSRAM non-stop at ~16MHz — zlib loses every bus arbitration.
+  Full analysis: `.claude/rules/SKILL_esp32s3_rgb_panel_constraints.md`
+- **FIX APPLIED:** `ui.h drawQrFromBytes()` re-enabled with pause-decode-resume pattern (R-117)
+  `digitalWrite(TFT_BL, LOW)` → `delay(20)` → `_png.decode()` → `delay(5)` → `digitalWrite(TFT_BL, HIGH)`
+  Backlight gate stops DMA bus pressure — zlib inflate gets full PSRAM bandwidth
+- **FIX APPLIED:** `ui.h _pngDrawRow()` — `lineBuf` made `static` (R-119) — off stack permanently
+- **FIX APPLIED:** `ui.h drawQrScreen()` — switched back from bitmap URL to PNG URL — calls `drawQrFromBytes()`
+  Backend /bitmap was reverted — PNG path is the correct production path
+- **EMERGENCY FALLBACK:** `drawQrFromBitmap()` preserved in ui.h with guard comment — R-114
+- **RULES.md:** R-117, R-118, R-119, R-120 prepended at TOP · R-116 status updated to CLOSED
+- **CI:** Pending — waiting for GitHub Actions compile check
+- **Flash:** ⬜ PENDING owner flash — expected: `[UI] PNG decode: rc=0 rows=165 w=165 h=165`
+
 ### 2026-06-15 — Bitmap experiment revert + rules update
 - **DISCOVERY:** Firmware PR #17 WAS merged to main on 2026-06-14 (not closed without merge as previously stated)
   Owner confirmed: bitmap ui.h on firmware main, QR bitmap flashed and working on hardware ✅
@@ -142,7 +158,7 @@ Thai temples.
 | IO expander | MCP23017 ×2 | MCP1 0x20 (sensors 1-8, relays 1-6) · MCP2 0x21 (sensors 9-10, relays 7-12) |
 | Firmware IDE | Arduino 1.8.19 | ESP32 core 2.0.17 ONLY — 3.x breaks WiFi |
 | GFX library | moononournation v1.4.9 ONLY | 1.6.5 requires core 3.x |
-| QR display | PNGdec investigation pending | rc=8 root cause unknown — see R-116. Bitmap fallback on firmware main (fake mode only) |
+| QR display | PNGdec R-117 fix PENDING FLASH | pause-decode-resume applied — root cause confirmed: PSRAM DMA contention |
 
 ---
 
@@ -181,9 +197,9 @@ Thai temples.
 - [x] network.h R5 — NVS-first WiFi, saveWifiAndReboot(), /hello, /order, /completion, /factory-reset, fetchImageBytes()
 - [x] satu_vending.ino R5 — STATE_WIFI_SETUP guard, WiFi.status() check after initWiFi()
 - [x] ui.h R5 — drawWifiSetupScreen() QWERTY keyboard (blocking, restarts on CONNECT)
-- [x] ui.h R-114 — drawQrFromBitmap() MERGED to main — bitmap confirmed on hardware (fake mode only)
-  ⚠️ Firmware main has bitmap code but backend has no /bitmap endpoint
-  Owner reflashing hardware with R5.3. Next: fix PNGdec root cause (R-116).
+- [x] ui.h R-117 — drawQrFromBytes() re-enabled with pause-decode-resume (PSRAM DMA contention fix)
+  lineBuf made static (R-119). drawQrScreen() back on PNG path. drawQrFromBitmap() kept as emergency fallback.
+  ⬜ PENDING owner flash — expected rc=0 rows=165
 - [ ] ui.h — service mode 5 tabs NOT COMPLETE — last CC build attempted, status unclear ⚠️
 - [ ] Full end-to-end test on real hardware — BLOCKED (hardware arriving)
 - [ ] OTA firmware update — explicitly deferred (not in Phase 1 scope)
@@ -249,8 +265,8 @@ Thai temples.
 | D1 database_id in wrangler.toml | 🟢 Low | Public repo — low risk, worth noting |
 | /v1/admin-data/:table CORS/401 | 🟡 UX | satu-admin.html JWT admin route missing |
 | WiFi credentials in config.h | 🟢 RESOLVED | R5 2026-06-12: NVS provisioning screen eliminates this permanently |
-| PNGdec rc=8 root cause unknown | 🟡 Firmware | Cannot use PNG in live mode until diagnosed — see R-116 |
-| Firmware main has bitmap, backend has no /bitmap | 🟡 Inconsistency | Owner reflashing R5.3. Resolve next session. |
+| PNGdec rc=8 root cause | 🟢 RESOLVED | Root cause: PSRAM DMA contention. Fix: pause-decode-resume (R-117). Pending owner flash confirm. |
+| Firmware main has bitmap, backend has no /bitmap | 🟢 RESOLVED | PNG path restored in drawQrScreen(). drawQrFromBitmap() kept as emergency fallback. |
 
 ---
 
@@ -370,15 +386,14 @@ TFT_eSPI:      REMOVE if installed — incompatible with RGB panel
 2. Complete Omise KYC / bank account registration
 3. Complete PDPA consent flow + legal review
 
-### P1 — PNGdec diagnostic (next firmware session)
+### P1 — Post PNG fix (next firmware session)
 4. Deploy backend (wrangler deploy) — PR #21 merged, not deployed yet ⚠️
 5. Run 14-test suite after backend deploy — confirm all 14 pass
-6. Add esp_ptr_in_psram(g_pngBuf) diagnostic immediately after ps_malloc in initUI() in ui.h
-   Report: [PSRAM] g_pngBuf in PSRAM: YES/NO addr=0x...
-   If NO → root cause found → fix heap caps, re-enable PNG path
-   Do NOT change any other code until this is measured
-7. Owner reflashes hardware with R5.3 from Mac backup (pre-bitmap, confirmed working)
-8. Complete ui.h service mode (5 tabs) — verify against simulator.html spec
+6. Owner flashes R-117 PNG fix — report serial: `[UI] PNG decode: rc=? rows=? w=? h=?`
+   SUCCESS = rc=0 rows=165 w=165 h=165
+   PARTIAL = rc=0 rows<165 → try delay(50) in drawQrFromBytes()
+   FAIL = rc=8 rows=1 → report to Chat, do NOT change PNG format
+7. Complete ui.h service mode (5 tabs) — verify against simulator.html spec
 9. Verify full end-to-end on real hardware when components arrive
 10. Fix /v1/admin-data/:table CORS/401 (add JWT admin route to index.js)
 

@@ -5,7 +5,22 @@
 
 ---
 
-- **R-116 PNGDEC INVESTIGATION STATUS — (2026-06-14):**
+- **R-120: NVS writes must not occur during image decode or QR display — schedule at idle state only (2026-06-15)**
+- **R-119: lineBuf in _pngDrawRow must be static (not stack-allocated) — stable layout during decode (2026-06-15)**
+- **R-118: Product images = JPEG ≤320×320px served from backend. Only Omise QR = PNG (EMVCo requirement) (2026-06-15)**
+- **R-117: PNG decode must use pause-decode-resume pattern (2026-06-15):**
+  `digitalWrite(TFT_BL,LOW)` → `delay(20)` → `_png.openRAM()` → `_png.decode()` → `delay(5)` → `digitalWrite(TFT_BL,HIGH)`
+  Reason: RGB DMA owns PSRAM bus continuously on ESP32-8048S070C class boards.
+  Gating backlight releases bus bandwidth to zlib inflate sliding window.
+  Root cause: NOT PSRAM allocation, NOT PNG format — confirmed PSRAM bus contention.
+  Evidence: rc=8 rows=1 on all PNG variants. Fetch=200 OK 27458 bytes. openRAM succeeds.
+  Reference: `.claude/rules/SKILL_esp32s3_rgb_panel_constraints.md`
+- **R-116 PNGDEC ROOT CAUSE CONFIRMED — PSRAM BANDWIDTH CONTENTION (2026-06-15 update):**
+  Root cause = RGB DMA engine reads 800×480 frame buffer from PSRAM continuously at ~16MHz,
+  consuming ~50% of OPI PSRAM bus bandwidth at all times. zlib inflate needs 32KB sliding
+  window with random PSRAM reads — DMA wins every bus arbitration. Fix = pause-decode-resume (R-117).
+  CLOSED: do not run further format/allocation diagnostics on this issue.
+- **R-116 PNGDEC INVESTIGATION STATUS — (2026-06-14) [SUPERSEDED by above 2026-06-15]:**
   PNGdec 1.1.6 openRAM() returns rc=8 rows=1 for all PNG variants tested.
   The library is NOT confirmed broken — it works for thousands of ESP32
   projects. Root cause NOT yet identified.

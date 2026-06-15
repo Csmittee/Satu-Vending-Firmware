@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-06-15 — PNG decode fix R-117 (pending owner flash)
+- Files: `firmware/ui.h` — drawQrFromBytes() re-enabled with pause-decode-resume · lineBuf static · drawQrScreen() on PNG path
+- Compile: ⬜ GitHub Actions pending
+- Flash: ⬜ pending owner flash
+- Expected serial: `[UI] PNG decode: rc=0 rows=165 w=165 h=165`
+- Root cause documented: PSRAM DMA bus contention — ESP32-8048S070C class boards
+- Branch: `claude/practical-cray-wsim4a` → PR `fix/png-psram-contention-r117`
+
+---
+
 ## 2026-06-15 — State after session close
 
 ### Current hardware state

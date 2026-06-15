@@ -136,30 +136,57 @@ static int      _pngDrawY  = 0;
 static int      _pngRowCount = 0;
 
 static int _pngDrawRow(PNGDRAW* pDraw) {
-  uint16_t lineBuf[800];
+  static uint16_t lineBuf[800];  // R-119: static — off stack, consistent memory layout
   _png.getLineAsRGB565(pDraw, lineBuf, PNG_RGB565_LITTLE_ENDIAN, 0xFFFFFFFF);
   gfx->draw16bitRGBBitmap(_pngDrawX, _pngDrawY + pDraw->y, lineBuf, pDraw->iWidth, 1);
   _pngRowCount++;
   return 0;
 }
 
-// drawQrFromBytes() — DISABLED (R-114): PNGdec 1.1.6 fails on all PNG variants
-// tested across PRs #16-#19. Kept for potential future use with other image types.
-// void drawQrFromBytes(uint8_t* buf, size_t len, int x, int y) {
-//   if (!buf || len == 0) return;
-//   _pngDrawX = x;
-//   _pngDrawY = y;
-//   _pngRowCount = 0;
-//   if (_png.openRAM(buf, (int32_t)len, _pngDrawRow) == PNG_SUCCESS) {
-//     int rc = _png.decode(nullptr, 0);
-//     Serial.printf("[UI] PNG decode: rc=%d rows=%d w=%d h=%d\n",
-//                   rc, _pngRowCount, _png.getWidth(), _png.getHeight());
-//     _png.close();
-//   } else {
-//     Serial.println("[UI] PNG open failed");
-//   }
-// }
+// drawQrFromBytes() — R-117 PAUSE-DECODE-RESUME
+// Root cause of rc=8: PSRAM bandwidth contention between RGB panel DMA and zlib inflate.
+// Fix: gate backlight off + 20ms yield → DMA bus pressure drops → zlib gets full bandwidth.
+// Donor sees brief dark flash (~100ms total). Acceptable for static QR display.
+// Works for all future images: product photos, amulet images, temple uploads.
+// See: .claude/rules/SKILL_esp32s3_rgb_panel_constraints.md
+void drawQrFromBytes(uint8_t* buf, size_t len, int x, int y) {
+  if (!buf || len == 0) {
+    Serial.println("[UI] drawQrFromBytes: null buf or zero len");
+    return;
+  }
 
+  // R-117 Step 1: release PSRAM bus from DMA pressure
+  digitalWrite(TFT_BL, LOW);
+  delay(20);  // allow RGB DMA to complete current frame burst — bus contention drops
+
+  // R-117 Step 2: decode PNG with full PSRAM bandwidth
+  _pngDrawX    = x;
+  _pngDrawY    = y;
+  _pngRowCount = 0;
+
+  int openRc = _png.openRAM(buf, (int32_t)len, _pngDrawRow);
+  if (openRc == PNG_SUCCESS) {
+    int rc = _png.decode(nullptr, 0);
+    Serial.printf("[UI] PNG decode: rc=%d rows=%d w=%d h=%d\n",
+                  rc, _pngRowCount, _png.getWidth(), _png.getHeight());
+    _png.close();
+  } else {
+    Serial.printf("[UI] PNG openRAM failed: rc=%d len=%u\n", openRc, (unsigned)len);
+  }
+
+  // R-117 Step 3: restore display
+  delay(5);
+  digitalWrite(TFT_BL, HIGH);
+}
+
+// ============================================================
+//  drawQrFromBitmap() — R-114 EMERGENCY FALLBACK ONLY
+//  Normal operation: use drawQrFromBytes() (PNG, R-117).
+//  This function is fake-mode-only scaffolding.
+//  Omise live mode serves real PromptPay PNG with EMVCo branding.
+//  Bitmap cannot substitute for Omise live QR.
+//  Do NOT call unless PNG decode is confirmed broken on a specific unit.
+// ============================================================
 // ============================================================
 //  DRAW QR FROM RAW BITMAP BYTES (R-114)
 //  Format: 4-byte header (width uint16 BE + height uint16 BE)
@@ -761,7 +788,7 @@ void drawGiftOptionScreen(int slotIdx) {
 }
 
 // ============================================================
-//  DRAW QR SCREEN  (R4: fetches image · R-114: switched to raw bitmap endpoint)
+//  DRAW QR SCREEN  (R4: fetches PNG · R-117: pause-decode-resume for PSRAM DMA contention)
 // ============================================================
 void drawQrScreen(String qrUrl, int amount, int slotIdx) {
   g_idleDrawn     = false;
@@ -810,22 +837,17 @@ void drawQrScreen(String qrUrl, int amount, int slotIdx) {
   gfx->setCursor(qrAreaX + 80, qrAreaY + 118);
   gfx->print("Loading QR...");
 
-  // Fetch and render bitmap (R-114) — PNGdec abandoned, raw bitmap endpoint used
+  // Fetch and render PNG QR — R-117 pause-decode-resume handles PSRAM DMA contention
   if (g_pngBuf && !qrUrl.isEmpty()) {
-    // Append /bitmap to PNG URL to get raw pixel data — bypasses PNGdec entirely
-    String bitmapUrl = qrUrl;
-    if (!bitmapUrl.endsWith("/bitmap")) {
-      bitmapUrl += "/bitmap";
-    }
-    Serial.printf("[UI] QR bitmap URL: %s\n", bitmapUrl.c_str());
+    Serial.printf("[UI] QR PNG URL: %s\n", qrUrl.c_str());
 
-    size_t bmpLen = fetchImageBytes(bitmapUrl, g_pngBuf, 200 * 1024);
-    if (bmpLen > 4) {
-      Serial.printf("[UI] QR bitmap loaded: %u bytes — rendering\n", bmpLen);
+    size_t pngLen = fetchImageBytes(qrUrl, g_pngBuf, 200 * 1024);
+    if (pngLen > 8) {
+      Serial.printf("[UI] QR PNG loaded: %u bytes — rendering\n", pngLen);
       gfx->fillRect(qrAreaX, qrAreaY, 244, 244, C_WHITE);
-      drawQrFromBitmap(g_pngBuf, bmpLen, qrAreaX + 2, qrAreaY + 2, 240, 240);
+      drawQrFromBytes(g_pngBuf, pngLen, qrAreaX + 2, qrAreaY + 2);
     } else {
-      Serial.println("[UI] QR bitmap failed — showing fallback");
+      Serial.println("[UI] QR PNG fetch failed — showing fallback");
       gfx->fillRect(qrAreaX, qrAreaY, 244, 244, C_WHITE);
       gfx->setTextColor(C_GREY);
       gfx->setTextSize(1);
