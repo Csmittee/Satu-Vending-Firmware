@@ -136,6 +136,7 @@ static int      _pngDrawY  = 0;
 static int      _pngRowCount = 0;
 
 static int _pngDrawRow(PNGDRAW* pDraw) {
+  Serial.printf("[PNG] row=%d y=%d w=%d\n", _pngRowCount, pDraw->y, pDraw->iWidth);  // ← ADD THIS
   static uint16_t lineBuf[800];  // R-119: static — off stack, consistent memory layout
   _png.getLineAsRGB565(pDraw, lineBuf, PNG_RGB565_LITTLE_ENDIAN, 0xFFFFFFFF);
   gfx->draw16bitRGBBitmap(_pngDrawX, _pngDrawY + pDraw->y, lineBuf, pDraw->iWidth, 1);
