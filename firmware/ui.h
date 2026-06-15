@@ -134,6 +134,7 @@ static uint8_t* g_pngBuf   = nullptr;
 static int      _pngDrawX  = 0;
 static int      _pngDrawY  = 0;
 static int      _pngRowCount = 0;
+static uint16_t g_qrFrameBuf[165 * 165];
 
 static int _pngDrawRow(PNGDRAW* pDraw) {
   Serial.printf("[PNG] cb row=%d y=%d w=%d drawX=%d drawY=%d\n",
@@ -142,7 +143,7 @@ static int _pngDrawRow(PNGDRAW* pDraw) {
                 ESP.getFreeHeap(), ESP.getFreePsram());
   static uint16_t lineBuf[800];  // R-119: static — off stack, consistent memory layout
   _png.getLineAsRGB565(pDraw, lineBuf, PNG_RGB565_LITTLE_ENDIAN, 0xFFFFFFFF);
-  gfx->draw16bitRGBBitmap(_pngDrawX, _pngDrawY + pDraw->y, lineBuf, pDraw->iWidth, 1);
+  memcpy(&g_qrFrameBuf[pDraw->y * pDraw->iWidth], lineBuf, pDraw->iWidth * 2);
   _pngRowCount++;
   return 0;
 }
@@ -174,6 +175,9 @@ void drawQrFromBytes(uint8_t* buf, size_t len, int x, int y) {
     Serial.printf("[UI] PNG decode: rc=%d rows=%d w=%d h=%d\n",
                   rc, _pngRowCount, _png.getWidth(), _png.getHeight());
     _png.close();
+    if (rc == 0 && _pngRowCount == 165) {
+      gfx->draw16bitRGBBitmap(_pngDrawX, _pngDrawY, g_qrFrameBuf, 165, 165);
+    }
   } else {
     Serial.printf("[UI] PNG openRAM failed: rc=%d len=%u\n", openRc, (unsigned)len);
   }
