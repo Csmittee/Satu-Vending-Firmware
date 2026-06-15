@@ -1,6 +1,6 @@
 # SKILL_problem_solving_kt.md
 # Structured Problem Solving — Kepner-Tregoe Adapted for Software & Firmware
-> Version: 1.1 — 2026-06-15 (updated with final resolution of PNGdec case study)
+> Version: 1.0 — 2026-06-15
 > Location in repo: .claude/rules/SKILL_problem_solving_kt.md (both repos)
 > Author: Chat — built from owner QA expertise (automotive/aerospace KT practitioner)
 >         + Kepner-Tregoe IS/IS-NOT framework + 8D methodology
