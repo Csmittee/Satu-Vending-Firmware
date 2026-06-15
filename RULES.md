@@ -1,11 +1,57 @@
 # RULES.md — Satu 1.0 Universal Rules
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
-> Last updated: 2026-06-14
+> Last updated: 2026-06-15
 
 ---
 
-- **R-114 FIRMWARE QR USES BITMAP NOT PNG — PERMANENT (2026-06-14):**
+- **R-116 PNGDEC INVESTIGATION STATUS — (2026-06-14):**
+  PNGdec 1.1.6 openRAM() returns rc=8 rows=1 for all PNG variants tested.
+  The library is NOT confirmed broken — it works for thousands of ESP32
+  projects. Root cause NOT yet identified.
+  Next diagnostic: esp_ptr_in_psram(g_pngBuf) immediately after ps_malloc
+  in initUI(). If PSRAM=NO, zlib inflate fails due to insufficient 
+  sliding window in internal RAM. This is the most likely root cause.
+  Do not change PNG format or architecture again until this is measured.
+  Bitmap branch preserved as fallback only.
+- **R-115 CRITICAL FIX ESCALATION PROTOCOL — PERMANENT (2026-06-14):**
+  When any fix attempt exceeds 2 loops without solving the root cause,
+  STOP ALL CODE CHANGES immediately. Do not create a workaround that
+  only works in one mode. Do not change architecture to avoid a library
+  bug without first confirming the library is actually broken.
+
+  Instead follow these steps in order:
+
+  Step 1 — BIG PICTURE REVIEW
+    List every file touched in this fix sequence.
+    List all assumptions that have never been verified on hardware.
+    State the original problem in one sentence.
+    Ask: are we still solving the original problem or a new one?
+
+  Step 2 — DEEP DIAGNOSTIC SPY
+    Add serial output at the exact failure point before changing code.
+    Never guess what data looks like — measure it.
+    Report raw values (rc=, bytes=, addr=, PSRAM=YES/NO).
+    Do not remove diagnostic output until root cause is confirmed.
+
+  Step 3 — RESEARCH GLOBAL KNOWLEDGE
+    Search Arduino forums, GitHub issues, and library release notes
+    for the exact error code and library version.
+    If the community has already solved it — use their fix.
+    Do not invent a new architecture to avoid a known solvable bug.
+
+  Step 4 — FIX MUST WORK IN ALL MODES
+    Any fix must work for both fake mode AND live Omise PNG mode.
+    A fix that only works in fake mode is not a fix — it is a 
+    workaround that creates future problems.
+    Image rendering (PNG/JPEG) is core to this product — QR codes,
+    amulet photos, Buddha images, temple owner uploads all depend on it.
+
+  Applied lesson: QR PNG bitmap experiment — PRs #16-#20, 5 flash 
+  cycles, 125K firmware tokens, problem confirmed but not root-caused.
+  Bitmap workaround works in fake mode only. PNGdec investigation 
+  continues next session with esp_ptr_in_psram() diagnostic.
+- **R-114 FIRMWARE QR USES BITMAP NOT PNG — (2026-06-14) [CLOSED WITHOUT MERGE — on claude/cool-hopper-6owumd branch only — firmware main at R5.3 — see R-116]:**
   drawQrScreen() fetches /bitmap endpoint, not PNG.
   drawQrFromBitmap() draws direct with gfx->fillRect() — no PNGdec.
   drawQrFromBytes() (PNGdec) remains in ui.h commented out — do not delete.
