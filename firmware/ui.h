@@ -145,7 +145,7 @@ static int _pngDrawRow(PNGDRAW* pDraw) {
   _png.getLineAsRGB565(pDraw, lineBuf, PNG_RGB565_LITTLE_ENDIAN, 0xFFFFFFFF);
   memcpy(&g_qrFrameBuf[pDraw->y * pDraw->iWidth], lineBuf, pDraw->iWidth * 2);
   _pngRowCount++;
-  return 0;
+  return 1;
 }
 
 // drawQrFromBytes() — R-117 PAUSE-DECODE-RESUME
