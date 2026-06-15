@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-06-15 — PNG QR DECODE FIXED ✅ CONFIRMED ON HARDWARE
+- Root cause: `_pngDrawRow()` returned `0` (PNGdec v1.1.4 stop-early signal) instead of `1`
+- Fix: `return 1` in callback — one character
+- Evidence: `[UI] PNG decode: rc=0 rows=165 w=165 h=165` on SATU-4R473R 2026-06-15 16:41:32
+- Branch: `claude/practical-cray-wsim4a` → PR open
+- Flash: ✅ CONFIRMED WORKING — QR renders correctly on hardware
+- Skills added: `SKILL_library_onboarding.md`, `LIBRARY_pngdec.md`
+- Rules added/corrected: R-89 (corrected return 0→1), R-117 (corrected root cause), R-121, R-122, R-123
+
+---
+
 ## 2026-06-15 — PNG decode fix R-117 (pending owner flash)
 - Files: `firmware/ui.h` — drawQrFromBytes() re-enabled with pause-decode-resume · lineBuf static · drawQrScreen() on PNG path
 - Compile: ⬜ GitHub Actions pending

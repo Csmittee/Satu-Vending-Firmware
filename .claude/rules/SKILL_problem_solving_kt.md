@@ -7,6 +7,35 @@
 > Load this file when: Any bug that fails to resolve after 2 fix attempts (R-111)
 
 ---
+## UPDATE — 2026-06-15 (appended from PNG investigation session — final chapter)
+
+### CONFIRMED OUTCOME — PNGdec case study final resolution
+
+Actual root cause: `_pngDrawRow()` returned `0`. PNGdec v1.1.4: "return 0 = stop decode early."
+This was documented in the library's own release notes. Never read. 48 hours lost.
+Fix: change `return 0` → `return 1`. One character. rc=0 rows=165 confirmed on hardware.
+
+**KT Post-Mortem:**
+The IS/IS-NOT table correctly identified shared resource conflict as the pattern.
+But the Phase 3a hypothesis table was missing one hypothesis:
+
+| # | Hypothesis | Explains IS? | Explains IS-NOT? | Verdict |
+|---|---|---|---|---|
+| 6 | Wrong callback return value | Yes (PNGdec stops at row 0) | Yes (no display needed to trigger) | ✅ CONFIRMED ROOT CAUSE |
+
+Hypothesis #6 would have been caught by SKILL_library_onboarding.md Step 1 in 5 minutes.
+It was missing because we skipped library onboarding and went straight to hardware hypotheses.
+
+**Mandatory addition to Phase 3a — BEFORE generating hypotheses:**
+> Step 0: Read the library designer's documentation for all APIs in use.
+> LIBRARY_xxx.md must exist before any hypothesis is formed (R-121).
+> This eliminates the entire class of "wrong API usage" hypotheses before any code is changed.
+
+**KT Rule 2 restatement (seek global knowledge before third attempt):**
+"Global knowledge" explicitly includes: library release notes, designer examples, API docs.
+Not just forums and Espressif docs — the library itself is the primary source.
+
+---
 
 ## WHY THIS EXISTS
 

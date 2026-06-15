@@ -137,10 +137,6 @@ static int      _pngRowCount = 0;
 static uint16_t g_qrFrameBuf[165 * 165];
 
 static int _pngDrawRow(PNGDRAW* pDraw) {
-  Serial.printf("[PNG] cb row=%d y=%d w=%d drawX=%d drawY=%d\n",
-                _pngRowCount, pDraw->y, pDraw->iWidth, _pngDrawX, _pngDrawY);
-  if (_pngRowCount == 0) Serial.printf("[PNG] free heap=%u free psram=%u\n",
-                ESP.getFreeHeap(), ESP.getFreePsram());
   static uint16_t lineBuf[800];  // R-119: static — off stack, consistent memory layout
   _png.getLineAsRGB565(pDraw, lineBuf, PNG_RGB565_LITTLE_ENDIAN, 0xFFFFFFFF);
   memcpy(&g_qrFrameBuf[pDraw->y * pDraw->iWidth], lineBuf, pDraw->iWidth * 2);
@@ -148,12 +144,10 @@ static int _pngDrawRow(PNGDRAW* pDraw) {
   return 1;
 }
 
-// drawQrFromBytes() — R-117 PAUSE-DECODE-RESUME
-// Root cause of rc=8: PSRAM bandwidth contention between RGB panel DMA and zlib inflate.
-// Fix: gate backlight off + 20ms yield → DMA bus pressure drops → zlib gets full bandwidth.
-// Donor sees brief dark flash (~100ms total). Acceptable for static QR display.
-// Works for all future images: product photos, amulet images, temple uploads.
-// See: .claude/rules/SKILL_esp32s3_rgb_panel_constraints.md
+// drawQrFromBytes() — confirmed working 2026-06-15 (rc=0 rows=165 on hardware)
+// Root cause of rc=8: _pngDrawRow() was returning 0 = PNGdec stop-early signal (v1.1.4 feature)
+// Fix: return 1 in callback. pause-decode-resume gate kept as defensive measure.
+// See: .claude/rules/LIBRARY_pngdec.md + .claude/rules/SKILL_esp32s3_rgb_panel_constraints.md
 void drawQrFromBytes(uint8_t* buf, size_t len, int x, int y) {
   if (!buf || len == 0) {
     Serial.println("[UI] drawQrFromBytes: null buf or zero len");
