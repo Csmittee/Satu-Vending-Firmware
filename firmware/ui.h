@@ -157,7 +157,7 @@ void drawQrFromBytes(uint8_t* buf, size_t len, int x, int y) {
 
   // R-117 Step 1: release PSRAM bus from DMA pressure
   digitalWrite(TFT_BL, LOW);
-  delay(20);  // allow RGB DMA to complete current frame burst — bus contention drops
+  delay(100);  // R-117b: 800x480 @ 16MHz = 24ms per frame. 100ms = 4+ frames to drain DMA burst
 
   // R-117 Step 2: decode PNG with full PSRAM bandwidth
   _pngDrawX    = x;
