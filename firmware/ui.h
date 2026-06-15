@@ -434,7 +434,7 @@ void initUI() {
   _initDefaultSlots();
 
   // Allocate PSRAM buffer for PNG QR decoding
-  g_pngBuf = (uint8_t*)ps_malloc(200 * 1024);
+  g_pngBuf = (uint8_t*)malloc(50 * 1024);
   if (!g_pngBuf) Serial.println("[UI] WARN: PNG buffer alloc failed");
 
   Serial.println("[UI] Display init OK — Arduino_GFX R4");
