@@ -1,22 +1,36 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Last updated: 2026-06-14
+> Last updated: 2026-06-15
 > Compiled by: Chat S15 (chaijohn-personal session — first proper STATE doc for Satu)
 > Status: Phase 1 active — ~50% complete
 
 ## SESSION LOG (newest first)
 
+### 2026-06-15 — Bitmap experiment revert + rules update
+- **DISCOVERY:** Firmware PR #17 WAS merged to main on 2026-06-14 (not closed without merge as previously stated)
+  Owner confirmed: bitmap ui.h on firmware main, QR bitmap flashed and working on hardware ✅
+- **BACKEND REVERTED (PR #21):** `/v1/qr/:charge_id/bitmap` endpoint removed from backend main
+  `src/handlers/qr.js` restored to _zlibStore() RFC 1950 state (PR #17 backend state)
+  `src/index.js` restored: no bitmap import, version=R4, no bitmap route
+- **REASON FOR REVERT:** Live Omise serves real PromptPay PNG with EMVCo payload — cannot re-serve as bitmap.
+  Bitmap is fake-mode-only. PNGdec must be fixed for live mode. Backend cleaned while investigation continues.
+- **RULES:** R-115 (Critical Fix Escalation Protocol) + R-116 (PNGdec Investigation Status) added to RULES.md in BOTH repos
+- **RULES:** R-114 annotation corrected to reflect actual state (PR #17 merged, backend reverted)
+- **INCONSISTENCY STATE:** Firmware main has bitmap code, backend has no /bitmap endpoint
+  Owner reflashing hardware with R5.3 (pre-bitmap) from Mac trash backup
+- **NEXT SESSION:** Add esp_ptr_in_psram(g_pngBuf) diagnostic to initUI() — measure PSRAM allocation
+
 ### 2026-06-14 — QR bitmap draw firmware (CC_PROMPT_firmware_qr_bitmap)
-- **PNGdec ABANDONED (R-114):** 4 PNG variants tested PRs #16-#19, all fail (rc=8 or rc=2)
-  Library broken on this hardware/core/library version combination — permanent conclusion
+- **PNGdec STILL FAILING (R-114 context):** 4 PNG variants tested PRs #16-#19, all fail (rc=8 or rc=2)
+  NOTE (2026-06-15): PNGdec NOT confirmed permanently broken — root cause unknown — see R-116
 - **FIX:** `ui.h drawQrFromBitmap()` — direct gfx->fillRect() pixel draw from raw bitmap
   No decode library. Backend /bitmap endpoint: 4-byte header + 1 byte/pixel 0x00=black 0xFF=white
 - **FIX:** `ui.h drawQrScreen()` — appends /bitmap to qrUrl, calls drawQrFromBitmap()
-  drawQrFromBytes() (PNGdec) commented out — kept for future image types
+  drawQrFromBytes() (PNGdec) commented out — kept for future investigation
 - **RULES.md:** R-114 prepended at top
-- **KNOWN_GOOD.md:** pending-flash entry prepended at top
-- **CI:** ⬜ GitHub Actions compile pending — waiting for green before PR
-- **Flash status:** ⬜ pending owner flash
-- **QR bitmap firmware:** ⬜ pending flash
+- **CI:** ✅ GitHub Actions Run #46 GREEN
+- **Flash status:** ✅ CONFIRMED — owner flashed, QR bitmap rendered on screen
+- **PR #17:** ✅ MERGED to firmware main 2026-06-14
+- **Backend bitmap:** ❌ REVERTED from backend main 2026-06-15 (PR #21)
 
 ### 2026-06-13 — QR blocking read fix (CC_PROMPT_firmware_qr_blocking_read)
 - **PR #13 CONFIRMED FLASH:** HTTP 200 ✅, Content-Length=-1, idle timeout at 497 bytes — available() root cause confirmed
@@ -128,7 +142,7 @@ Thai temples.
 | IO expander | MCP23017 ×2 | MCP1 0x20 (sensors 1-8, relays 1-6) · MCP2 0x21 (sensors 9-10, relays 7-12) |
 | Firmware IDE | Arduino 1.8.19 | ESP32 core 2.0.17 ONLY — 3.x breaks WiFi |
 | GFX library | moononournation v1.4.9 ONLY | 1.6.5 requires core 3.x |
-| QR display | Raw bitmap via drawQrFromBitmap() | R-114: PNGdec abandoned — direct pixel draw |
+| QR display | PNGdec investigation pending | rc=8 root cause unknown — see R-116. Bitmap fallback on firmware main (fake mode only) |
 
 ---
 
@@ -148,7 +162,9 @@ Thai temples.
 - [x] D1 database cleanup — ghost devices purged, test device MACs locked (R-14)
 - [x] /v1/machine/completion endpoint — added, tested
 - [x] /v1/machine/factory-reset endpoint — backend side implemented
-- [x] /v1/qr/:charge_id/bitmap endpoint — raw pixel bitmap, bypasses PNGdec (R-114, PR #20)
+- [x] /v1/qr/:charge_id PNG endpoint — _zlibStore() RFC 1950, synchronous, confirmed working
+- [❌] /v1/qr/:charge_id/bitmap — REVERTED from backend main 2026-06-15 (PR #21)
+  Preserved on branch revert/qr-bitmap-experiment and claude/cool-hopper-6owumd
 
 #### Backend — Pending / Known Issues
 - [ ] Order expiry / QR timeout — pending orders never expire — needs Cron Trigger ⚠️
@@ -165,10 +181,13 @@ Thai temples.
 - [x] network.h R5 — NVS-first WiFi, saveWifiAndReboot(), /hello, /order, /completion, /factory-reset, fetchImageBytes()
 - [x] satu_vending.ino R5 — STATE_WIFI_SETUP guard, WiFi.status() check after initWiFi()
 - [x] ui.h R5 — drawWifiSetupScreen() QWERTY keyboard (blocking, restarts on CONNECT)
-- [x] ui.h R-114 — drawQrFromBitmap() (pending CI green + owner flash) ⬜
+- [x] ui.h R-114 — drawQrFromBitmap() MERGED to main — bitmap confirmed on hardware (fake mode only)
+  ⚠️ Firmware main has bitmap code but backend has no /bitmap endpoint
+  Owner reflashing hardware with R5.3. Next: fix PNGdec root cause (R-116).
 - [ ] ui.h — service mode 5 tabs NOT COMPLETE — last CC build attempted, status unclear ⚠️
 - [ ] Full end-to-end test on real hardware — BLOCKED (hardware arriving)
 - [ ] OTA firmware update — explicitly deferred (not in Phase 1 scope)
+- [ ] PNGdec fix — esp_ptr_in_psram() diagnostic PENDING (next session P0)
 
 #### Infrastructure ✅ ADDED 2026-06-13
 - [x] GitHub Actions compile check: ACTIVE — .github/workflows/compile-check.yml
@@ -230,6 +249,8 @@ Thai temples.
 | D1 database_id in wrangler.toml | 🟢 Low | Public repo — low risk, worth noting |
 | /v1/admin-data/:table CORS/401 | 🟡 UX | satu-admin.html JWT admin route missing |
 | WiFi credentials in config.h | 🟢 RESOLVED | R5 2026-06-12: NVS provisioning screen eliminates this permanently |
+| PNGdec rc=8 root cause unknown | 🟡 Firmware | Cannot use PNG in live mode until diagnosed — see R-116 |
+| Firmware main has bitmap, backend has no /bitmap | 🟡 Inconsistency | Owner reflashing R5.3. Resolve next session. |
 
 ---
 
@@ -247,7 +268,7 @@ src/
 │   ├── webhook.js        — Omise webhook, HMAC, idempotency
 │   ├── admin.js          — device management (disable/enable/reassign/reboot/factory-reset)
 │   ├── dashboard.js      — temple owner dashboard routes, JWT-protected
-│   └── qr.js             — /v1/qr/:charge_id (PNG) + /v1/qr/:charge_id/bitmap (raw bitmap R-114)
+│   └── qr.js             — /v1/qr/:charge_id PNG only — _zlibStore() RFC 1950
 ├── auth/
 │   └── jwt.js            — verifyJWT + signJWT
 ├── middleware/
@@ -275,13 +296,14 @@ config.h.example    — template for new dev environment setup
 hardware.h          — MCP23017, relays, IR, LEDs, idleAnimation() ← R2 LOCKED
 network.h           — WiFi, NVS, /hello, /order, /completion, /factory-reset, fetchImageBytes()
 ui.h                — all screen drawing, touch detection, 5-tab service mode ← IN PROGRESS
+                      NOTE: bitmap code on main — do not flash until PNGdec fixed or backend restored
 state_machine.h     — enum MachineState, extern declarations
 ```
 
 ### Project Knowledge Docs (project folder)
 ```
 CLAUDE.md           — project compass, stack, 5 rules, key files, repos (30 lines max)
-RULES.md            — lessons learned R-01 to R-114 (newest at top)
+RULES.md            — lessons learned R-85 to R-116 (newest at top)
 PROJECT_STATE.md    — this file
 CHAT_HANDOFF.md     — last session summary (overwrite each session, never append)
 KNOWLEDGE_MAP.md    — what to read for what task (navigation guide)
@@ -307,8 +329,8 @@ SECURITY.md         — auth layers, ownership model, payment modes, security ga
 | POST | /v1/auth/register | ✅ Working | ALLOW_REGISTRATION secret |
 | POST | /v1/admin/device/* | ✅ Working | X-Admin-Token auth |
 | GET | /v1/dashboard/* | ✅ Working | JWT auth |
-| GET | /v1/qr/:charge_id | ✅ Working | PNG endpoint (legacy) |
-| GET | /v1/qr/:charge_id/bitmap | ✅ Working | Raw bitmap R-114 — firmware uses this |
+| GET | /v1/qr/:charge_id | ✅ Working | PNG — _zlibStore() RFC 1950 |
+| GET | /v1/qr/:charge_id/bitmap | ❌ REVERTED | Removed from backend main 2026-06-15 (PR #21). Branch preserved. |
 | GET | /v1/admin-data/:table | ❌ Missing | CORS/401 in satu-admin.html |
 
 ---
@@ -335,7 +357,7 @@ Upload speed:  460800
 Port:          /dev/cu.usbserial-1420 (varies by machine)
 Core:          ESP32 2.0.17 ONLY (3.x breaks WiFi)
 GFX Library:   moononournation v1.4.9 ONLY
-PNGdec:        v1.1.6 (kept for non-QR future use — broken for QR R-114)
+PNGdec:        v1.1.6 (investigation pending — rc=8 root cause unknown — see R-116)
 TFT_eSPI:      REMOVE if installed — incompatible with RGB panel
 ```
 
@@ -348,18 +370,23 @@ TFT_eSPI:      REMOVE if installed — incompatible with RGB panel
 2. Complete Omise KYC / bank account registration
 3. Complete PDPA consent flow + legal review
 
-### P1 — Unblock hardware test
-4. Wait for GitHub Actions CI green on claude/cool-hopper-6owumd — then open firmware PR
-5. Owner flashes R-114 build — verify QR bitmap renders on screen
-6. Complete ui.h service mode (5 tabs) — verify against simulator.html spec
-7. Verify full end-to-end on real hardware when components arrive
-8. Fix /v1/admin-data/:table CORS/401 (add JWT admin route to index.js)
+### P1 — PNGdec diagnostic (next firmware session)
+4. Deploy backend (wrangler deploy) — PR #21 merged, not deployed yet ⚠️
+5. Run 14-test suite after backend deploy — confirm all 14 pass
+6. Add esp_ptr_in_psram(g_pngBuf) diagnostic immediately after ps_malloc in initUI() in ui.h
+   Report: [PSRAM] g_pngBuf in PSRAM: YES/NO addr=0x...
+   If NO → root cause found → fix heap caps, re-enable PNG path
+   Do NOT change any other code until this is measured
+7. Owner reflashes hardware with R5.3 from Mac backup (pre-bitmap, confirmed working)
+8. Complete ui.h service mode (5 tabs) — verify against simulator.html spec
+9. Verify full end-to-end on real hardware when components arrive
+10. Fix /v1/admin-data/:table CORS/401 (add JWT admin route to index.js)
 
 ### P2 — Polish
-9. Implement order expiry (Cron Trigger already configured in wrangler.toml)
-10. Build temple owner claim/onboarding flow (setup code UI)
-11. Temple owner dashboard — complete missing features
+11. Implement order expiry (Cron Trigger already configured in wrangler.toml)
+12. Build temple owner claim/onboarding flow (setup code UI)
+13. Temple owner dashboard — complete missing features
 
 ### P3 — Phase 2 prep
-12. Multi-machine architecture review
-13. Analytics and reconciliation reporting
+14. Multi-machine architecture review
+15. Analytics and reconciliation reporting

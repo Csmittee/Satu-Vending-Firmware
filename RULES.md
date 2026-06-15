@@ -51,12 +51,14 @@
   cycles, 125K firmware tokens, problem confirmed but not root-caused.
   Bitmap workaround works in fake mode only. PNGdec investigation 
   continues next session with esp_ptr_in_psram() diagnostic.
-- **R-114 FIRMWARE QR USES BITMAP NOT PNG — (2026-06-14) [CLOSED WITHOUT MERGE — on claude/cool-hopper-6owumd branch only — firmware main at R5.3 — see R-116]:**
+- **R-114 FIRMWARE QR BITMAP APPROACH — (2026-06-14) [PR #17 MERGED to firmware main 2026-06-14 — backend /bitmap endpoint REVERTED 2026-06-15 via PR #21 — owner reflashing R5.3 from backup — firmware main has bitmap code but backend has no /bitmap — investigation continues per R-116]:**
   drawQrScreen() fetches /bitmap endpoint, not PNG.
   drawQrFromBitmap() draws direct with gfx->fillRect() — no PNGdec.
   drawQrFromBytes() (PNGdec) remains in ui.h commented out — do not delete.
   PNGdec 1.1.6 fails on all PNG variants tested (PRs #16–#19): rc=8 or rc=2.
-  Never re-enable PNGdec for QR on this hardware.
+  PNGdec is NOT confirmed permanently broken — see R-116 for next diagnostic.
+  Bitmap confirmed working on hardware (owner flash 2026-06-14) in fake mode only.
+  Cannot use bitmap with live Omise — real PromptPay PNG cannot be re-served as bitmap.
 
 ## Universal — Apply to Every Session
 

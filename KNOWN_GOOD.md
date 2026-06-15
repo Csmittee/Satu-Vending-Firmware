@@ -4,15 +4,36 @@
 
 ---
 
-## 2026-06-14 — QR bitmap draw (pending owner flash)
+## 2026-06-15 — State after session close
+
+### Current hardware state
+```
+Flashed:  Owner reflashing to R5.3 (pre-bitmap) from Mac trash backup
+Reason:   Backend bitmap endpoint reverted (PR #21) — firmware main
+          has bitmap code but backend has no /bitmap endpoint
+Next:     PNGdec diagnostic session — esp_ptr_in_psram() in initUI()
+```
+
+### Firmware main state (repo, not what’s on hardware)
+```
+Branch:   main
+PR #17:   MERGED 2026-06-14 — bitmap ui.h on main
+PR #14:   R5.3 blocking readBytes (last confirmed flash to hardware)
+Warning:  Firmware main has bitmap code — do NOT flash from main until
+          backend bitmap endpoint is restored OR PNGdec fix lands
+```
+
+---
+
+## 2026-06-14 — QR bitmap draw ✅ CONFIRMED flash
 
 ### Firmware
 ```
 Build:    R-114 — drawQrFromBitmap() direct pixel draw, no PNGdec
-Branch:   claude/cool-hopper-6owumd
+Branch:   claude/cool-hopper-6owumd (merged to main via PR #17)
 Files:    ui.h (drawQrFromBitmap added, drawQrFromBytes commented out, drawQrScreen updated)
-Compile:  ⬜ GitHub Actions pending
-Flash:    ⬜ pending owner flash
+Compile:  ✅ GitHub Actions CI Run #46 — GREEN
+Flash:    ✅ CONFIRMED — owner flashed 2026-06-14, QR bitmap rendered on screen
 ```
 
 ### What changed
@@ -21,14 +42,17 @@ Flash:    ⬜ pending owner flash
 - drawQrScreen() now fetches /bitmap endpoint (qrUrl + "/bitmap") via existing fetchImageBytes()
 - Backend bitmap format: 4-byte header (width+height uint16 BE) + 1 byte/pixel (0x00=black 0xFF=white)
 
-### Expected serial after flash
+### Confirmed WORKING ✅ (fake mode only)
+- QR bitmap renders on hardware screen
+- drawQrFromBitmap() rc=0, draw complete confirmed via serial
+
+### NOT working in live mode ❌
+- Live Omise returns real PromptPay PNG — cannot be re-served as raw bitmap
+- Bitmap approach is fake-mode-only — NOT a final solution
+- Backend bitmap endpoint REVERTED 2026-06-15 (PR #21)
+
+### Serial output confirmed
 ```
-[UI] QR bitmap URL: https://api.janishammer.com/v1/qr/fake_chg_xxxxx/bitmap
-[NET] fetchImageBytes: HTTP 200
-[NET] fetchImageBytes: Content-Length=42029
-[NET] fetchImageBytes: 42029 bytes read
-[UI] QR bitmap loaded: 42029 bytes — rendering
-[UI] drawQrFromBitmap: w=205 h=205 dest=(x,y) size=240x240
 [UI] drawQrFromBitmap: done
 [UI] QR screen drawn
 ```
@@ -164,27 +188,6 @@ Compile:  ✅ Clean — GitHub Actions green (2 min 21 sec)
 
 ---
 
-## Snapshot: 2026-06-13 — QR PNG Fetch Fix (CC_PROMPT_firmware_qr_png_fetch)
-
-### Firmware
-```
-Build:       R5.1
-Files:       network.h (fetchImageBytes WiFiClientSecure), ui.h (drawQrScreen logs)
-Compile:     CI pending — push to claude/vibrant-cray-cqp2em
-Flash:       PENDING — owner to flash and report serial output
-Serial:      "[NET] fetchImageBytes: HTTP 200" + "[UI] QR PNG loaded: N bytes" = success
-             "[UI] QR PNG failed — showing fallback" = decode issue (report if seen)
-```
-
-### What changed
-- `network.h fetchImageBytes()`: WiFiClientSecure + setInsecure() replaces plain HTTPClient
-  Plain HTTPClient silently fails on external HTTPS — was root cause of QR not showing
-- `ui.h drawQrScreen()`: Added serial logs on both success and failure paths
-- `RULES.md`: R-97 added — WiFiClientSecure rule for external HTTPS
-- Known remaining: WiFi keyboard missing . @ - _ (batched fix/wifi-keyboard-special-chars)
-
----
-
 ## Snapshot: 2026-06-12 — R5 First Flash ✅
 
 ### Backend
@@ -245,7 +248,7 @@ Compile:     ✅ Clean after 3 fix loops:
 - Service mode: not tested (stubs only)
 - WiFi setup screen keyboard: missing . @ - _ characters
 
-### Confirmed DESIGNED but not tested ⬜
+### Confirmed DESIGNED but not tested ◻
 - WiFi setup screen (appears on empty NVS — confirmed logic correct)
 - Countdown visual timer
 - Service mode 5 tabs
