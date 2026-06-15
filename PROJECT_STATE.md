@@ -5,6 +5,19 @@
 
 ## SESSION LOG (newest first)
 
+### 2026-06-15 — PNG victory cleanup (CC_PROMPT_png_victory_cleanup)
+- **PNG QR decode: ✅ FIXED AND CONFIRMED ON HARDWARE 2026-06-15 16:41:32**
+  Root cause: `_pngDrawRow()` returned `0` = PNGdec v1.1.4 stop-early signal
+  Fix: `return 1` in callback — one character — rc=0 rows=165 w=165 h=165
+- **ui.h:** spy diagnostic Serial.printf lines removed from `_pngDrawRow()`
+- **Skills added:** `.claude/rules/SKILL_library_onboarding.md` (new) · `.claude/rules/LIBRARY_pngdec.md` (new)
+- **Skills updated:** `SKILL_problem_solving_kt.md` v1.1 · `SKILL_esp32s3_rgb_panel_constraints.md` v1.1 (final resolution appended)
+- **RULES.md:** R-121/122/123 added · R-117 corrected (actual root cause) · R-89 corrected (return 0→1)
+- **WORKFLOW_SKILL.md:** intervention levels + library onboarding + KT framework sections added
+- **CI:** ✅ GitHub Actions Run #76 GREEN — commit 79090e3
+
+## SESSION LOG (newest first)
+
 ### 2026-06-15 — PNG decode fix R-117 (pause-decode-resume for PSRAM DMA contention)
 - **ROOT CAUSE CONFIRMED:** PSRAM bus bandwidth contention between RGB DMA and zlib inflate
   Evidence: rc=8 rows=1 on all PNG variants. Fetch=200 OK 27458 bytes. openRAM succeeds.
@@ -158,7 +171,7 @@ Thai temples.
 | IO expander | MCP23017 ×2 | MCP1 0x20 (sensors 1-8, relays 1-6) · MCP2 0x21 (sensors 9-10, relays 7-12) |
 | Firmware IDE | Arduino 1.8.19 | ESP32 core 2.0.17 ONLY — 3.x breaks WiFi |
 | GFX library | moononournation v1.4.9 ONLY | 1.6.5 requires core 3.x |
-| QR display | PNGdec R-117 fix PENDING FLASH | pause-decode-resume applied — root cause confirmed: PSRAM DMA contention |
+| QR display | PNGdec ✅ FIXED 2026-06-15 | return 1 in callback — rc=0 rows=165 confirmed on hardware |
 
 ---
 
@@ -197,9 +210,9 @@ Thai temples.
 - [x] network.h R5 — NVS-first WiFi, saveWifiAndReboot(), /hello, /order, /completion, /factory-reset, fetchImageBytes()
 - [x] satu_vending.ino R5 — STATE_WIFI_SETUP guard, WiFi.status() check after initWiFi()
 - [x] ui.h R5 — drawWifiSetupScreen() QWERTY keyboard (blocking, restarts on CONNECT)
-- [x] ui.h R-117 — drawQrFromBytes() re-enabled with pause-decode-resume (PSRAM DMA contention fix)
-  lineBuf made static (R-119). drawQrScreen() back on PNG path. drawQrFromBitmap() kept as emergency fallback.
-  ⬜ PENDING owner flash — expected rc=0 rows=165
+- [x] ui.h PNG decode — ✅ CONFIRMED ON HARDWARE 2026-06-15 16:41:32 — rc=0 rows=165 w=165 h=165
+  Root cause: return 0 in callback = PNGdec stop-early. Fix: return 1. Reference: LIBRARY_pngdec.md
+  lineBuf static (R-119). Frame buffer collect-then-draw. drawQrFromBitmap() kept as emergency fallback.
 - [ ] ui.h — service mode 5 tabs NOT COMPLETE — last CC build attempted, status unclear ⚠️
 - [ ] Full end-to-end test on real hardware — BLOCKED (hardware arriving)
 - [ ] OTA firmware update — explicitly deferred (not in Phase 1 scope)
@@ -265,7 +278,7 @@ Thai temples.
 | D1 database_id in wrangler.toml | 🟢 Low | Public repo — low risk, worth noting |
 | /v1/admin-data/:table CORS/401 | 🟡 UX | satu-admin.html JWT admin route missing |
 | WiFi credentials in config.h | 🟢 RESOLVED | R5 2026-06-12: NVS provisioning screen eliminates this permanently |
-| PNGdec rc=8 root cause | 🟢 RESOLVED | Root cause: PSRAM DMA contention. Fix: pause-decode-resume (R-117). Pending owner flash confirm. |
+| PNGdec rc=8 root cause | 🟢 RESOLVED | Root cause: return 0 in callback = PNGdec stop-early (v1.1.4). Fix: return 1. Confirmed 2026-06-15. |
 | Firmware main has bitmap, backend has no /bitmap | 🟢 RESOLVED | PNG path restored in drawQrScreen(). drawQrFromBitmap() kept as emergency fallback. |
 
 ---
@@ -389,10 +402,7 @@ TFT_eSPI:      REMOVE if installed — incompatible with RGB panel
 ### P1 — Post PNG fix (next firmware session)
 4. Deploy backend (wrangler deploy) — PR #21 merged, not deployed yet ⚠️
 5. Run 14-test suite after backend deploy — confirm all 14 pass
-6. Owner flashes R-117 PNG fix — report serial: `[UI] PNG decode: rc=? rows=? w=? h=?`
-   SUCCESS = rc=0 rows=165 w=165 h=165
-   PARTIAL = rc=0 rows<165 → try delay(50) in drawQrFromBytes()
-   FAIL = rc=8 rows=1 → report to Chat, do NOT change PNG format
+6. ✅ DONE — PNG QR decode confirmed 2026-06-15 16:41:32: rc=0 rows=165 w=165 h=165
 7. Complete ui.h service mode (5 tabs) — verify against simulator.html spec
 9. Verify full end-to-end on real hardware when components arrive
 10. Fix /v1/admin-data/:table CORS/401 (add JWT admin route to index.js)
