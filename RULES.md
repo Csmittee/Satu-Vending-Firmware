@@ -5,6 +5,11 @@
 
 ---
 
+- **R-127: satu_observer.ino is a standalone diagnostic tool — must live in `tools/satu_observer/`, NEVER in `firmware/` (2026-06-16).**
+  Arduino IDE compiles ALL .ino files in a sketch folder together.
+  Two .ino files with setup()/loop() = duplicate symbol error = CI failure.
+  Each standalone tool must have its own directory matching its .ino filename.
+
 - **R-126: Idle animation must NEVER block touch polling (2026-06-16).**
   Touch check must be called inside the animation frame loop, not after it.
   Maximum touch latency = 1 frame (~16ms). Double-tap requirement = animation bug.
