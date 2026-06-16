@@ -1,9 +1,25 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Last updated: 2026-06-15
+> Last updated: 2026-06-16
 > Compiled by: Chat S15 (chaijohn-personal session — first proper STATE doc for Satu)
 > Status: Phase 1 active — ~50% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-16 — CI fixes + workflow docs (no CC_PROMPT — inline session)
+- **CI Fix 1: FreeFonts not found** — arduino-cli only adds a library's include path when it
+  detects a direct `#include <LibraryName.h>`. Installing "Adafruit GFX Library" did nothing
+  because `<Adafruit_GFX.h>` was never explicitly included. Fix: bundled 3 FreeSans font headers
+  directly in `firmware/` (stripped `#include <Adafruit_GFX.h>`), changed ui.h to local includes.
+  Files added: `firmware/FreeSansBold24pt7b.h`, `FreeSansBold18pt7b.h`, `FreeSansBold12pt7b.h`
+- **CI Fix 2: duplicate setup()/loop()** — `satu_observer.ino` was in `firmware/`. Arduino
+  compiles all .ino files in sketch folder together → duplicate symbol error. Fix: moved to
+  `tools/satu_observer/satu_observer.ino` (proper Arduino standalone sketch structure).
+- **R-127 added to RULES.md** — standalone tools must never live in firmware/
+- **WORKFLOW_SKILL.md + RULES-workflow.md (both repos)** — removed CHAT_HANDOFF.md from CC
+  session closing checklist. CHAT_HANDOFF.md = Chat's responsibility only (R-05/R-84 corrected).
+  Backend PR #27 created and merged.
+- **CI:** ✅ Runs 95 (push) + 96 (PR) GREEN — commit 9cbfd29
+- **Flash:** ✅ Owner flashed SATU-4R473R — 2026-06-16
 
 ### 2026-06-16 — Firmware UX fixes post first hardware test (CC_PROMPT_firmware_ux_fixes)
 - **First full end-to-end hardware test PASSED on SATU-4R473R**
@@ -20,8 +36,8 @@
   - Boot "SATU": `FreeSansBold24pt7b` size 1
 - Items #2 and #3 (completion HTTP 400 + long dispense time) fixed in backend session — not firmware
 - **R-126 added to RULES.md**
-- **CI:** Pending GitHub Actions compile check
-- **Flash:** ⬜ PENDING owner flash after PR merge
+- **CI:** ✅ GREEN — commit 9cbfd29 (CI fixed in subsequent inline session — see above)
+- **Flash:** ✅ Owner flashed SATU-4R473R — 2026-06-16
 
 ## OPEN ITEMS
 - [ ] PAYMENT_TIMEOUT_MS — return to 120000 before temple deployment
