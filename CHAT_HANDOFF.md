@@ -1,123 +1,58 @@
-# CHAT HANDOFF — 2026-06-15
+# CHAT HANDOFF — 2026-06-16
 > Overwrite this file at end of every session — never append
 
 ## ⚠️ DO FIRST
 1. Project → Files → GitHub sync checkbox → **CONFIRM CHECKED** (resets every new chat)
-2. Paste this handoff into Chat
 
 ---
 
-## WHAT HAPPENED THIS SESSION (2026-06-15)
+## WHAT WAS DONE THIS SESSION
 
-### Backend
-- **PR #21 MERGED:** Reverted bitmap experiment from backend main
-  - `src/handlers/qr.js` → restored to PR #17 state: `_zlibStore()` RFC 1950, synchronous, no await
-  - `src/index.js` → restored: no bitmap import, version=R4, no bitmap route
-  - `/v1/qr/:charge_id/bitmap` endpoint **GONE from backend main**
-  - `/v1/qr/:charge_id` PNG endpoint **remains and working**
-- **RULES.md (backend):** R-115 + R-116 added at top; R-114 annotated as reverted
-- **PROJECT_STATE.md (backend):** Updated with 2026-06-15 session log
-- **Branch preserved:** `revert/qr-bitmap-experiment` (not deleted)
+### Backend fixes (previous session — already on main)
+- CORS header added to 401 from `/v1/admin-data/`
+- Machine Builder: `hw-device-select` values fixed MAC→device name, `hwDispense()` corrected fields
+- Full end-to-end hardware test PASSED on SATU-4R473R 2026-06-16
 
-### Firmware
-- **PR #17 WAS MERGED (confirmed by owner):** bitmap ui.h IS on firmware main
-  Session incorrectly stated it was “closed without merge” — it was merged 2026-06-14
-- Owner confirmed: QR bitmap rendered on hardware successfully ✅ (fake mode)
-- Owner reflashing hardware with R5.3 (pre-bitmap) from Mac trash backup
-- **RULES.md (firmware):** R-115 + R-116 added; R-114 annotation corrected
-- **PROJECT_STATE.md (firmware):** Updated — this file
-- **KNOWN_GOOD.md (firmware):** 2026-06-14 entry updated to confirmed ✅
-
-### Key correction
-Session previously said firmware PR #17 was “closed without merging”. It was merged.
-Firmware main now has bitmap code. Backend has no /bitmap endpoint.
-This is the known inconsistency — documented in RULES.md R-114, PROJECT_STATE.md, and KNOWN_GOOD.md.
+### Firmware UX fixes (this session — CC_PROMPT_firmware_ux_fixes)
+- **Fix 1 (R-126):** `idleAnimationUI()` in `ui.h` — `delay(120)` and `delay(80)` replaced
+  with millis-based loops that poll touch every 16ms and return immediately on touch.
+  Max touch latency: 400ms → 16ms. Double-tap requirement eliminated.
+- **Fix 2 (R-126):** Adafruit FreeFonts replace scaled bitmap fonts on large text screens:
+  - Boot "SATU": FreeSansBold24pt7b size 1
+  - QR screen amount "B999": FreeSansBold24pt7b size 1
+  - Vending "Dispensing...": FreeSansBold18pt7b size 1
+  - Completion "Your Merit Lucky Number" title: FreeSansBold12pt7b size 1
+  - Lucky number hero: FreeSansBold24pt7b size 2 (large + quality)
+- R-126 added to RULES.md, PROJECT_STATE.md and KNOWN_GOOD.md updated, prompt archived
 
 ---
 
-## CURRENT STATE
+## WHAT OWNER MUST DO NEXT
 
-| Layer | State |
-|-------|-------|
-| Backend main | R4 — PNG endpoint only — _zlibStore() — no bitmap |
-| Firmware main | Has bitmap code (PR #17 merged) — drawQrFromBitmap() in ui.h |
-| Hardware | Owner reflashing R5.3 (blocking readBytes, no bitmap) from Mac backup |
-| Branch `claude/cool-hopper-6owumd` | Preserved — same content as firmware main PR #17 |
-| Branch `revert/qr-bitmap-experiment` (backend) | Preserved — do not delete |
-
-⚠️ **INCONSISTENCY:** Firmware main has bitmap code (→ calls /bitmap) but backend has no /bitmap endpoint.
-Do NOT flash firmware from main until either:
-  A) PNGdec is fixed and PNG path restored, OR  
-  B) Backend bitmap endpoint is restored
+1. Wait for CI green on PR `claude/determined-planck-4smsma`
+2. Merge PR to main
+3. Flash SATU-4R473R from Arduino IDE
+4. Test: single-tap on idle screen → must respond immediately (no double-tap needed)
+5. Test: lucky number screen, amount, "Dispensing..." — should look much cleaner
+6. If font positions look slightly off → direct edit cursor y-values in ui.h (minor tuning ok)
+7. Update KNOWN_GOOD.md after flash
 
 ---
 
-## NEXT SESSION — EXACT ORDER
+## OPEN ITEMS
 
-**Step 1 — Owner must do first:**
-- Deploy backend PR #21: `wrangler deploy` (PR merged but not yet deployed)
-- Run 14-test suite (satu-system-tester.html) — all 14 must pass
-- Reflash hardware with R5.3 from Mac trash backup
-
-**Step 2 — PNGdec diagnostic (CC task):**
-Add `esp_ptr_in_psram(g_pngBuf)` diagnostic to `ui.h initUI()` immediately after `ps_malloc(200*1024)`:
-```cpp
-Serial.printf("[PSRAM] g_pngBuf in PSRAM: %s addr=0x%08X\n",
-    esp_ptr_in_psram(g_pngBuf) ? "YES" : "NO",
-    (uint32_t)g_pngBuf);
-```
-- If **PSRAM=NO** → root cause found → fix malloc to use MALLOC_CAP_SPIRAM, re-enable PNG
-- If **PSRAM=YES** → PSRAM is fine → investigate PNGdec inflate parameters next
-- Do NOT change any other code until this is measured (R-115 Step 2)
-
-**Step 3 — After diagnostic result:**
-- If PNGdec can be fixed: restore PNG path in ui.h, restore PNG endpoint in backend
-- If PNGdec truly broken: restore bitmap endpoint in backend, keep bitmap firmware
+- [ ] `PAYMENT_TIMEOUT_MS` — change to 120000 before temple deployment (currently 60000)
+      Owner direct edit in `config.h`
+- [ ] Service mode 5 tabs — full build (stubs only currently) — next firmware CC session
 
 ---
 
-## OWNER ACTION REQUIRED
+## KEY FILE STATE
 
-| Item | Priority | Notes |
-|------|----------|-------|
-| `wrangler deploy` — deploy backend PR #21 | 🔴 NOW | PR merged but not live until deployed |
-| Run 14-test suite | 🔴 NOW | After deploy. All 14 must pass. |
-| Reflash hardware with R5.3 | 🟡 NEXT | Pre-bitmap firmware from Mac trash. Confirmed working. |
-| Next session: PNGdec diagnostic | 🟡 NEXT SESSION | esp_ptr_in_psram() diagnostic — see Step 2 above |
-
----
-
-## BRANCH MAP
-
-| Repo | Branch | State | Delete? |
-|------|--------|-------|--------|
-| Firmware | `main` | Has bitmap code (PR #17) | — |
-| Firmware | `claude/cool-hopper-6owumd` | Bitmap branch — same as main | 🚫 DO NOT DELETE |
-| Backend | `main` | No bitmap — PNG only | — |
-| Backend | `revert/qr-bitmap-experiment` | PR #21 source | 🚫 DO NOT DELETE |
-
----
-
-## ARDUINO IDE SETTINGS
-
-```
-Board:        ESP32S3 Dev Module
-Flash:        16MB (128Mb)
-Partition:    16M Flash (3MB APP/9.9MB FATFS)
-PSRAM:        OPI PSRAM  ← NEVER CHANGE — display breaks without this
-Upload Speed: 460800
-Port:         /dev/cu.usbserial-1420
-Core:         2.0.17 ONLY
-```
-
----
-
-## NVS KEYS (namespace: satu, all ≤15 chars)
-
-```
-device_id    dev_secret   wifi_ssid    wifi_pass
-svc_pin      svc_pin_en   boot_pin     cfg_idle
-cfg_sel      cfg_water    cfg_lucky    scr_theme
-lang         vol          nvs_idc      nvs_grow
-nvs_gcol
-```
+| File | Branch | State |
+|---|---|---|
+| firmware/ui.h | claude/determined-planck-4smsma | R-126 — FreeFonts + touch-aware anim |
+| RULES.md | claude/determined-planck-4smsma | R-126 added |
+| PROJECT_STATE.md | claude/determined-planck-4smsma | Session log + open items |
+| KNOWN_GOOD.md | claude/determined-planck-4smsma | 2026-06-16 snapshot (flash pending) |
+| CC_PROMPT_firmware_ux_fixes.md | Archived | docs/prompts/ ✅ COMPLETE |
