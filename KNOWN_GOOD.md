@@ -4,6 +4,14 @@
 
 ---
 
+## 2026-06-16 — R-126 firmware UX — touch + font fixes — flash required ⬜
+- ui.h: `idleAnimationUI()` now polls touch every 16ms — no longer blocks
+- ui.h: Large text screens use Adafruit FreeFonts (24pt/18pt/12pt) instead of scaled bitmaps
+- RULES.md: R-126 added
+- CI: pending GitHub Actions green before merge
+- Flash: required by owner after PR merge
+- Baseline: SATU-4R473R confirmed passing full end-to-end test 2026-06-16
+
 ## 2026-06-15 — PNG QR DECODE FIXED ✅ CONFIRMED ON HARDWARE
 - Root cause: `_pngDrawRow()` returned `0` (PNGdec v1.1.4 stop-early signal) instead of `1`
 - Fix: `return 1` in callback — one character

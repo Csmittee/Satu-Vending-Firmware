@@ -6,6 +6,9 @@
 #include <TAMC_GT911.h>
 #include <ArduinoJson.h>
 #include <PNGdec.h>
+#include "FreeSansBold24pt7b.h"
+#include "FreeSansBold18pt7b.h"
+#include "FreeSansBold12pt7b.h"
 #include "config.h"
 
 // ============================================================
@@ -448,11 +451,12 @@ void initUI() {
 void drawBootScreen(String status) {
   gfx->fillScreen(C_BG);
 
-  gfx->setTextColor(C_GOLD);
-  gfx->setTextSize(5);
-  int lw = 4 * 30;
-  gfx->setCursor(SCR_W/2 - lw/2, SCR_H/2 - 60);
+  // R-126: FreeSansBold24pt7b — ascent ~26px, "SATU" width ~80px
+  gfx->setFont(&FreeSansBold24pt7b);
+  gfx->setTextColor(C_GOLD); gfx->setTextSize(1);
+  gfx->setCursor(SCR_W/2 - 40, SCR_H/2 - 34);  // baseline: visual top at SCR_H/2-60
   gfx->print("SATU");
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   gfx->setTextColor(C_GOLD_DIM);
   gfx->setTextSize(2);
@@ -804,10 +808,13 @@ void drawQrScreen(String qrUrl, int amount, int slotIdx) {
 
   int lx = 30;
 
-  gfx->setTextColor(C_GOLD); gfx->setTextSize(5);
+  // R-126: FreeSansBold24pt7b — ascent ~26px, cursor y = top + 26
   char amtBuf[12]; snprintf(amtBuf, 12, "B%d", amount);
-  gfx->setCursor(lx, STATUS_H + 18);
+  gfx->setFont(&FreeSansBold24pt7b);
+  gfx->setTextColor(C_GOLD); gfx->setTextSize(1);
+  gfx->setCursor(lx, STATUS_H + 44);
   gfx->print(amtBuf);
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   gfx->setTextColor(C_MIDGREY); gfx->setTextSize(2);
   gfx->setCursor(lx, STATUS_H + 82);
@@ -905,10 +912,13 @@ void drawVendingScreen(int slotIdx) {
   SlotConfig& s = (slotIdx >= 0 && slotIdx < NUM_SLOTS)
                   ? g_slots[slotIdx] : g_slots[0];
 
-  gfx->setTextColor(C_GOLD); gfx->setTextSize(4);
+  // R-126: FreeSansBold18pt7b — ascent ~20px, "Dispensing..." 13 chars ~169px wide
+  gfx->setFont(&FreeSansBold18pt7b);
+  gfx->setTextColor(C_GOLD); gfx->setTextSize(1);
   const char* vendTitle = "Dispensing...";
-  gfx->setCursor(SCR_W/2 - strlen(vendTitle)*24/2, 130);
+  gfx->setCursor(SCR_W/2 - 85, 150);  // baseline: visual top at ~130
   gfx->print(vendTitle);
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   gfx->setTextColor(C_WHITE); gfx->setTextSize(3);
   gfx->setCursor(SCR_W/2 - strlen(s.name_en)*18/2, 210);
@@ -945,15 +955,21 @@ void drawCompletionScreen(int slotIdx, int luckyNumber, bool sacredWater) {
                   gfx->color565(br, br, br));
   }
 
-  gfx->setTextColor(C_GOLD); gfx->setTextSize(2);
+  // R-126: FreeSansBold12pt7b for title — ascent ~13px, ~10px avg char width
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_GOLD); gfx->setTextSize(1);
   const char* th1 = "Your Merit Lucky Number";
-  gfx->setCursor(SCR_W/2 - strlen(th1)*12/2, STATUS_H + 28);
+  gfx->setCursor(SCR_W/2 - (int)strlen(th1)*10/2, STATUS_H + 41);
   gfx->print(th1);
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
+  // R-126: FreeSansBold24pt7b size 2 for lucky number hero — ascent ~52px, digit width ~36px
   char lnBuf[8]; snprintf(lnBuf, 8, "%d", luckyNumber);
-  gfx->setTextColor(C_GOLD); gfx->setTextSize(8);
-  gfx->setCursor(SCR_W/2 - strlen(lnBuf)*48/2, SCR_H/2 - 60);
+  gfx->setFont(&FreeSansBold24pt7b);
+  gfx->setTextColor(C_GOLD); gfx->setTextSize(2);
+  gfx->setCursor(SCR_W/2 - (int)strlen(lnBuf)*36/2, SCR_H/2 - 8);
   gfx->print(lnBuf);
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   gfx->setTextColor(C_GOLD_DIM); gfx->setTextSize(1);
   const char* bless = "May blessings be upon you";
@@ -1375,12 +1391,23 @@ void idleAnimationUI() {
     for (int t = 0; t < 3; t++) {
       gfx->drawRect(t, t, SCR_W - t*2, SCR_H - t*2, C_GOLD);
     }
-    delay(120);
+    // R-126: poll touch every ~16ms so animation exits immediately on touch
+    unsigned long t0 = millis();
+    while (millis() - t0 < 120) {
+      _touch.read();
+      if (_touch.isTouched) return;
+      delay(16);
+    }
     gfx->fillRect(0, 0, SCR_W, 4, C_BG);
     gfx->fillRect(0, SCR_H-4, SCR_W, 4, C_BG);
     gfx->fillRect(0, 0, 4, SCR_H, C_BG);
     gfx->fillRect(SCR_W-4, 0, 4, SCR_H, C_BG);
-    delay(80);
+    t0 = millis();
+    while (millis() - t0 < 80) {
+      _touch.read();
+      if (_touch.isTouched) return;
+      delay(16);
+    }
   }
 }
 

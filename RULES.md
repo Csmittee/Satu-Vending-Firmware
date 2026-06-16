@@ -1,9 +1,16 @@
 # RULES.md — Satu 1.0 Universal Rules
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
-> Last updated: 2026-06-15
+> Last updated: 2026-06-16
 
 ---
+
+- **R-126: Idle animation must NEVER block touch polling (2026-06-16).**
+  Touch check must be called inside the animation frame loop, not after it.
+  Maximum touch latency = 1 frame (~16ms). Double-tap requirement = animation bug.
+  Any future animation added to idle screen must follow this same pattern.
+  Font rule: never scale small bitmap fonts for large display sizes.
+  Use native Adafruit GFX FreeFonts at their designed size instead.
 
 - **R-123: CALLBACK RETURN VALUES — for any library using callbacks, document what each return value means in LIBRARY_xxx.md BEFORE writing project code (2026-06-15).**
   Wrong return value = silent failure that mimics hardware bugs.

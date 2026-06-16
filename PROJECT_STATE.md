@@ -5,6 +5,32 @@
 
 ## SESSION LOG (newest first)
 
+### 2026-06-16 — Firmware UX fixes post first hardware test (CC_PROMPT_firmware_ux_fixes)
+- **First full end-to-end hardware test PASSED on SATU-4R473R**
+  Payment → relay → door → completion → idle — confirmed working 2026-06-16
+- **Fix 1 (R-126): Touch delay on idle** — `idleAnimationUI()` blocking `delay()` replaced
+  with millis-based loops that poll `_touch.read()` every ~16ms and return on touch.
+  Max touch latency reduced from 400ms → 16ms. Double-tap requirement eliminated.
+- **Fix 2 (R-126): Font quality** — replaced `setTextSize(4-8)` scaled bitmap fonts with
+  Adafruit FreeFonts on large text screens:
+  - Lucky number hero: `FreeSansBold24pt7b` size 2
+  - Amount display (QR screen): `FreeSansBold24pt7b` size 1
+  - "Dispensing..." title: `FreeSansBold18pt7b` size 1
+  - "Your Merit Lucky Number": `FreeSansBold12pt7b` size 1
+  - Boot "SATU": `FreeSansBold24pt7b` size 1
+- Items #2 and #3 (completion HTTP 400 + long dispense time) fixed in backend session — not firmware
+- **R-126 added to RULES.md**
+- **CI:** Pending GitHub Actions compile check
+- **Flash:** ⬜ PENDING owner flash after PR merge
+
+## OPEN ITEMS
+- [ ] PAYMENT_TIMEOUT_MS — return to 120000 before temple deployment
+      Currently set for HW testing. Direct edit in config.h by owner.
+- [ ] Service mode firmware — ui.h 5 tabs full build (stubs only currently)
+      Next firmware CC session after this one.
+
+## SESSION LOG (newest first)
+
 ### 2026-06-15 — PNG victory cleanup (CC_PROMPT_png_victory_cleanup)
 - **PNG QR decode: ✅ FIXED AND CONFIRMED ON HARDWARE 2026-06-15 16:41:32**
   Root cause: `_pngDrawRow()` returned `0` = PNGdec v1.1.4 stop-early signal
