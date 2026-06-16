@@ -34,7 +34,6 @@ jobs:
         run: |
           arduino-cli lib update-index
           arduino-cli lib install "GFX Library for Arduino"@1.4.9
-          arduino-cli lib install "Adafruit GFX Library"
           arduino-cli lib install "PNGdec"@1.1.6
           arduino-cli lib install "TAMC_GT911"
           arduino-cli lib install "ArduinoJson"

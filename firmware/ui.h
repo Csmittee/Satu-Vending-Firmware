@@ -6,9 +6,9 @@
 #include <TAMC_GT911.h>
 #include <ArduinoJson.h>
 #include <PNGdec.h>
-#include <Fonts/FreeSansBold24pt7b.h>
-#include <Fonts/FreeSansBold18pt7b.h>
-#include <Fonts/FreeSansBold12pt7b.h>
+#include "FreeSansBold24pt7b.h"
+#include "FreeSansBold18pt7b.h"
+#include "FreeSansBold12pt7b.h"
 #include "config.h"
 
 // ============================================================
