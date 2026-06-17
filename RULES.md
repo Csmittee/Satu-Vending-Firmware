@@ -1,9 +1,44 @@
 # RULES.md — Satu 1.0 Universal Rules
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
-> Last updated: 2026-06-16
+> Last updated: 2026-06-17
 
 ---
+
+- **R-137: Font rule — UNIVERSAL and PERMANENT (2026-06-17).**
+  Never use NULL font with setTextSize > 1 on any Latin text on any screen.
+  FreeSansBold24pt7b = hero numbers + large titles (setTextSize 1 or 2).
+  FreeSansBold18pt7b = screen titles (setTextSize 1).
+  FreeSansBold12pt7b = section headings, slot names (setTextSize 1).
+  NULL font setTextSize 1 = body text, labels, status lines only.
+  After every setFont(&FreeSansXXX) call, reset with setFont(NULL).
+  Font files live in firmware/ — FreeSansBold24/18/12pt7b.h.
+  Proven on SATU-4R473R hardware 2026-06-16. Do not replace or question.
+
+- **R-136: Flap re-lock trigger = proximity switch CLOSED → lockFlap() immediately (2026-06-17).**
+  No timer-based re-lock in normal operation.
+  FLAP_RELOCK_TIMEOUT = 3000ms safety only (proximity not wired or flap stuck).
+  Log warning if timeout fires — means proximity pin needs wiring or flap is jammed.
+
+- **R-135: Flap unlock and motor start are SIMULTANEOUS — same moment, same call block (2026-06-17).**
+  Flap stays unlocked for entire vend duration.
+  Do NOT re-lock flap during motor spin. Do NOT unlock flap after motor stops.
+
+- **R-134: SPEAKER_PIN = -1 in config.h until GPIO assigned (2026-06-17). NVS key "vol" saved regardless.**
+  Volume UI stubs gracefully when SPEAKER_PIN < 0.
+
+- **R-129 REVISED (2026-06-17): Relay 12 = solenoid pin lock. INVERTED polarity vs motor relays.**
+  HIGH = pin retracted = UNLOCKED. LOW = pin extended = LOCKED (fail-secure, spring-held).
+  unlockFlap() at payment confirmed. lockFlap() on proximity CLOSED or FLAP_RELOCK_TIMEOUT.
+  Flap stays unlocked entire vend. One-way mechanical stop prevents forced re-entry.
+  Power cut = fail-locked (safe — mechanical stop protects mid-vend state).
+  FLAP_PROXIMITY_MCP_PIN on MCP2 GPA2-7 — TBD — stub with -1 until assigned.
+
+- **R-128 CONFIRMED (2026-06-17): Motor stop = IR sensor triggered ONLY.**
+  VEND_MAX_SPIN_MS = 30000ms safety cutoff. SENSOR_POLL_MS = 10ms.
+  vendProduct() returns bool. Lane empty → disable + log.
+  VEND_PULSE_MS, DROP_TIMEOUT, REMOVAL_TIMEOUT deleted permanently.
+  NON-NEGOTIABLE. Timer-based motor stop is permanently prohibited.
 
 - **R-127: satu_observer.ino is a standalone diagnostic tool — must live in `tools/satu_observer/`, NEVER in `firmware/` (2026-06-16).**
   Arduino IDE compiles ALL .ino files in a sketch folder together.
