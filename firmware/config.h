@@ -16,6 +16,10 @@
 //          Added NVS key reference block
 //   R5   — WIFI_SSID/WIFI_PASSWORD EMPTY — credentials now entered
 //          via touchscreen provisioning, stored in NVS (nvs_ssid / nvs_pass)
+//   R6   — VEND_PULSE_MS, DROP_TIMEOUT, REMOVAL_TIMEOUT removed (R-128)
+//          RELAY_FLAP added (R-129 — replaces RELAY_DOOR_LOCK)
+//          VEND_MAX_SPIN_MS, SENSOR_POLL_MS, FLAP_RELOCK_TIMEOUT added (R-128/R-129)
+//          FLAP_PROXIMITY_MCP_PIN, SPEAKER_PIN added
 // ============================================================
 // NVS KEYS ("satu" namespace, all ≤15 chars):
 //   device_id  — assigned device ID (string)
@@ -74,7 +78,7 @@ const char* API_BASE_URL = "https://api.janishammer.com";
 // ============================================================
 // MCP23017 I2C Addresses
 //   MCP1 (0x20): sensors 1-8,  relays 1-6
-//   MCP2 (0x21): sensors 9-16, relays 7-12 (pump + lock)
+//   MCP2 (0x21): sensors 9-16, relays 7-12 (pump + flap)
 //   MCP3 (0x22): sensors 17-21, relays 13-18  — future 21-lane
 // ============================================================
 #define MCP1_ADDR  0x20
@@ -97,16 +101,28 @@ extern const int mcp2_relays[6];
 #define SENSOR_TRIGGERED  LOW    // IR beam broken = item present
 #define SENSOR_CLEAR      HIGH   // IR beam open   = nothing
 
-#define VEND_PULSE_MS  800    // ms to hold relay ON for one vend
+#define RELAY_FLAP       12   // R-129: solenoid pin lock. HIGH=unlocked, LOW=locked (fail-secure)
 
 // ============================================================
 // Timeouts (milliseconds)
 // ============================================================
 #define PAYMENT_TIMEOUT       30000   // 30s QR window (R-102, was 120s)
 #define VEND_TIMEOUT          10000   // 10s relay watchdog
-#define DROP_TIMEOUT           5000   // 5s for item to fall through IR
-#define REMOVAL_TIMEOUT       30000   // 30s for user to take item
 #define HEARTBEAT_INTERVAL   300000   // 5 min
+
+// ── Vend + Flap timing (R-128, R-129) ────────────────────────────────────
+#define VEND_MAX_SPIN_MS      30000  // R-128: motor safety cutoff (30s = ~10 turns)
+#define SENSOR_POLL_MS            10  // R-128: IR sensor read interval during spin
+#define FLAP_RELOCK_TIMEOUT     3000  // R-129: max wait for proximity before force-lock
+
+// ── Flap proximity switch (R-129) ─────────────────────────────────────────
+// Wired to MCP2 GPA2–GPA7. Assign pin number (0–5 = GPA2–GPA7) when wired.
+// -1 = not yet assigned. Firmware stubs safely: uses FLAP_RELOCK_TIMEOUT only.
+#define FLAP_PROXIMITY_MCP_PIN   -1   // TODO: assign MCP2 GPA pin when wired
+
+// ── Speaker (R-134) ────────────────────────────────────────────────────────
+// TODO: assign GPIO when speaker is wired. -1 = not yet assigned.
+#define SPEAKER_PIN              -1
 
 // ============================================================
 // LED Configuration (WS2812B strip)

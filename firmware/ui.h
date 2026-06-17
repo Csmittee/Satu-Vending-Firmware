@@ -275,19 +275,21 @@ static void _drawStatusBar(StatusBarState state) {
   gfx->fillRect(0, 0, SCR_W, STATUS_H, C_DARKGOLD);
   gfx->fillRect(0, STATUS_H - 3, SCR_W, 3, C_GOLD);
 
-  gfx->setTextColor(C_WHITE);
-  gfx->setTextSize(3);
-  gfx->setCursor(10, 8);
+  gfx->setFont(&FreeSansBold18pt7b);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
+  gfx->setCursor(10, 34);
   gfx->print("SATU");
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   const char* label = _stateLabels[state];
-  gfx->setTextSize(2);
-  int lw = strlen(label) * 12;
-  gfx->setCursor(SCR_W/2 - lw/2, 12);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextSize(1);
+  int lw = strlen(label) * 9;
+  gfx->setCursor(SCR_W/2 - lw/2, 34);
   gfx->setTextColor(C_WHITE);
   gfx->print(label);
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
-  gfx->setTextSize(1);
   String devLabel = g_deviceId.isEmpty() ? "No ID" : g_deviceId;
   gfx->setTextColor(C_GOLD_DIM);
   gfx->setCursor(SCR_W - devLabel.length()*6 - 4, 6);
@@ -355,11 +357,12 @@ static void _drawCell(int idx, bool selected) {
   if (disabled) {
     char slotLabel[8];
     snprintf(slotLabel, 8, "%d", idx + 1);
-    gfx->setTextSize(3);
-    gfx->setTextColor(C_MIDGREY);
-    int lw = strlen(slotLabel) * 18;
-    gfx->setCursor(x + CELL_W/2 - lw/2, y + CELL_H/2 - 12);
+    gfx->setFont(&FreeSansBold12pt7b);
+    gfx->setTextColor(C_MIDGREY); gfx->setTextSize(1);
+    int lw = strlen(slotLabel) * 9;
+    gfx->setCursor(x + CELL_W/2 - lw/2, y + CELL_H/2 + 7);
     gfx->print(slotLabel);
+    gfx->setFont(NULL); gfx->setTextSize(1);
     return;
   }
 
@@ -378,12 +381,13 @@ static void _drawCell(int idx, bool selected) {
   uint16_t priceColor = selected ? C_WHITE : _priceColor(s.price);
   char priceBuf[10];
   snprintf(priceBuf, 10, "%d", s.price);
-  gfx->setTextSize(4);
-  gfx->setTextColor(priceColor);
-  int pw  = strlen(priceBuf) * 24;
-  int pY  = y + CELL_H/2 - 16;
+  gfx->setFont(&FreeSansBold24pt7b);
+  gfx->setTextColor(priceColor); gfx->setTextSize(1);
+  int pw  = strlen(priceBuf) * 20;
+  int pY  = y + CELL_H/2 + 10;
   gfx->setCursor(x + CELL_W/2 - pw/2, pY);
   gfx->print(priceBuf);
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   gfx->setTextSize(1);
   gfx->setTextColor(selected ? C_GOLD_DIM : C_GREY);
@@ -458,12 +462,13 @@ void drawBootScreen(String status) {
   gfx->print("SATU");
   gfx->setFont(NULL); gfx->setTextSize(1);
 
-  gfx->setTextColor(C_GOLD_DIM);
-  gfx->setTextSize(2);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_GOLD_DIM); gfx->setTextSize(1);
   const char* tag = "Merit Donation System";
-  int tw = strlen(tag) * 12;
-  gfx->setCursor(SCR_W/2 - tw/2, SCR_H/2 - 10);
+  int tw = strlen(tag) * 9;
+  gfx->setCursor(SCR_W/2 - tw/2, SCR_H/2 + 4);
   gfx->print(tag);
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   gfx->setTextColor(C_GREY);
   gfx->setTextSize(1);
@@ -482,10 +487,11 @@ void drawBootScreen(String status) {
 void drawSetupCodeScreen(String code, String countdown) {
   gfx->fillScreen(C_BG);
 
-  gfx->setTextColor(C_GOLD);
-  gfx->setTextSize(3);
-  gfx->setCursor(10, 8);
+  gfx->setFont(&FreeSansBold18pt7b);
+  gfx->setTextColor(C_GOLD); gfx->setTextSize(1);
+  gfx->setCursor(10, 34);
   gfx->print("SATU");
+  gfx->setFont(NULL); gfx->setTextSize(1);
   gfx->setTextColor(C_ORANGE);
   gfx->setTextSize(1);
   gfx->setCursor(SCR_W/2 - 60, 8);
@@ -493,27 +499,30 @@ void drawSetupCodeScreen(String code, String countdown) {
 
   int midY = SCR_H / 2 - 60;
 
-  gfx->setTextColor(C_WHITE);
-  gfx->setTextSize(2);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
   const char* prompt = "Enter this code in the admin panel:";
-  int pw = strlen(prompt) * 12;
-  gfx->setCursor(SCR_W/2 - pw/2, midY);
+  int pw = strlen(prompt) * 9;
+  gfx->setCursor(SCR_W/2 - pw/2, midY + 13);
   gfx->print(prompt);
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   // Code hero
-  gfx->setTextColor(C_GOLD);
-  gfx->setTextSize(6);
-  int cw = code.length() * 36;
-  gfx->setCursor(SCR_W/2 - cw/2, midY + 36);
+  gfx->setFont(&FreeSansBold24pt7b);
+  gfx->setTextColor(C_GOLD); gfx->setTextSize(2);
+  int cw = code.length() * 30;
+  gfx->setCursor(SCR_W/2 - cw/2, midY + 88);
   gfx->print(code.c_str());
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   // Countdown
-  gfx->setTextColor(C_GREY);
-  gfx->setTextSize(2);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_GREY); gfx->setTextSize(1);
   String cdLabel = "Retrying in " + countdown;
-  int cdw = cdLabel.length() * 12;
-  gfx->setCursor(SCR_W/2 - cdw/2, midY + 108);
+  int cdw = cdLabel.length() * 9;
+  gfx->setCursor(SCR_W/2 - cdw/2, midY + 121);
   gfx->print(cdLabel.c_str());
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   // Device ID footer
   extern String g_deviceId;
@@ -531,10 +540,11 @@ void drawSetupCodeScreen(String code, String countdown) {
 void drawDebugScreen() {
   gfx->fillScreen(C_BG);
   gfx->fillRect(0, 0, SCR_W, STATUS_H, C_DARKGREY);
-  gfx->setTextColor(C_ORANGE);
-  gfx->setTextSize(2);
-  gfx->setCursor(10, 12);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_ORANGE); gfx->setTextSize(1);
+  gfx->setCursor(10, 25);
   gfx->print("DEBUG");
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   extern String g_deviceId;
   extern String g_setupCode;
@@ -637,14 +647,16 @@ int getTouchedNumpad(int ox, int oy) {
 void drawBootPinScreen() {
   gfx->fillScreen(C_BG);
   gfx->fillRect(0, 0, SCR_W, STATUS_H, C_DARKGOLD);
-  gfx->setTextColor(C_WHITE);
-  gfx->setTextSize(3);
-  gfx->setCursor(10, 8);
+  gfx->setFont(&FreeSansBold18pt7b);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
+  gfx->setCursor(10, 34);
   gfx->print("SATU");
-  gfx->setTextColor(C_GOLD);
-  gfx->setTextSize(2);
-  gfx->setCursor(SCR_W/2 - 80, 12);
+  gfx->setFont(NULL); gfx->setTextSize(1);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_GOLD); gfx->setTextSize(1);
+  gfx->setCursor(SCR_W/2 - 58, 25);
   gfx->print("Enter PIN");
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   int npX = SCR_W/2 - (NP_COLS * (NP_KEY_W + NP_GAP))/2 + 60;
   int npY = STATUS_H + 40;
@@ -663,11 +675,12 @@ String drawPinOverlay() {
   int boxY = SCR_H/2 - boxH/2;
   _fillRoundRect(boxX, boxY, boxW, boxH, 12, gfx->color565(10, 8, 18));
   _drawRoundRect(boxX, boxY, boxW, boxH, 12, C_GOLD);
-  gfx->setTextColor(C_GOLD);
-  gfx->setTextSize(2);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_GOLD); gfx->setTextSize(1);
   const char* title = "Service PIN";
-  gfx->setCursor(boxX + boxW/2 - strlen(title)*12/2, boxY + 12);
+  gfx->setCursor(boxX + boxW/2 - strlen(title)*9/2, boxY + 25);
   gfx->print(title);
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   int npX = boxX + 20;
   int npY = boxY + 50;
@@ -719,12 +732,13 @@ void drawProductSelection(int slotIdx) {
   int barH = 44, barY = SCR_H - barH;
   gfx->fillRect(0, barY, SCR_W, barH, C_DARKGOLD);
   gfx->drawRect(0, barY, SCR_W, barH, C_GOLD);
-  gfx->setTextColor(C_BLACK);
-  gfx->setTextSize(2);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_BLACK); gfx->setTextSize(1);
   const char* msg = "Tap again to confirm  |  Wait to cancel";
-  int mw = strlen(msg) * 12;
-  gfx->setCursor(SCR_W/2 - mw/2, barY + 13);
+  int mw = strlen(msg) * 9;
+  gfx->setCursor(SCR_W/2 - mw/2, barY + 26);
   gfx->print(msg);
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   Serial.printf("[UI] Product selection: slot %d\n", slotIdx);
 }
@@ -739,12 +753,13 @@ void drawGiftOptionScreen(int slotIdx) {
 
   SlotConfig& s = g_slots[slotIdx];
 
-  gfx->setTextColor(C_GOLD);
-  gfx->setTextSize(2);
+  gfx->setFont(&FreeSansBold18pt7b);
+  gfx->setTextColor(C_GOLD); gfx->setTextSize(1);
   const char* title = "Choose your blessing";
   int tw = strlen(title) * 12;
-  gfx->setCursor(SCR_W/2 - tw/2, STATUS_H + 18);
+  gfx->setCursor(SCR_W/2 - tw/2, STATUS_H + 38);
   gfx->print(title);
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   int cardW = 280, cardH = 200;
   int cardY = STATUS_H + 60;
@@ -755,18 +770,22 @@ void drawGiftOptionScreen(int slotIdx) {
   _drawRoundRect(cardAX, cardY, cardW, cardH, 12, gfx->color565(50, 40, 80));
   gfx->fillRect(cardAX + cardW/2 - 20, cardY + 30, 40, 40, gfx->color565(140, 90, 30));
   gfx->drawRect(cardAX + cardW/2 - 20, cardY + 30, 40, 40, C_GOLD);
-  gfx->setTextColor(C_GOLD); gfx->setTextSize(2);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_GOLD); gfx->setTextSize(1);
   const char* labelA = "Item Only";
-  gfx->setCursor(cardAX + cardW/2 - strlen(labelA)*12/2, cardY + 90);
+  gfx->setCursor(cardAX + cardW/2 - strlen(labelA)*9/2, cardY + 90);
   gfx->print(labelA);
+  gfx->setFont(NULL); gfx->setTextSize(1);
   gfx->setTextColor(C_GREY); gfx->setTextSize(1);
   const char* subA = "Receive your donation item";
   gfx->setCursor(cardAX + cardW/2 - strlen(subA)*6/2, cardY + 116);
   gfx->print(subA);
   char priceA[16]; snprintf(priceA, 16, "%d THB", s.price);
-  gfx->setTextColor(_priceColor(s.price)); gfx->setTextSize(2);
-  gfx->setCursor(cardAX + cardW/2 - strlen(priceA)*12/2, cardY + 148);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(_priceColor(s.price)); gfx->setTextSize(1);
+  gfx->setCursor(cardAX + cardW/2 - strlen(priceA)*9/2, cardY + 148);
   gfx->print(priceA);
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   if (g_cfg_water) {
     _fillRoundRect(cardBX, cardY, cardW, cardH, 12, gfx->color565(10, 18, 35));
@@ -776,21 +795,46 @@ void drawGiftOptionScreen(int slotIdx) {
     int wx = cardBX + cardW/2;
     gfx->fillCircle(wx - 8, cardY + 46, 10, gfx->color565(79, 195, 247));
     gfx->fillCircle(wx + 8, cardY + 52, 12, gfx->color565(33, 150, 243));
-    gfx->setTextColor(C_GOLD); gfx->setTextSize(2);
+    gfx->setFont(&FreeSansBold12pt7b);
+    gfx->setTextColor(C_GOLD); gfx->setTextSize(1);
     const char* labelB = "+Sacred Water";
-    gfx->setCursor(cardBX + cardW/2 - strlen(labelB)*12/2, cardY + 90);
+    gfx->setCursor(cardBX + cardW/2 - strlen(labelB)*9/2, cardY + 90);
     gfx->print(labelB);
+    gfx->setFont(NULL); gfx->setTextSize(1);
     gfx->setTextColor(C_GREY); gfx->setTextSize(1);
     const char* subB = "Add sacred water blessing";
     gfx->setCursor(cardBX + cardW/2 - strlen(subB)*6/2, cardY + 116);
     gfx->print(subB);
     char priceB[20]; snprintf(priceB, 20, "%d+20 THB", s.price);
-    gfx->setTextColor(C_PRICE_ORANGE); gfx->setTextSize(2);
-    gfx->setCursor(cardBX + cardW/2 - strlen(priceB)*12/2, cardY + 148);
+    gfx->setFont(&FreeSansBold12pt7b);
+    gfx->setTextColor(C_PRICE_ORANGE); gfx->setTextSize(1);
+    gfx->setCursor(cardBX + cardW/2 - strlen(priceB)*9/2, cardY + 148);
     gfx->print(priceB);
+    gfx->setFont(NULL); gfx->setTextSize(1);
   }
 
   Serial.printf("[UI] Gift option screen: slot %d\n", slotIdx);
+}
+
+// ============================================================
+//  SHOW PAYMENT ACCEPTED BANNER  (R-131: 1.5s green overlay on QR screen)
+// ============================================================
+void showPaymentAccepted() {
+  int bY = SCR_H - 120;
+  gfx->fillRect(0, bY, SCR_W, 120, gfx->color565(10, 80, 20));
+  gfx->drawRect(0, bY, SCR_W, 120, C_GREEN);
+  gfx->setFont(&FreeSansBold18pt7b);
+  gfx->setTextColor(C_GREEN); gfx->setTextSize(1);
+  gfx->setCursor(SCR_W/2 - 140, bY + 52);
+  gfx->print("Payment Accepted");
+  gfx->setFont(NULL); gfx->setTextSize(1);
+  gfx->setTextColor(C_WHITE);
+  const char* sub = "Dispensing your item...";
+  gfx->setCursor(SCR_W/2 - (int)(strlen(sub)*6/2), bY + 82);
+  gfx->print(sub);
+  unsigned long t0 = millis();
+  while (millis() - t0 < 1500) { _touch.read(); delay(16); }
+  Serial.println("[UI] Payment accepted banner shown");
 }
 
 // ============================================================
@@ -816,9 +860,11 @@ void drawQrScreen(String qrUrl, int amount, int slotIdx) {
   gfx->print(amtBuf);
   gfx->setFont(NULL); gfx->setTextSize(1);
 
-  gfx->setTextColor(C_MIDGREY); gfx->setTextSize(2);
-  gfx->setCursor(lx, STATUS_H + 82);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_MIDGREY); gfx->setTextSize(1);
+  gfx->setCursor(lx, STATUS_H + 95);
   gfx->print(s.name_en);
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   gfx->setTextSize(1); gfx->setTextColor(C_GREY);
   const char* ins[] = {
@@ -885,15 +931,16 @@ void updateQrTimer(int secondsLeft) {
 
   int lx = 30;
   int ty = STATUS_H + 116 + 3*20 + 16;
-  gfx->fillRect(lx, ty, 120, 20, C_BG);
+  gfx->fillRect(lx, ty, 120, 22, C_BG);
 
   int m = secondsLeft / 60;
   int s = secondsLeft % 60;
   char buf[8]; snprintf(buf, 8, "%d:%02d", m, s);
-  gfx->setTextColor(secondsLeft < 30 ? C_RED : C_ORANGE);
-  gfx->setTextSize(2);
-  gfx->setCursor(lx, ty);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(secondsLeft < 30 ? C_RED : C_ORANGE); gfx->setTextSize(1);
+  gfx->setCursor(lx, ty + 13);
   gfx->print(buf);
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   int barW = (int)((float)SCR_W * secondsLeft / 120.0f);
   gfx->fillRect(0, SCR_H - 4, SCR_W, 4, C_DARKGREY);
@@ -920,14 +967,18 @@ void drawVendingScreen(int slotIdx) {
   gfx->print(vendTitle);
   gfx->setFont(NULL); gfx->setTextSize(1);
 
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(3);
-  gfx->setCursor(SCR_W/2 - strlen(s.name_en)*18/2, 210);
+  gfx->setFont(&FreeSansBold18pt7b);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
+  gfx->setCursor(SCR_W/2 - strlen(s.name_en)*12/2, 230);
   gfx->print(s.name_en);
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
-  gfx->setTextColor(C_GREY); gfx->setTextSize(2);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_GREY); gfx->setTextSize(1);
   const char* sub = "Please wait...";
-  gfx->setCursor(SCR_W/2 - strlen(sub)*12/2, 270);
+  gfx->setCursor(SCR_W/2 - strlen(sub)*9/2, 283);
   gfx->print(sub);
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   int bx = SCR_W/2 - 200, by = 360;
   gfx->drawRect(bx, by, 400, 8, C_DARKGOLD);
@@ -989,10 +1040,12 @@ void drawCompletionScreen(int slotIdx, int luckyNumber, bool sacredWater) {
   int footY = SCR_H - 54;
   gfx->fillRect(0, footY, SCR_W, 54, C_DARKGOLD);
   gfx->drawRect(0, footY, SCR_W, 54, C_GOLD);
-  gfx->setTextColor(C_BLACK); gfx->setTextSize(2);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_BLACK); gfx->setTextSize(1);
   const char* thanks = "Thank you for your donation";
-  gfx->setCursor(SCR_W/2 - strlen(thanks)*12/2, footY + 8);
+  gfx->setCursor(SCR_W/2 - strlen(thanks)*9/2, footY + 21);
   gfx->print(thanks);
+  gfx->setFont(NULL); gfx->setTextSize(1);
   gfx->setTextSize(1);
   const char* subThanks = "Good deeds bring good returns";
   gfx->setCursor(SCR_W/2 - strlen(subThanks)*6/2, footY + 32);
@@ -1011,11 +1064,14 @@ void drawErrorScreen(String message) {
   _drawStatusBar(SB_IDLE);
 
   gfx->fillCircle(SCR_W/2, 170, 45, C_RED);
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(4);
-  gfx->setCursor(SCR_W/2 - 12, 152);
+  gfx->setFont(&FreeSansBold24pt7b);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
+  gfx->setCursor(SCR_W/2 - 14, 178);
   gfx->print("X");
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(2);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
   int lineY = 240;
   String msg = message;
   msg.replace("\\n", "\n");
@@ -1024,13 +1080,14 @@ void drawErrorScreen(String message) {
     int nl  = msg.indexOf('\n', start);
     int end = (nl == -1) ? msg.length() : nl;
     String line = msg.substring(start, min(end, start + 42));
-    gfx->setCursor(SCR_W/2 - (int)(line.length()*12)/2, lineY);
+    gfx->setCursor(SCR_W/2 - (int)(line.length()*9)/2, lineY + 13);
     gfx->print(line.c_str());
     lineY += 28;
     start = end + 1;
     if (start >= (int)msg.length()) break;
     if (lineY > SCR_H - 40) break;
   }
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   Serial.printf("[UI] Error: %s\n", message.c_str());
 }
@@ -1060,9 +1117,11 @@ static void _drawSvcTabBar(int activeTab) {
 }
 
 static void _drawSvcBody_SelfTest(int bodyX) {
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(2);
-  gfx->setCursor(bodyX + 16, STATUS_H + 16);
+  gfx->setFont(&FreeSansBold18pt7b);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
+  gfx->setCursor(bodyX + 16, STATUS_H + 36);
   gfx->print("Self Test");
+  gfx->setFont(NULL); gfx->setTextSize(1);
   gfx->setTextColor(C_GREY); gfx->setTextSize(1);
   gfx->setCursor(bodyX + 16, STATUS_H + 46);
   gfx->print("Tap a slot to test motor");
@@ -1075,17 +1134,21 @@ static void _drawSvcBody_SelfTest(int bodyX) {
     int cy = STATUS_H + 70 + row * 44;
     uint16_t bg = g_slots[i].enabled ? C_GREEN : C_DARKGREY;
     gfx->fillRoundRect(cx, cy, 38, 38, 4, bg);
-    gfx->setTextColor(C_WHITE); gfx->setTextSize(2);
+    gfx->setFont(&FreeSansBold12pt7b);
+    gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
     char nb[4]; snprintf(nb, 4, "%d", i+1);
-    gfx->setCursor(cx + 19 - strlen(nb)*6, cy + 11);
+    gfx->setCursor(cx + 19 - strlen(nb)*4, cy + 25);
     gfx->print(nb);
+    gfx->setFont(NULL); gfx->setTextSize(1);
   }
 }
 
 static void _drawSvcBody_FreePlay(int bodyX) {
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(2);
-  gfx->setCursor(bodyX + 16, STATUS_H + 16);
+  gfx->setFont(&FreeSansBold18pt7b);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
+  gfx->setCursor(bodyX + 16, STATUS_H + 36);
   gfx->print("Free Play");
+  gfx->setFont(NULL); gfx->setTextSize(1);
   gfx->setTextColor(C_GREY); gfx->setTextSize(1);
   gfx->setCursor(bodyX + 16, STATUS_H + 46);
   gfx->print("Tap slot to vend without payment");
@@ -1098,17 +1161,21 @@ static void _drawSvcBody_FreePlay(int bodyX) {
     int cy = STATUS_H + 70 + row * 44;
     gfx->fillRoundRect(cx, cy, 38, 38, 4, C_BGCELL);
     _drawRoundRect(cx, cy, 38, 38, 4, C_GOLD);
-    gfx->setTextColor(C_WHITE); gfx->setTextSize(2);
+    gfx->setFont(&FreeSansBold12pt7b);
+    gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
     char nb[4]; snprintf(nb, 4, "%d", i+1);
-    gfx->setCursor(cx + 19 - strlen(nb)*6, cy + 11);
+    gfx->setCursor(cx + 19 - strlen(nb)*4, cy + 25);
     gfx->print(nb);
+    gfx->setFont(NULL); gfx->setTextSize(1);
   }
 }
 
 static void _drawSvcBody_Devices(int bodyX) {
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(2);
-  gfx->setCursor(bodyX + 16, STATUS_H + 16);
+  gfx->setFont(&FreeSansBold18pt7b);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
+  gfx->setCursor(bodyX + 16, STATUS_H + 36);
   gfx->print("Devices");
+  gfx->setFont(NULL); gfx->setTextSize(1);
   gfx->setTextColor(C_GREY); gfx->setTextSize(1);
   int y = STATUS_H + 50;
   // MCP23017
@@ -1122,40 +1189,50 @@ static void _drawSvcBody_Devices(int bodyX) {
 }
 
 static void _drawSvcBody_Settings(int bodyX) {
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(2);
-  gfx->setCursor(bodyX + 16, STATUS_H + 16);
+  gfx->setFont(&FreeSansBold18pt7b);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
+  gfx->setCursor(bodyX + 16, STATUS_H + 36);
   gfx->print("Settings");
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   int y = STATUS_H + 52;
   // Action buttons
   // [401] Factory Reset
   _fillRoundRect(bodyX + 16, y, 260, 44, 8, C_RED);
   _drawRoundRect(bodyX + 16, y, 260, 44, 8, gfx->color565(200, 50, 50));
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(2);
-  gfx->setCursor(bodyX + 36, y + 13);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
+  gfx->setCursor(bodyX + 36, y + 26);
   gfx->print("Factory Reset (401)");
+  gfx->setFont(NULL); gfx->setTextSize(1);
   y += 56;
 
   // [402] Toggle Boot PIN
   _fillRoundRect(bodyX + 16, y, 260, 44, 8, gfx->color565(30, 60, 120));
   _drawRoundRect(bodyX + 16, y, 260, 44, 8, C_GOLD);
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(2);
-  gfx->setCursor(bodyX + 36, y + 13);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
+  gfx->setCursor(bodyX + 36, y + 26);
   gfx->print("Toggle Boot PIN (402)");
+  gfx->setFont(NULL); gfx->setTextSize(1);
   y += 56;
 
   // Lang toggle
   _fillRoundRect(bodyX + 16, y, 260, 44, 8, gfx->color565(20, 40, 20));
   _drawRoundRect(bodyX + 16, y, 260, 44, 8, C_GREEN);
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(2);
-  gfx->setCursor(bodyX + 36, y + 13);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
+  gfx->setCursor(bodyX + 36, y + 26);
   gfx->print(g_lang_th ? "Lang: TH" : "Lang: EN");
+  gfx->setFont(NULL); gfx->setTextSize(1);
 }
 
 static void _drawSvcBody_Firmware(int bodyX) {
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(2);
-  gfx->setCursor(bodyX + 16, STATUS_H + 16);
+  gfx->setFont(&FreeSansBold18pt7b);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
+  gfx->setCursor(bodyX + 16, STATUS_H + 36);
   gfx->print("Firmware");
+  gfx->setFont(NULL); gfx->setTextSize(1);
   gfx->setTextColor(C_GREY); gfx->setTextSize(1);
   int y = STATUS_H + 50;
   gfx->setCursor(bodyX+16, y); gfx->print("Version: " FW_VERSION); y+=20;
@@ -1166,9 +1243,11 @@ static void _drawSvcBody_Firmware(int bodyX) {
 void drawServiceScreen(int tab) {
   gfx->fillScreen(C_BG);
   gfx->fillRect(0, 0, SCR_W, STATUS_H, C_DARKGREY);
-  gfx->setTextColor(C_ORANGE); gfx->setTextSize(2);
-  gfx->setCursor(10, 12);
+  gfx->setFont(&FreeSansBold18pt7b);
+  gfx->setTextColor(C_ORANGE); gfx->setTextSize(1);
+  gfx->setCursor(10, 32);
   gfx->print("SERVICE");
+  gfx->setFont(NULL); gfx->setTextSize(1);
   gfx->setTextColor(C_GREY); gfx->setTextSize(1);
   gfx->setCursor(SCR_W - 90, 12);
   gfx->print("[EXIT]");
@@ -1440,12 +1519,12 @@ static const char* _wkbUpper[4] = { "1234567890", "QWERTYUIOP", "ASDFGHJKL", "ZX
 static const char* _wkbLower[4] = { "1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm" };
 
 // Row 4 special key bounds (all at row y = _WKB_Y + 4*(key+gap))
-// CAPS: x=42  w=80    → [42,122)
-// '.': x=126  w=48    → [126,174)   '@': x=178 → [178,226)
-// '-': x=230  w=48    → [230,278)   '_': x=282 → [282,330)
-// SPACE: x=334 w=186  → [334,520)
-// DEL: x=524 w=80    → [524,604)
-// CONNECT: x=608 w=150 → [608,758)
+// CAPS: x=42  w=80    -> [42,122)
+// '.': x=126  w=48    -> [126,174)   '@': x=178 -> [178,226)
+// '-': x=230  w=48    -> [230,278)   '_': x=282 -> [282,330)
+// SPACE: x=334 w=186  -> [334,520)
+// DEL: x=524 w=80    -> [524,604)
+// CONNECT: x=608 w=150 -> [608,758)
 #define _WKB4_CAPS_X    42
 #define _WKB4_CAPS_W    80
 #define _WKB4_SYM_X    126   // first symbol key (. @ - _), each 48px wide with 4px gap
@@ -1599,12 +1678,16 @@ void drawWifiSetupScreen() {
 
   // Header bar
   gfx->fillRect(0, 0, SCR_W, STATUS_H, C_DARKGOLD);
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(3);
-  gfx->setCursor(10, 8);
+  gfx->setFont(&FreeSansBold18pt7b);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
+  gfx->setCursor(10, 34);
   gfx->print("SATU");
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(2);
-  gfx->setCursor(SCR_W/2 - 88, 12);
+  gfx->setFont(NULL); gfx->setTextSize(1);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
+  gfx->setCursor(SCR_W/2 - strlen("WiFi Setup")*9/2, 25);
   gfx->print("WiFi Setup");
+  gfx->setFont(NULL); gfx->setTextSize(1);
 
   String ssid = "";
   String pass = "";

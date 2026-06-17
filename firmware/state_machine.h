@@ -7,6 +7,8 @@
 //        Changed: selectedProduct extern → selectedSlot
 //        Added: wantSacredWater extern
 //   R5 — Added: STATE_WIFI_SETUP (first-boot NVS provisioning)
+//   R6 — Removed: STATE_WAITING_DROP, STATE_DISPENSING, STATE_WAITING_REMOVAL
+//        vendProduct() is synchronous (R-128/R-129) — no async drop/removal states
 // ============================================================
 
 #ifndef STATE_MACHINE_H
@@ -23,10 +25,7 @@ enum MachineState {
   STATE_PRODUCT_SELECTION,  // slot highlighted, waiting for confirm tap
   STATE_GIFT_OPTION,        // Item Only vs +Sacred Water choice   ← R3
   STATE_AWAITING_PAYMENT,   // QR shown, waiting for PromptPay
-  STATE_VENDING,            // relay fired
-  STATE_WAITING_DROP,       // IR waiting for item to drop
-  STATE_DISPENSING,         // door unlocked, item in tray
-  STATE_WAITING_REMOVAL,    // waiting for user to take item
+  STATE_VENDING,            // vendProduct() running synchronously  ← R6
   STATE_COMPLETING,         // lucky number + thank you screen
   STATE_ERROR,
   STATE_OFFLINE,

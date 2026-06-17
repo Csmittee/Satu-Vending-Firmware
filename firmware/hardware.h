@@ -4,7 +4,7 @@
 // ============================================================
 // HARDWARE:
 //   MCP1 (0x20): GPA0-7 = IR sensors 1-8  | GPB0-5 = Relays 1-6
-//   MCP2 (0x21): GPA0-1 = IR sensors 9-10 | GPB0-5 = Relays 7-10, Pump, Lock
+//   MCP2 (0x21): GPA0-1 = IR sensors 9-10 | GPB0-5 = Relays 7-10, Pump, Flap
 //   LEDs: 40x WS2812B on GPIO5
 //         Zone TOP  : LEDs 0-9   (top accent)
 //         Zone FL1  : LEDs 10-19 (floor 1 — lanes 1-5)
@@ -14,11 +14,14 @@
 // RELAY WIRING (active HIGH based on config.h):
 //   Relay 1-10  = Lane motors (1 per lane)
 //   Relay 11    = Water pump (future)
-//   Relay 12    = Door lock solenoid (HIGH = unlocked)
+//   Relay 12    = Exit flap solenoid (R-129: HIGH=UNLOCKED, LOW=LOCKED fail-secure)
 //
 // SENSOR LOGIC:
 //   SENSOR_TRIGGERED = LOW  (item breaks IR beam)
 //   SENSOR_CLEAR     = HIGH (nothing in beam)
+//
+// R2 LOCKED — never modify or redeclare anything owned by this file
+// RELAY_FLAP defined in config.h (not here — R2 LOCKED)
 // ============================================================
 
 #ifndef HARDWARE_H
@@ -40,8 +43,7 @@ const int mcp1_sensors[8] = {0, 1, 2, 3, 4, 5, 6, 7};
 const int mcp1_relays[6]  = {8, 9, 10, 11, 12, 13};
 
 // MCP2: GPA = sensors 9-10 (pins 0-1), GPB = relays 7-12 (pins 8-13)
-// Relay 11 = pump (GPB3 = pin 11), Relay 12 = door lock (GPB4 = pin 12 on MCP2 → GPB5 = 13)
-// WIRING NOTE: door lock relay is mcp2 GPB5 (pin 13)
+// Relay 11 = pump (GPB3 = pin 11), Relay 12 = exit flap solenoid (GPB5 = pin 13)
 const int mcp2_sensors[2] = {0, 1};
 const int mcp2_relays[6]  = {8, 9, 10, 11, 12, 13};
 
@@ -61,12 +63,11 @@ static const RelayPin RELAY_MAP[12] = {
   {2, 10},   // Relay 9  — Lane 9
   {2, 11},   // Relay 10 — Lane 10
   {2, 12},   // Relay 11 — Water pump
-  {2, 13},   // Relay 12 — Door lock
+  {2, 13},   // Relay 12 — Exit flap solenoid (R-129)
 };
 
-#define RELAY_DOOR_LOCK   12   // 1-indexed relay number for door lock
+// RELAY_FLAP defined in config.h — not duplicated here (R2 LOCKED)
 #define RELAY_PUMP        11   // 1-indexed relay number for water pump
-#define VEND_PULSE_MS     800  // Relay on-time for dispensing (tune per motor)
 
 // ════════════════════════════════════════════════════════════════════════════
 //  LOW-LEVEL RELAY WRITE
@@ -139,9 +140,9 @@ void initMCP23017() {
       mcp2.pinMode(mcp2_relays[i], OUTPUT);
       mcp2.digitalWrite(mcp2_relays[i], RELAY_OFF);
     }
-    // Ensure door is LOCKED on boot
-    mcp2.digitalWrite(RELAY_MAP[RELAY_DOOR_LOCK - 1].pin, RELAY_OFF);
-    Serial.println("[HW] MCP2 OK — Door locked");
+    // R-129: ensure flap is LOCKED (pin extended) on boot
+    mcp2.digitalWrite(RELAY_MAP[RELAY_FLAP - 1].pin, RELAY_OFF);
+    Serial.println("[HW] MCP2 OK — flap LOCKED on boot");
   }
 }
 
@@ -259,50 +260,110 @@ static void vendingAnimation(int lane) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  DOOR LOCK
-//  RELAY_DOOR_LOCK = Relay 12 (mcp2, GPB5)
-//  RELAY_ON  = unlocked (solenoid energized)
-//  RELAY_OFF = locked   (solenoid de-energized, spring-locked)
+//  FLAP LOCK — R-129 solenoid pin lock
+//  RELAY_FLAP = Relay 12 (mcp2, GPB5 = pin 13)
+//  HIGH = pin RETRACTED = UNLOCKED (solenoid energized)
+//  LOW  = pin EXTENDED  = LOCKED   (solenoid de-energized, spring-held — fail-secure)
 // ════════════════════════════════════════════════════════════════════════════
-void unlockDoor() {
-  setRelay(RELAY_DOOR_LOCK, true);
-  Serial.println("[HW] Door UNLOCKED");
-  // Light door LEDs green
+
+// unlockFlap() — retract pin, allow flap to swing open
+// Call at same moment motor starts. Flap stays unlocked for entire vend.
+void unlockFlap() {
+  setRelay(RELAY_FLAP, true);
+  Serial.println("[HW] Flap UNLOCKED — pin retracted");
   setLEDColor(ZONE_DOOR_START, ZONE_DOOR_END, CRGB::Green);
 }
 
-void lockDoor() {
-  setRelay(RELAY_DOOR_LOCK, false);
-  Serial.println("[HW] Door LOCKED");
-  // Return door LEDs to gold
+// lockFlap() — extend pin, prevent flap from opening
+// Call only when proximity confirms flap at rest, or on FLAP_RELOCK_TIMEOUT.
+void lockFlap() {
+  setRelay(RELAY_FLAP, false);
+  Serial.println("[HW] Flap LOCKED — pin extended");
   setLEDColor(ZONE_DOOR_START, ZONE_DOOR_END, CRGB(80, 56, 0));
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  VEND PRODUCT
+//  VEND PRODUCT — R-128 sensor-driven motor stop + R-129 pin-lock flap
 //  lane: 0-indexed (0-9)
-//  Fires relay for VEND_PULSE_MS, then turns off.
-//  Visual: vendingAnimation + door zone glow.
 //
-//  SAFETY: relay is always turned off even if code crashes (no blocking loops)
+//  Sequence:
+//    1. unlockFlap() + motor ON — simultaneous
+//    2. Spin loop: read IR sensor every SENSOR_POLL_MS
+//    3. Sensor fires → motor OFF
+//    4. Wait for proximity switch CLOSED → lockFlap()
+//    5. Safety: FLAP_RELOCK_TIMEOUT → lockFlap() if proximity never fires
+//
+//  Returns: true  = item confirmed dropped (sensor triggered)
+//           false = lane empty (VEND_MAX_SPIN_MS elapsed, no sensor)
+//
+//  RELAY POLARITY NOTE:
+//    Motor relays 1–10: HIGH=ON  LOW=OFF
+//    RELAY_FLAP (12):   HIGH=UNLOCKED  LOW=LOCKED  ← INVERTED — do not confuse
 // ════════════════════════════════════════════════════════════════════════════
-void vendProduct(int lane) {
+bool vendProduct(int lane) {
   if (lane < 0 || lane > 9) {
     Serial.printf("[HW] vendProduct: invalid lane %d\n", lane);
-    return;
+    return false;
   }
 
-  int relayNum = lane + 1;  // relay 1-10 map to lanes 0-9
-  Serial.printf("[HW] Vending lane %d (relay %d)\n", lane, relayNum);
+  int relayNum = lane + 1;
 
   vendingAnimation(lane);
 
-  // Fire relay pulse
+  // Step 1: unlock flap + start motor simultaneously
+  unlockFlap();
   setRelay(relayNum, true);
-  delay(VEND_PULSE_MS);
-  setRelay(relayNum, false);
+  Serial.printf("[HW] Relay %d ON — motor SPINNING + flap UNLOCKED\n", relayNum);
 
-  Serial.printf("[HW] Vend pulse complete: relay %d OFF\n", relayNum);
+  // Step 2: spin loop — sensor poll every SENSOR_POLL_MS
+  unsigned long spinStart = millis();
+  bool sensorFired = false;
+
+  while (millis() - spinStart < VEND_MAX_SPIN_MS) {
+    if (readSensor(lane)) {
+      sensorFired = true;
+      Serial.printf("[HW] Sensor %d TRIGGERED — item detected after %lums\n",
+                    lane + 1, millis() - spinStart);
+      break;
+    }
+    delay(SENSOR_POLL_MS);
+  }
+
+  // Step 3: stop motor
+  setRelay(relayNum, false);
+  if (sensorFired) {
+    Serial.printf("[HW] Relay %d OFF — motor stopped (sensor)\n", relayNum);
+  } else {
+    Serial.printf("[HW] Relay %d OFF — SAFETY CUTOFF %dms — lane %d EMPTY\n",
+                  relayNum, VEND_MAX_SPIN_MS, lane + 1);
+  }
+
+  // Step 4: wait for proximity switch → lockFlap()
+  // Stubs safely when FLAP_PROXIMITY_MCP_PIN = -1 (not yet wired)
+  unsigned long flapStart = millis();
+  bool proxFired = false;
+
+#if FLAP_PROXIMITY_MCP_PIN >= 0
+  while (millis() - flapStart < FLAP_RELOCK_TIMEOUT) {
+    // CLOSED = LOW (INPUT_PULLUP, same logic as IR sensors)
+    if (mcp2.digitalRead(FLAP_PROXIMITY_MCP_PIN) == LOW) {
+      proxFired = true;
+      Serial.printf("[HW] Proximity CLOSED — flap at rest after %lums\n",
+                    millis() - flapStart);
+      break;
+    }
+    delay(10);
+  }
+#endif
+
+  // Step 5: lock flap — on proximity or timeout
+  lockFlap();
+  if (!proxFired) {
+    Serial.printf("[HW] Flap re-locked via TIMEOUT (%dms) — proximity not wired or stuck\n",
+                  FLAP_RELOCK_TIMEOUT);
+  }
+
+  return sensorFired;
 }
 
 #endif // HARDWARE_H

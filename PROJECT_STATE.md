@@ -1,9 +1,35 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Last updated: 2026-06-16
+> Last updated: 2026-06-17
 > Compiled by: Chat S15 (chaijohn-personal session — first proper STATE doc for Satu)
-> Status: Phase 1 active — ~50% complete
+> Status: Phase 1 active — ~55% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-17 — Firmware R6: sensor motor + pin-lock flap + payment banner + font audit (CC_BUILD_PROMPT_firmware_ux_r128_REVISED)
+- **R-128 (Sensor-driven motor stop):** `vendProduct(int lane)` rewritten to return `bool`.
+  Motor stops on IR sensor trigger only — `VEND_MAX_SPIN_MS=30000` is safety cutoff, NOT primary stop.
+  `SENSOR_POLL_MS=10` — IR sensor read interval during spin. `VEND_PULSE_MS`, `DROP_TIMEOUT`,
+  `REMOVAL_TIMEOUT` deleted permanently from config.h and all usage points.
+- **R-129 (Pin-lock solenoid flap):** `RELAY_DOOR_LOCK` renamed `RELAY_FLAP=12` in config.h.
+  `HIGH=UNLOCKED` (pin retracted), `LOW=LOCKED` (fail-secure on power loss).
+  `unlockFlap()` + `lockFlap()` added to hardware.h. MCP2 relay 12 wired to solenoid pin lock.
+  `FLAP_PROXIMITY_MCP_PIN=-1` stubs safely — uses `FLAP_RELOCK_TIMEOUT=3000` when not wired.
+  Motor + flap unlocked simultaneously on vend start. Flap locked after motor stop.
+- **R-131 (Payment accepted banner):** `showPaymentAccepted()` added to ui.h.
+  1.5s green overlay on QR screen before vend. Called in `_onPaymentConfirmed()` in satu_vending.ino.
+- **R-137 (Font audit):** NEVER use NULL font with `setTextSize>1` on Latin text.
+  Rule: `FreeSansBold24pt7b`=hero numbers, `FreeSansBold18pt7b`=screen titles,
+  `FreeSansBold12pt7b`=section headings, NULL size 1=body text only.
+  All screens in ui.h audited and corrected.
+- **State machine cleanup:** `STATE_WAITING_DROP`, `STATE_DISPENSING`, `STATE_WAITING_REMOVAL`
+  removed from state_machine.h enum. Vend flow is now synchronous via `_onPaymentConfirmed()`.
+- **Session closing:** RULES.md updated (R-128 through R-137 prepended), KNOWN_GOOD.md snapshot
+  prepended, CC_BUILD_PROMPT archived to docs/prompts/ with ✅ COMPLETE stamp.
+- **Files changed:** firmware/config.h (R6), firmware/hardware.h (R6), firmware/state_machine.h,
+  firmware/satu_vending.ino (R6), firmware/ui.h (R6)
+- **CI:** ⬜ PENDING — waiting for GitHub Actions compile check
+- **Flash:** ⬜ PENDING — owner to flash and confirm vend + flap + banner on SATU-4R473R
+- **Branch:** claude/magical-feynman-rrkais · PR pending
 
 ### 2026-06-16 — CI fixes + workflow docs (no CC_PROMPT — inline session)
 - **CI Fix 1: FreeFonts not found** — arduino-cli only adds a library's include path when it
@@ -44,6 +70,7 @@
       Currently set for HW testing. Direct edit in config.h by owner.
 - [ ] Service mode firmware — ui.h 5 tabs full build (stubs only currently)
       Next firmware CC session after this one.
+- [ ] FLAP_PROXIMITY_MCP_PIN — assign MCP2 GPA pin when solenoid wired (-1 = stub, safe)
 
 ## SESSION LOG (newest first)
 
@@ -57,8 +84,6 @@
 - **RULES.md:** R-121/122/123 added · R-117 corrected (actual root cause) · R-89 corrected (return 0→1)
 - **WORKFLOW_SKILL.md:** intervention levels + library onboarding + KT framework sections added
 - **CI:** ✅ GitHub Actions Run #76 GREEN — commit 79090e3
-
-## SESSION LOG (newest first)
 
 ### 2026-06-15 — PNG decode fix R-117 (pause-decode-resume for PSRAM DMA contention)
 - **ROOT CAUSE CONFIRMED:** PSRAM bus bandwidth contention between RGB DMA and zlib inflate
@@ -219,7 +244,7 @@ Thai temples.
 
 ## PHASE STATUS
 
-### Phase 1 — Prototyping (~50% complete) ← CURRENT
+### Phase 1 — Prototyping (~55% complete) ← CURRENT
 
 #### Backend & API ✅ COMPLETE
 - [x] Cloudflare Workers + D1 backend (index.js, machine.js, order.js, webhook.js, admin.js)
@@ -245,20 +270,23 @@ Thai temples.
 - [ ] satu-admin.html CORS/401 — /v1/admin-data/:table route missing (JWT admin version, not X-Admin-Token)
 
 #### Firmware ⚠️ IN PROGRESS
-- [x] State machine architecture (state_machine.h) — all states incl. STATE_WIFI_SETUP (R5)
-- [x] config.h — pin constants, NUM_SLOTS, timeouts, NVS key constants (gitignored)
+- [x] State machine architecture (state_machine.h) — R6: removed STATE_WAITING_DROP/STATE_DISPENSING/STATE_WAITING_REMOVAL
+- [x] config.h R6 — RELAY_FLAP=12, VEND_MAX_SPIN_MS=30000, SENSOR_POLL_MS=10, FLAP_RELOCK_TIMEOUT=3000
+      VEND_PULSE_MS / DROP_TIMEOUT / REMOVAL_TIMEOUT deleted permanently (R-128)
 - [x] config.h.example — tracked template, WIFI_SSID="" WIFI_PASSWORD="" intentional (R5)
-- [x] hardware.h R2 — MCP23017, relays, IR sensors, LED breathing, idleAnimation() — LOCKED, never modify
+- [x] hardware.h R6 — 4 authorized R6 changes complete:
+      unlockFlap() + lockFlap() added (R-129) · vendProduct() returns bool + sensor-driven (R-128)
+      Boot message: "[HW] MCP2 OK — flap LOCKED on boot" · Relay 12 comment updated
+      ALL OTHER hardware.h content R2 LOCKED — never modify
 - [x] network.h R5 — NVS-first WiFi, saveWifiAndReboot(), /hello, /order, /completion, /factory-reset, fetchImageBytes()
-- [x] satu_vending.ino R5 — STATE_WIFI_SETUP guard, WiFi.status() check after initWiFi()
-- [x] ui.h R5 — drawWifiSetupScreen() QWERTY keyboard (blocking, restarts on CONNECT)
+- [x] satu_vending.ino R6 — _onPaymentConfirmed(), _onItemDropped(), _onLaneEmpty() · sync vend flow
+- [x] ui.h R6 — showPaymentAccepted() 1.5s green banner (R-131) · font audit complete (R-137)
+      _pngDrawRow returns 1 (R-89/R-117) · static lineBuf (R-119) · pause-decode-resume (R-117)
 - [x] ui.h PNG decode — ✅ CONFIRMED ON HARDWARE 2026-06-15 16:41:32 — rc=0 rows=165 w=165 h=165
-  Root cause: return 0 in callback = PNGdec stop-early. Fix: return 1. Reference: LIBRARY_pngdec.md
-  lineBuf static (R-119). Frame buffer collect-then-draw. drawQrFromBitmap() kept as emergency fallback.
-- [ ] ui.h — service mode 5 tabs NOT COMPLETE — last CC build attempted, status unclear ⚠️
-- [ ] Full end-to-end test on real hardware — BLOCKED (hardware arriving)
+- [ ] ui.h — service mode 5 tabs NOT COMPLETE — stubs only, next firmware CC session
+- [ ] FLAP_PROXIMITY_MCP_PIN — assign MCP2 GPA pin when solenoid wired (-1 = stub, safe)
+- [ ] Full end-to-end test on real hardware (R6 vend + flap + banner) — PENDING owner flash ⬜
 - [ ] OTA firmware update — explicitly deferred (not in Phase 1 scope)
-- [ ] PNGdec fix — esp_ptr_in_psram() diagnostic PENDING (next session P0)
 
 #### Infrastructure ✅ ADDED 2026-06-13
 - [x] GitHub Actions compile check: ACTIVE — .github/workflows/compile-check.yml
@@ -267,11 +295,11 @@ Thai temples.
 - Board: ESP32S3 | Core: 2.0.17 LOCKED | Libraries: 6 at locked versions
 - CC waits for green ✅ before opening PR (R-90)
 
-#### Hardware ⚠️ PENDING
-- [ ] ESP32-S3 display board — in transit from China
+#### Hardware ⚠️ IN PROGRESS
+- [x] ESP32-S3 display board — ARRIVED · first hardware test 2026-06-16 ✅
 - [ ] Relay modules — sourcing
-- [ ] IR sensors (E18-D80NK) — sourcing
-- [ ] Push spring set — sourcing
+- [ ] IR sensors (E18-D80NK) — sourcing (R-128 requires sensors for sensor-driven motor stop)
+- [ ] Solenoid pin-lock flap — sourcing (R-129: RELAY_FLAP=12, HIGH=UNLOCKED)
 - [ ] Physical build and wiring — blocked on components
 
 #### Business / Legal IN PROGRESS
@@ -302,9 +330,10 @@ Thai temples.
 - PAYMENT_MODE=fake — never change to live without physical ESP32 connected
 - Test device MACs: SATU-TEST001 (AA:BB:CC:DD:EE:00) + SATU-SIM01 (AA:BB:CC:DD:EE:01) ONLY
 - D1-backed rate limiting — rateLimit.js — fixed, do not revert to in-memory
-- hardware.h R2 — NEVER modify, NEVER replace
+- hardware.h R2 — NEVER modify beyond 4 authorized R6 changes (vendProduct/unlockFlap/lockFlap/boot msg)
 - NUM_SLOTS defined in config.h ONLY — ui.h reads it, never redefines
 - idleAnimation() = LED breathing in hardware.h · idleAnimationUI() = screen flash in ui.h — TWO different functions
+- RELAY_FLAP=12 HIGH=UNLOCKED LOW=LOCKED (fail-secure) — never invert
 
 ---
 
@@ -322,6 +351,7 @@ Thai temples.
 | WiFi credentials in config.h | 🟢 RESOLVED | R5 2026-06-12: NVS provisioning screen eliminates this permanently |
 | PNGdec rc=8 root cause | 🟢 RESOLVED | Root cause: return 0 in callback = PNGdec stop-early (v1.1.4). Fix: return 1. Confirmed 2026-06-15. |
 | Firmware main has bitmap, backend has no /bitmap | 🟢 RESOLVED | PNG path restored in drawQrScreen(). drawQrFromBitmap() kept as emergency fallback. |
+| RELAY_FLAP fail-secure | 🟢 By design | LOW=LOCKED on power loss — pin extends, flap stays closed (R-129) |
 
 ---
 
@@ -360,21 +390,23 @@ public/
 
 ### Firmware (Csmittee/Satu-Vending-Firmware)
 ```
-satu_vending.ino    — main: setup(), loop(), state machine, slot loading
-config.h            — ALL constants: pins, NUM_SLOTS, timeouts, NVS key names
+satu_vending.ino    — main: setup(), loop(), state machine, _onPaymentConfirmed/Dropped/LaneEmpty
+config.h            — ALL constants: pins, NUM_SLOTS, timeouts, NVS key names, RELAY_FLAP=12
                       ← IN .gitignore — WiFi credentials NEVER in git
 config.h.example    — template for new dev environment setup
-hardware.h          — MCP23017, relays, IR, LEDs, idleAnimation() ← R2 LOCKED
+hardware.h          — MCP23017, relays, IR, LEDs, idleAnimation(), unlockFlap(), lockFlap(),
+                      vendProduct() bool (sensor-driven) ← R6 changes complete, rest LOCKED R2
 network.h           — WiFi, NVS, /hello, /order, /completion, /factory-reset, fetchImageBytes()
-ui.h                — all screen drawing, touch detection, 5-tab service mode ← IN PROGRESS
-                      NOTE: bitmap code on main — do not flash until PNGdec fixed or backend restored
-state_machine.h     — enum MachineState, extern declarations
+ui.h                — all screen drawing, touch detection, showPaymentAccepted() (R-131),
+                      FreeSansBold fonts (R-137), PNG pause-decode-resume (R-117)
+                      5-tab service mode — STUBS ONLY — next CC session
+state_machine.h     — enum MachineState (R6: DROP/DISPENSING/REMOVAL states removed)
 ```
 
 ### Project Knowledge Docs (project folder)
 ```
 CLAUDE.md           — project compass, stack, 5 rules, key files, repos (30 lines max)
-RULES.md            — lessons learned R-85 to R-116 (newest at top)
+RULES.md            — lessons learned R-85 to R-137 (newest at top)
 PROJECT_STATE.md    — this file
 CHAT_HANDOFF.md     — last session summary (overwrite each session, never append)
 KNOWLEDGE_MAP.md    — what to read for what task (navigation guide)
@@ -428,7 +460,7 @@ Upload speed:  460800
 Port:          /dev/cu.usbserial-1420 (varies by machine)
 Core:          ESP32 2.0.17 ONLY (3.x breaks WiFi)
 GFX Library:   moononournation v1.4.9 ONLY
-PNGdec:        v1.1.6 (investigation pending — rc=8 root cause unknown — see R-116)
+PNGdec:        v1.1.6 — return 1 in callback confirmed working (R-89/R-117)
 TFT_eSPI:      REMOVE if installed — incompatible with RGB panel
 ```
 
@@ -441,19 +473,19 @@ TFT_eSPI:      REMOVE if installed — incompatible with RGB panel
 2. Complete Omise KYC / bank account registration
 3. Complete PDPA consent flow + legal review
 
-### P1 — Post PNG fix (next firmware session)
-4. Deploy backend (wrangler deploy) — PR #21 merged, not deployed yet ⚠️
-5. Run 14-test suite after backend deploy — confirm all 14 pass
-6. ✅ DONE — PNG QR decode confirmed 2026-06-15 16:41:32: rc=0 rows=165 w=165 h=165
-7. Complete ui.h service mode (5 tabs) — verify against simulator.html spec
-9. Verify full end-to-end on real hardware when components arrive
-10. Fix /v1/admin-data/:table CORS/401 (add JWT admin route to index.js)
+### P1 — Post R6 flash (next firmware session)
+4. Owner flashes R6 (claude/magical-feynman-rrkais → main after CI green + PR merged)
+   Expected: motor stops on IR trigger · flap unlocks/locks · 1.5s payment banner
+5. Wire IR sensors (E18-D80NK) + solenoid pin-lock flap to relay 12 (MCP2)
+   Assign FLAP_PROXIMITY_MCP_PIN in config.h when wired
+6. Complete ui.h service mode (5 tabs) — verify against simulator.html spec
+7. Fix /v1/admin-data/:table CORS/401 (add JWT admin route to index.js)
 
 ### P2 — Polish
-11. Implement order expiry (Cron Trigger already configured in wrangler.toml)
-12. Build temple owner claim/onboarding flow (setup code UI)
-13. Temple owner dashboard — complete missing features
+8. Implement order expiry (Cron Trigger already configured in wrangler.toml)
+9. Build temple owner claim/onboarding flow (setup code UI)
+10. Temple owner dashboard — complete missing features
 
 ### P3 — Phase 2 prep
-14. Multi-machine architecture review
-15. Analytics and reconciliation reporting
+11. Multi-machine architecture review
+12. Analytics and reconciliation reporting
