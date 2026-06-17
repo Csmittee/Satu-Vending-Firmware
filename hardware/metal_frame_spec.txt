@@ -1,0 +1,43 @@
+========================================
+SATU VENDING MACHINE - METAL FRAME SPECIFICATION
+========================================
+
+DIMENSIONS (External):
+- Width: 500 mm
+- Height: 600 mm  
+- Depth: 500 mm
+
+MATERIAL:
+- Steel sheet: 1.5 mm thickness
+- Finish: Powder coated, matte black
+
+DOOR:
+- Front access door with hinge on left side
+- Acrylic window: 400 mm x 500 mm
+- 4mm clear acrylic
+- Door lock: Cam lock type with 20mm cylinder
+
+MOUNTING:
+- M3 threaded inserts for ESP32 board (4 positions)
+- M3 threaded inserts for MCP23017 boards (2 positions)
+- Relay module mounting plate (pre-drilled 3mm holes)
+- Power supply mounting bracket (120mm x 70mm)
+- Collection bin tray (bottom, removable)
+
+VENTILATION:
+- Side vents: 50mm x 20mm slots (3 per side)
+- Bottom intake: 100mm x 20mm slots
+- Top exhaust: 50mm x 20mm slots
+
+NOTES FOR FABRICATOR:
+- All edges deburred
+- Rounded corners (5mm radius)
+- Include rubber feet (4x, 10mm height)
+- Powder coat: RAL 9005 (Jet Black)
+
+CONTACT FOR QUOTE:
+[Your Name]
+[Your Phone]
+[Your Email]
+
+Please quote: 1 prototype unit + 10 production units
