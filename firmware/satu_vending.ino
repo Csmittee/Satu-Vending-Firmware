@@ -19,6 +19,10 @@
 //   R5   — WiFi NVS provisioning: STATE_WIFI_SETUP + drawWifiSetupScreen()
 //          initWiFi() NVS-first (nvs_ssid/nvs_pass), config.h fallback
 //          No credentials → WiFi setup touchscreen, restart after save
+//   R6   — R-128: motor stop on IR sensor trigger, synchronous vendProduct()
+//          R-129: pin-lock flap via RELAY_FLAP (defined in config.h)
+//          R-131: showPaymentAccepted() 1.5s green banner before vend
+//          R-137: font audit — FreeSans hierarchy throughout ui.h
 // ============================================================
 
 #include "config.h"
@@ -69,7 +73,8 @@ void runStateMachine();
 void runTimers();
 void _proceedToPayment();
 void _onPaymentConfirmed();
-void _onItemRemoved();
+void _onItemDropped();
+void _onLaneEmpty(int lane);
 
 // ── PIN validation ──────────────────────────────────────────────────────────────
 static bool _validatePin(String entered) {
@@ -197,7 +202,7 @@ static void _clearNVS() {
 void setup() {
   Serial.begin(115200);
   delay(500);
-  Serial.println("\n[SATU] Booting R5...");
+  Serial.println("\n[SATU] Booting R6...");
 
   initHardware();
   Serial.println("[SATU] Hardware OK");
@@ -415,54 +420,9 @@ void runStateMachine() {
     }
 
     // ── VENDING ────────────────────────────────────────────────────────────────────────
+    // R-128/R-129: vendProduct() runs synchronously — enters and exits this state within
+    // _onPaymentConfirmed(). By the time loop() sees STATE_VENDING it is already done.
     case STATE_VENDING: {
-      setState(STATE_WAITING_DROP);
-      break;
-    }
-
-    // ── WAITING_DROP ───────────────────────────────────────────────────────────────────
-    case STATE_WAITING_DROP: {
-      bool dropped = readSensor(selectedSlot);
-      if (!dropped) {
-        setState(STATE_DISPENSING);
-        unlockDoor();
-        Serial.println("[STATE] Item dropped, door unlocked");
-      }
-      if (elapsed > DROP_TIMEOUT) {
-        laneErrorCount[selectedSlot]++;
-        Serial.printf("[STATE] Drop timeout lane %d (errors: %d)\n",
-                      selectedSlot, laneErrorCount[selectedSlot]);
-        if (laneErrorCount[selectedSlot] >= 3) {
-          laneDisabled[selectedSlot] = true;
-          g_slots[selectedSlot].enabled = false;
-        }
-        reportCompletion(currentOrderId, false, selectedSlot);
-        setState(STATE_ERROR);
-        drawErrorScreen("Please contact staff\nSlot " + String(selectedSlot + 1) + " error");
-        delay(3000);
-        setState(STATE_IDLE);
-        drawIdleScreen();
-      }
-      break;
-    }
-
-    // ── DISPENSING ─────────────────────────────────────────────────────────────────────
-    case STATE_DISPENSING: {
-      setState(STATE_WAITING_REMOVAL);
-      break;
-    }
-
-    // ── WAITING_REMOVAL ───────────────────────────────────────────────────────────────
-    case STATE_WAITING_REMOVAL: {
-      bool itemGone = readSensor(selectedSlot);
-      if (itemGone) {
-        lockDoor();
-        _onItemRemoved();
-      }
-      if (elapsed > REMOVAL_TIMEOUT) {
-        lockDoor();
-        _onItemRemoved();
-      }
       break;
     }
 
@@ -592,28 +552,45 @@ void _proceedToPayment() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  HELPER: payment confirmed
+//  HELPER: payment confirmed  (R-131: banner · R-128/R-129: synchronous vend)
 // ════════════════════════════════════════════════════════════════════════════
 void _onPaymentConfirmed() {
+  showPaymentAccepted();           // R-131: 1.5s green banner on QR screen
   setState(STATE_VENDING);
   drawVendingScreen(selectedSlot);
-  vendProduct(selectedSlot);
   if (wantSacredWater) {
     setRelay(RELAY_PUMP, true);
     delay(3000);
     setRelay(RELAY_PUMP, false);
   }
+  bool dropped = vendProduct(selectedSlot);  // R-128/R-129: synchronous, returns true=item detected
+  if (dropped) _onItemDropped();
+  else         _onLaneEmpty(selectedSlot);
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  HELPER: item removed from tray
+//  HELPER: item dropped (sensor fired)  — R-128
 // ════════════════════════════════════════════════════════════════════════════
-void _onItemRemoved() {
+void _onItemDropped() {
   int lucky = 10 + (int)(esp_random() % 90);  // 10-99, hardware RNG
   setState(STATE_COMPLETING);
   drawCompletionScreen(selectedSlot, lucky, wantSacredWater);
   reportCompletion(currentOrderId, true, selectedSlot);
-  Serial.printf("[STATE] Complete — lucky=%d water=%d\n", lucky, wantSacredWater);
+  Serial.printf("[STATE] Complete — slot=%d lucky=%d water=%d\n",
+                selectedSlot + 1, lucky, wantSacredWater);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  HELPER: lane empty (sensor never fired, motor hit safety timeout)  — R-128
+// ════════════════════════════════════════════════════════════════════════════
+void _onLaneEmpty(int lane) {
+  Serial.printf("[STATE] Lane %d EMPTY — disabling\n", lane + 1);
+  if (lane >= 0 && lane < NUM_SLOTS) g_slots[lane].enabled = false;
+  reportCompletion(currentOrderId, false, lane);
+  drawErrorScreen("Slot " + String(lane + 1) + " is empty\nPlease contact staff");
+  delay(4000);
+  setState(STATE_IDLE);
+  drawIdleScreen();
 }
 
 // ════════════════════════════════════════════════════════════════════════════
