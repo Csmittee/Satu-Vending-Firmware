@@ -68,12 +68,15 @@ jobs:
           #define RELAY_OFF         LOW
           #define SENSOR_TRIGGERED  LOW
           #define SENSOR_CLEAR      HIGH
-          #define VEND_PULSE_MS     800
-          #define PAYMENT_TIMEOUT   120000
-          #define VEND_TIMEOUT       10000
-          #define DROP_TIMEOUT        5000
-          #define REMOVAL_TIMEOUT    30000
+          #define RELAY_FLAP        12
+          #define PAYMENT_TIMEOUT   30000
+          #define VEND_TIMEOUT      10000
           #define HEARTBEAT_INTERVAL 300000
+          #define VEND_MAX_SPIN_MS  30000
+          #define SENSOR_POLL_MS        10
+          #define FLAP_RELOCK_TIMEOUT 3000
+          #define FLAP_PROXIMITY_MCP_PIN -1
+          #define SPEAKER_PIN           -1
           #define NUM_LEDS           40
           #define LED_BRIGHTNESS     128
           #define ZONE_TOP_START      0
