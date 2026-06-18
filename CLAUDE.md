@@ -1,5 +1,8 @@
 # CLAUDE.md — Satu Project Compass
-<!-- max 30 lines · never grows · CC reads this on every session start -->
+> Version 1.1 — 2026-06-18
+> Changes: Added CC_SKILL.md + CC_CHAT_LOG.md to Key Files; removed deleted hardware repo
+> Previous: v1.0 — 2026-06-11
+<!-- max 35 lines · never grows · CC reads this on every session start -->
 
 ## Stack
 - **Backend**: Cloudflare Workers + D1 (SQLite) · `api.janishammer.com`
@@ -22,16 +25,14 @@
 
 ## Key Files (read before touching anything)
 - `RULES.md` — 10 universal rules · read every session · domain rules in `.claude/rules/`
+- `CC_SKILL.md` — CC session protocol + 6 skills · read every CC session
+- `CC_CHAT_LOG.md` — CC→Chat log · Chat reads last 3 entries each session open
 - `PROJECT_STATE.md` — phase status · roadmap · CC updates after every fix/PR
 - `KNOWN_GOOD.md` — last confirmed test snapshot · updated by Chat/owner after each test session
-- `WORKFLOW_SKILL.md` — NOT in this repo. Single source of truth = Satu-vending-backend/WORKFLOW_SKILL.md.
-  Owner downloads from backend repo → Claude project knowledge folder. Chat reads it. CC does not need it.
 - `UI_SPEC.md` — screen inventory · grid system · service mode tabs · NVS key table · read before any ui.h change
 - `SECURITY.md` — auth layers · ownership model · security gaps · read before any auth/ownership/reset code
-- `KNOWLEDGE_MAP.md` (backend repo) — navigation guide · what to read for each task
-- `KNOWN_GOOD.md` — timestamped test snapshots, last confirmed working state
+- `KNOWLEDGE_MAP.md` — navigation guide · what to read for each task
 
 ## Repos
 - Backend: `Csmittee/Satu-vending-backend`
 - Firmware: `Csmittee/Satu-Vending-Firmware`
-- Hardware: `Csmittee/Satu-vending-hardware` — wiring diagrams, BOM — read before any hardware decision

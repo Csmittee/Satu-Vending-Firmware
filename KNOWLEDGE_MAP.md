@@ -1,29 +1,31 @@
-# SATU — Knowledge Architecture Guide
-<!-- How to find anything in this project quickly -->
-<!-- Read this first in any new chat session -->
-<!-- Last updated: 2026-05-31 -->
+# SATU — Knowledge Architecture Guide (Firmware)
+> Version 1.1 — 2026-06-18
+> Changes: Added CC_SKILL.md + CC_CHAT_LOG.md entries; removed deleted hardware repo; added .claude/claude_project/ section
+> Previous: v1.0 — 2026-05-31
 
 ## Document Map — What to Read for What Task
 
 | Task | Read first | Then read |
-|------|-----------|-----------|
-| Starting new chat session | CHAT_HANDOFF.md | PROJECT_STATE.md |
+|------|-----------|----------|
+| Starting new chat session | CHAT_HANDOFF.md (proj folder) | CC_CHAT_LOG.md (last 3 entries) |
+| CC session start | CC_SKILL.md | CLAUDE.md + RULES.md |
 | Any firmware change | UI_SPEC.md | CHAT_HANDOFF.md file touch rules |
 | Any backend change | PROJECT_STATE.md endpoint table | SECURITY.md auth layers |
 | Any auth / ownership code | SECURITY.md | schema.sql |
 | Service mode UI | UI_SPEC.md (tabs 1-5 section) | simulator.html |
 | Grid / slot layout | UI_SPEC.md (grid system section) | machine.js _loadSlots() |
 | Payment integration | PROJECT_STATE.md Omise section | SECURITY.md payment modes |
-| CC build session | CC_BUILD_PROMPT_*.md | Upload local .h files first |
+| CC build session | CC_BUILD_PROMPT_*.md (repo root) | CC_CHAT_LOG.md last 3 entries |
 | Security review | SECURITY.md | PROJECT_STATE.md known risks |
-| Hardware wiring | satu_wiring_diagram.html | hardware.h pin arrays |
+| Hardware wiring / BOM | satu-machine-builder.html (Wiring tab) | hardware.h pin arrays |
+| Workflow / session modes | .claude/claude_project/WORKFLOW_SKILL.md | CLAUDE.md |
 | Business / legal | satu-business-model.html | work_instruction.txt |
 
 ---
 
 ## File Locations
 
-### Firmware (local Arduino folder — always upload fresh, do NOT use repo)
+### Firmware (Arduino sketch folder — pull fresh from repo before compiling)
 ```
 satu_vending.ino   — main state machine, setup(), loop()
 config.h           — pin constants, timeouts, NUM_SLOTS
@@ -48,14 +50,34 @@ wrangler.toml           — Cloudflare config, routes, cron
 public/                 — static HTML files (simulator, testers, admin)
 ```
 
-### Project knowledge docs (this folder)
+### Repo root docs
 ```
-SECURITY.md         — auth layers, ownership model, gaps
+CLAUDE.md           — project compass · CC reads every session
+RULES.md            — universal rules + domain index · CC reads every session
+CC_SKILL.md         — CC session protocol, 6 skills, CC_CHAT_LOG format · CC reads every session
+CC_CHAT_LOG.md      — CC→Chat session log · CC writes · Chat reads last 3
+PROJECT_STATE.md    — firmware phase status, known bugs, next actions
+KNOWN_GOOD.md       — firmware compile + flash snapshots (append only)
 UI_SPEC.md          — screen inventory, grid system, service tabs, NVS keys
-KNOWLEDGE_MAP.md    — this file
-PROJECT_STATE.md    — endpoint status, known bugs, next actions
-CHAT_HANDOFF.md     — session summary, what broke, what to tell next chat
-CC_BUILD_PROMPT_*.md — CC session opening prompt
+SECURITY.md         — auth layers, ownership model, gaps
+CC_BUILD_PROMPT_*.md — CC session prompts (active at root; archived to docs/prompts/ after use)
+```
+
+### .claude/claude_project/ (reference copies — Chat reads, CC rarely needs)
+```
+WORKFLOW_SKILL.md   — v2.0 governance master reference
+CHAT_RULE.md        — Chat non-negotiables reference
+```
+
+### .claude/rules/ (domain rules — CC loads by task)
+```
+RULES-workflow.md   — session structure, CC prompts, handoff
+RULES-backend.md    — API, payment, D1, rate limiting
+RULES-firmware.md   — Arduino, NVS, compile, UI
+RULES-hardware.md   — wiring, relays, power
+RULES-security.md   — auth, secrets, ownership, legal
+SKILL_*.md          — KT problem solving, library onboarding, ESP32 constraints
+LIBRARY_*.md        — library onboarding docs (PNGdec, etc.)
 ```
 
 ---
@@ -65,11 +87,11 @@ CC_BUILD_PROMPT_*.md — CC session opening prompt
 1. **hardware.h is R2 — NEVER replace or modify it**
 2. **NUM_SLOTS defined in config.h only** — ui.h reads it, never redefines
 3. **idleAnimation() lives in hardware.h** (LED) — ui.h has idleAnimationUI() (screen flash) — different functions
-4. **Local Arduino files = source of truth** — not project knowledge, not GitHub
+4. **config.h is .gitignored** — WiFi creds never in git
 5. **Factory reset requires backend call first** — see SECURITY.md
 6. **NVS keys ≤15 chars each** — see UI_SPEC.md NVS table for approved keys only
-7. **config.h is .gitignored** — WiFi creds never in git
-8. **PAYMENT_MODE=fake for all dev/testing** — never switch to live without physical hardware
+7. **PAYMENT_MODE=fake for all dev/testing** — never switch to live without physical hardware
+8. **Two-repo system** — read both repos (backend + firmware) before any decision — hardware repo was deleted
 
 ---
 
@@ -90,33 +112,10 @@ CC_BUILD_PROMPT_*.md — CC session opening prompt
 
 ---
 
-## Endpoint Status Quick Reference
-
-| Endpoint | Status | Notes |
-|----------|--------|-------|
-| POST /v1/machine/hello | ✅ Working | Returns slots[], status, setup_code |
-| POST /v1/machine/heartbeat | ✅ Working | |
-| GET /v1/machine/commands | ✅ Working | 30s poll |
-| POST /v1/machine/completion | ❌ Missing | Returns 404 — R4 build |
-| POST /v1/machine/factory-reset | ❌ Missing | R4 build |
-| POST /v1/machine/claim | ✅ Working | |
-| POST /v1/order | ✅ Working | |
-| GET /v1/order/:id/status | ✅ Working | |
-| POST /v1/webhook/omise | ✅ Working | |
-| POST /v1/auth/login | ✅ Working | |
-| POST /v1/auth/register | ✅ Working | ALLOW_REGISTRATION gated |
-| GET /v1/dashboard/slots | ✅ Working | |
-| PUT /v1/dashboard/slots | ✅ Working | |
-| GET /v1/dashboard/orders | ❌ Missing | R4 build |
-| GET /v1/admin-data/:table | ❌ Missing | R4 build |
-| GET /health | ✅ Working | Returns payment_mode |
-
----
-
-## Variable Code Name Reference (use in discussions)
+## Variable Code Name Reference
 
 | Code | What it is | Where set | NVS key |
-|------|-----------|-----------|---------|
+|------|-----------|-----------|----------|
 | DEVID | Device ID (SATU-XXXXXX) | Backend assigned | device_id |
 | DEVSEC | Device secret | Backend assigned | dev_secret |
 | SETUPC | 6-digit setup code | Backend generated | shown on screen |
@@ -132,14 +131,3 @@ CC_BUILD_PROMPT_*.md — CC session opening prompt
 | GRID | Grid rows × cols | Backend → /hello | nvs_grow, nvs_gcol |
 | PAY_MODE | Payment gateway mode | Cloudflare secret | — |
 | VPULSE | Relay pulse duration | config.h hardcoded | — |
-
----
-
-## How to Start a CC Session
-
-1. Open new CC conversation
-2. Paste CC_BUILD_PROMPT_*.md as first message
-3. Upload local Arduino files when CC asks (never use project knowledge versions)
-4. Do NOT upload hardware.h — tell CC it is R2, locked, do not touch
-5. CC reads all backend files from repo automatically
-6. While CC is running: install PNGdec library in Arduino IDE (only new lib needed)
