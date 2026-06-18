@@ -1,9 +1,20 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Last updated: 2026-06-17
+> Version 1.1 — 2026-06-18
 > Compiled by: Chat S15 (chaijohn-personal session — first proper STATE doc for Satu)
 > Status: Phase 1 active — ~55% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-18 — Governance docs wiring: CC_SKILL + CC_CHAT_LOG + R-138 to R-141 (R-84)
+- **SCOPE:** Docs only. Zero .ino, .h, or src/ file changes.
+- **New governance files registered:** CC_SKILL.md + CC_CHAT_LOG.md added to CLAUDE.md Key Files.
+- **New rules added:** R-138 (CC_CHAT_LOG protocol) · R-139 (CC_SKILL.md mandatory read) · R-140 (HTML file size limit >1000 lines = flag) · R-141 (document versioning headers) prepended to RULES.md (v1.3).
+- **Backend equivalents:** R-143 to R-146 added to backend RULES.md.
+- **CLAUDE.md corrections:** Satu-vending-hardware repo reference removed (repo deleted). Version header v1.1 added. CC_SKILL.md + CC_CHAT_LOG.md in Key Files.
+- **KNOWLEDGE_MAP.md corrections:** Hardware repo references removed. Two-repo system wording updated. .claude/claude_project/ section added. public/ inventory corrected.
+- **CC_CHAT_LOG.md created:** Seed entry. Zero firmware files touched this session.
+- **Prompt archived:** docs/prompts/CC_BUILD_PROMPT_governance_v1.md → ✅ COMPLETE 2026-06-18.
+- **Branch:** claude/hopeful-noether-6vkn0x · PR pending.
 
 ### 2026-06-17 — Firmware R6: sensor motor + pin-lock flap + payment banner + font audit (CC_BUILD_PROMPT_firmware_ux_r128_REVISED)
 - **R-128 (Sensor-driven motor stop):** `vendProduct(int lane)` rewritten to return `bool`.
@@ -72,7 +83,7 @@
       Next firmware CC session after this one.
 - [ ] FLAP_PROXIMITY_MCP_PIN — assign MCP2 GPA pin when solenoid wired (-1 = stub, safe)
 
-## SESSION LOG (newest first)
+## SESSION LOG (continued)
 
 ### 2026-06-15 — PNG victory cleanup (CC_PROMPT_png_victory_cleanup)
 - **PNG QR decode: ✅ FIXED AND CONFIRMED ON HARDWARE 2026-06-15 16:41:32**
@@ -219,7 +230,6 @@ Thai temples.
 |---|---|---|
 | `Csmittee/Satu-vending-backend` | Cloudflare Worker + D1 + all API | ✅ Yes |
 | `Csmittee/Satu-Vending-Firmware` | Arduino/C++ ESP32 firmware | ⚠️ Partial (upload constraint) |
-| `Csmittee/Satu-vending-hardware` | Wiring diagrams, BOM | ❌ Reference only |
 
 ---
 
@@ -382,9 +392,8 @@ src/
 wrangler.toml             — Workers config, D1 binding, [assets], cron, routes
 public/
 ├── satu-system-tester.html  — 14-test automated suite ← run after every backend change
-├── satu-machine-tester.html — manual machine simulation tool
-├── satu-preflight.html      — firmware pre-flash checklist tool
 ├── simulator.html           — service mode UI reference spec
+├── satu-machine-builder.html — machine builder: wiring, HW trigger, farm tester
 └── satu-admin.html          — admin dashboard (JWT version — CORS fix pending)
 ```
 
@@ -403,12 +412,13 @@ ui.h                — all screen drawing, touch detection, showPaymentAccepted
 state_machine.h     — enum MachineState (R6: DROP/DISPENSING/REMOVAL states removed)
 ```
 
-### Project Knowledge Docs (project folder)
+### Project Knowledge Docs (repo root)
 ```
-CLAUDE.md           — project compass, stack, 5 rules, key files, repos (30 lines max)
-RULES.md            — lessons learned R-85 to R-137 (newest at top)
+CLAUDE.md           — project compass, stack, 5 rules, key files, repos (35 lines max)
+RULES.md            — lessons learned R-85 to R-141 (newest at top)
+CC_SKILL.md         — CC session skills: Chat Override Guard, Structural Change Guard, etc.
+CC_CHAT_LOG.md      — CC session log (newest entry at top, max 10 lines per entry)
 PROJECT_STATE.md    — this file
-CHAT_HANDOFF.md     — last session summary (overwrite each session, never append)
 KNOWLEDGE_MAP.md    — what to read for what task (navigation guide)
 UI_SPEC.md          — screen inventory, grid system, 5-tab service mode, NVS key table
 SECURITY.md         — auth layers, ownership model, payment modes, security gaps
