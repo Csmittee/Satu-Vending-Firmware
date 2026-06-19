@@ -1,7 +1,7 @@
 # CLAUDE.md — Satu Project Compass
-> Version 1.2 — 2026-06-19
-> Changes: Added satu-hw-trigger.html + satu-wiring.html to Key Files; RULES.md refactored to 60 lines; R-147
-> Previous: v1.1 — 2026-06-18
+> Version 1.3 — 2026-06-19
+> Changes: Added firmware source files to Key Files (satu_vending.ino, hardware.h, network.h, ui.h)
+> Previous: v1.2 — 2026-06-19
 <!-- max 35 lines · never grows · CC reads this on every session start -->
 
 ## Stack
@@ -32,8 +32,12 @@
 - `UI_SPEC.md` — screen inventory · grid system · service mode tabs · NVS key table · read before any ui.h change
 - `SECURITY.md` — auth layers · ownership model · security gaps · read before any auth/ownership/reset code
 - `KNOWLEDGE_MAP.md` — navigation guide · what to read for each task
-- `public/satu-hw-trigger.html` — HW Trigger standalone tool · Section C extracted from machine builder
-- `public/satu-wiring.html`     — Wiring + BOM standalone reference · Section D extracted from machine builder
+- `public/satu-hw-trigger.html`       — HW Trigger standalone tool · Section C extracted from machine builder
+- `public/satu-wiring.html`           — Wiring + BOM standalone reference · Section D extracted from machine builder
+- `firmware/satu_vending.ino`         — main state machine loop · read before any logic change
+- `firmware/hardware.h`               — R2 LOCKED · relay + sensor + flap control · read-only always
+- `firmware/network.h`                — WiFi + API calls
+- `firmware/ui.h`                     — touch display + QR rendering
 
 ## Repos
 - Backend: `Csmittee/Satu-vending-backend`

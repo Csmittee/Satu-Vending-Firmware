@@ -1,10 +1,17 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 1.1 — 2026-06-19
-> Changes: Added session entry for firmware R7 (R-148/R-149 fixes)
-> Previous: v1.0 — 2026-06-18
+> Version 1.2 — 2026-06-19
+> Changes: Added session entry for firmware CLAUDE.md v1.3 docs update
+> Previous: v1.1 — 2026-06-19
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
 
+---
+## 2026-06-19 — Docs-only: CLAUDE.md Key Files update (firmware source files)
+**Did:** Added firmware/satu_vending.ino, firmware/hardware.h, firmware/network.h, firmware/ui.h to CLAUDE.md Key Files section. Bumped CLAUDE.md to v1.3. No firmware source files touched.
+**Updated:** CLAUDE.md v1.3, CC_CHAT_LOG.md v1.2
+**New files:** NONE
+**Pending Chat verify:** No firmware source files changed. No compile required (docs-only).
+**Flags:** NONE
 ---
 ## 2026-06-19 — CC_PROMPT_firmware_fix_vend_loop_and_gift_touch_v1
 **Did:** Fixed Bug 1 (carry-over touch) + Bug 2 (vend loop command poll). Files: firmware/satu_vending.ino (entry guard + include reorder), firmware/hardware.h (spin loop pollCommands every 500ms).
