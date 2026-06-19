@@ -1,10 +1,17 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 1.2 — 2026-06-19
-> Changes: Added session entry for firmware CLAUDE.md v1.3 docs update
-> Previous: v1.1 — 2026-06-19
+> Version 1.3 — 2026-06-19
+> Changes: Added session entry for CI paths filter (compile-check.yml)
+> Previous: v1.2 — 2026-06-19
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
 
+---
+## 2026-06-19 — CI paths filter: compile-check.yml skips non-firmware changes
+**Did:** Added `paths: ['firmware/**']` filter to both push and pull_request triggers in .github/workflows/compile-check.yml. CI no longer runs on docs-only commits (CLAUDE.md, RULES.md, CC_CHAT_LOG.md etc.).
+**Updated:** .github/workflows/compile-check.yml, CC_CHAT_LOG.md v1.3
+**New files:** NONE
+**Pending Chat verify:** Push a docs-only commit — confirm CI does NOT trigger. Push a firmware/ change — confirm CI DOES trigger.
+**Flags:** NONE
 ---
 ## 2026-06-19 — Docs-only: CLAUDE.md Key Files update (firmware source files)
 **Did:** Added firmware/satu_vending.ino, firmware/hardware.h, firmware/network.h, firmware/ui.h to CLAUDE.md Key Files section. Bumped CLAUDE.md to v1.3. No firmware source files touched.
