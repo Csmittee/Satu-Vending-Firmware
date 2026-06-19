@@ -1,10 +1,17 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 1.6 — 2026-06-19
-> Changes: Added session entry for SKILL 8 — Rules Hygiene Scan added to CC_SKILL.md
-> Previous: v1.5 — 2026-06-19
+> Version 1.7 — 2026-06-19
+> Changes: Added session entry for config.h.example cleanup — file deleted from repo
+> Previous: v1.6 — 2026-06-19
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
 
+---
+## 2026-06-19 — Cleanup: config.h.example deleted from repo (R-86 enforcement)
+**Did:** Deleted firmware/config.h.example. CI already has PRODUCT_SELECTION_TIMEOUT 15 in compile-check.yml heredoc (PR #35). R-86 says no config.h.example in repo — this removes the contradiction created in R8.
+**Updated:** CC_CHAT_LOG.md v1.7
+**New files:** NONE
+**Pending Chat verify:** Owner must add this line to local config.h before next flash (after #define SENSOR_POLL_MS line): `#define PRODUCT_SELECTION_TIMEOUT 15`
+**Flags:** NONE
 ---
 ## 2026-06-19 — Docs: SKILL 8 — Rules Hygiene Scan added to CC_SKILL.md
 **Did:** Added SKILL 8 (Rules Hygiene Scan) to CC_SKILL.md after SKILL 7. Trigger: major build milestones. Output: KEEP/REMOVE/REVIEW list for owner approval. Docs-only, never auto-deletes rules. Bumped CC_SKILL.md v1.1→v1.2.
