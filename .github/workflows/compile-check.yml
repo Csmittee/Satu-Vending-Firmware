@@ -78,6 +78,7 @@ jobs:
           #define HEARTBEAT_INTERVAL 300000
           #define VEND_MAX_SPIN_MS  30000
           #define SENSOR_POLL_MS        10
+          #define PRODUCT_SELECTION_TIMEOUT 15
           #define FLAP_RELOCK_TIMEOUT 3000
           #define FLAP_PROXIMITY_MCP_PIN -1
           #define SPEAKER_PIN           -1
