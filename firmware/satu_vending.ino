@@ -23,12 +23,15 @@
 //          R-129: pin-lock flap via RELAY_FLAP (defined in config.h)
 //          R-131: showPaymentAccepted() 1.5s green banner before vend
 //          R-137: font audit — FreeSans hierarchy throughout ui.h
+//   R7   — R-148: STATE_GIFT_OPTION entry guard 250ms (carry-over touch fix)
+//          R-149: vendProduct() polls commands every 500ms (sensor_triggered fix)
+//          Include order: network.h before hardware.h (CommandList dependency)
 // ============================================================
 
 #include "config.h"
 #include "state_machine.h"
-#include "hardware.h"
 #include "network.h"
+#include "hardware.h"
 #include "ui.h"
 
 // ── State machine globals ──────────────────────────────────────────────
@@ -374,6 +377,7 @@ void runStateMachine() {
 
     // ── GIFT_OPTION ──────────────────────────────────────────────────────────────────
     case STATE_GIFT_OPTION: {
+      if (elapsed < 250) break;   // R-148: entry guard — ignore carry-over touch from product selection
       int choice = getTouchedGiftOption();
       if (choice == 0) {
         wantSacredWater = false;
