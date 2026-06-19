@@ -1,7 +1,7 @@
 # SATU — Knowledge Architecture Guide (Firmware)
-> Version 1.1 — 2026-06-18
-> Changes: Added CC_SKILL.md + CC_CHAT_LOG.md entries; removed deleted hardware repo; added .claude/claude_project/ section
-> Previous: v1.0 — 2026-05-31
+> Version 1.2 — 2026-06-19
+> Changes: Added ui_service.h to firmware file list
+> Previous: v1.1 — 2026-06-18
 
 ## Document Map — What to Read for What Task
 
@@ -31,7 +31,8 @@ satu_vending.ino   — main state machine, setup(), loop()
 config.h           — pin constants, timeouts, NUM_SLOTS
 hardware.h         — MCP23017, relays, IR, LEDs, idleAnimation()   ← NEVER REPLACE
 network.h          — WiFi, NVS, /hello, /order, /completion
-ui.h               — all screen drawing, touch detection, service mode
+ui.h               — all screen drawing, touch detection, service mode shell + getTouchedServiceContent()
+ui_service.h       — service mode 5-tab body implementations (_drawSvcBody_* + _getTouchedServiceExtra())
 state_machine.h    — enum MachineState, extern declarations
 ```
 

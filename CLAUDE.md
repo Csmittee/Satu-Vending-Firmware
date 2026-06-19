@@ -1,7 +1,7 @@
 # CLAUDE.md — Satu Project Compass
-> Version 1.3 — 2026-06-19
-> Changes: Added firmware source files to Key Files (satu_vending.ino, hardware.h, network.h, ui.h)
-> Previous: v1.2 — 2026-06-19
+> Version 1.4 — 2026-06-19
+> Changes: Added firmware/ui_service.h to Key Files
+> Previous: v1.3 — 2026-06-19
 <!-- max 35 lines · never grows · CC reads this on every session start -->
 
 ## Stack
@@ -38,6 +38,7 @@
 - `firmware/hardware.h`               — R2 LOCKED · relay + sensor + flap control · read-only always
 - `firmware/network.h`                — WiFi + API calls
 - `firmware/ui.h`                     — touch display + QR rendering
+- `firmware/ui_service.h`             — service mode 5-tab body implementations + _getTouchedServiceExtra()
 
 ## Repos
 - Backend: `Csmittee/Satu-vending-backend`

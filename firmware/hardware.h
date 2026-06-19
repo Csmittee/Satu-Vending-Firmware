@@ -38,6 +38,10 @@ Adafruit_MCP23X17 mcp1;
 Adafruit_MCP23X17 mcp2;
 CRGB leds[NUM_LEDS];
 
+// MCP health flags — set by initMCP23017(), read by ui_service.h
+bool g_mcp1_ok = false;
+bool g_mcp2_ok = false;
+
 // ── Pin arrays (matching config.h extern declarations) ───────────────────────
 // MCP1: GPA = sensors 1-8 (pins 0-7), GPB = relays 1-6 (pins 8-13)
 const int mcp1_sensors[8] = {0, 1, 2, 3, 4, 5, 6, 7};
@@ -118,7 +122,7 @@ void initMCP23017() {
   // MCP1
   if (!mcp1.begin_I2C(MCP1_ADDR)) {
     Serial.println("[HW] ERROR: MCP1 (0x20) not found! Check wiring.");
-    // Non-fatal in development — will show sensor errors in log
+    g_mcp1_ok = false;
   } else {
     // GPA 0-7 = sensors → INPUT_PULLUP
     for (int i = 0; i < 8; i++) mcp1.pinMode(mcp1_sensors[i], INPUT_PULLUP);
@@ -128,11 +132,13 @@ void initMCP23017() {
       mcp1.digitalWrite(mcp1_relays[i], RELAY_OFF);
     }
     Serial.println("[HW] MCP1 OK");
+    g_mcp1_ok = true;
   }
 
   // MCP2
   if (!mcp2.begin_I2C(MCP2_ADDR)) {
     Serial.println("[HW] ERROR: MCP2 (0x21) not found! Check wiring.");
+    g_mcp2_ok = false;
   } else {
     // GPA 0-1 = sensors → INPUT_PULLUP
     for (int i = 0; i < 2; i++) mcp2.pinMode(mcp2_sensors[i], INPUT_PULLUP);
@@ -144,6 +150,7 @@ void initMCP23017() {
     // R-129: ensure flap is LOCKED (pin extended) on boot
     mcp2.digitalWrite(RELAY_MAP[RELAY_FLAP - 1].pin, RELAY_OFF);
     Serial.println("[HW] MCP2 OK — flap LOCKED on boot");
+    g_mcp2_ok = true;
   }
 }
 
