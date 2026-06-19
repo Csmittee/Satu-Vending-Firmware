@@ -39,7 +39,8 @@ static inline void touchReadOnce() {
 // R-151: Gift option debounce reset — module-level so setState() can reset it on entry.
 // Static local inside getTouchedGiftOption() would persist across state transitions and
 // allow carry-over touches to fire immediately on re-entry.
-static unsigned long _lastGiftTouchMs = 0;
+static unsigned long _lastGiftTouchMs    = 0;
+static unsigned long _lastConfirmTouchMs = 0;
 static void resetGiftTouchDebounce() { _lastGiftTouchMs = millis(); }
 
 // ============================================================
@@ -829,6 +830,16 @@ void drawGiftOptionScreen(int slotIdx) {
     gfx->setFont(NULL); gfx->setTextSize(1);
   }
 
+  // R-153: Back button — bottom centre, returns to product selection
+  int backBtnX = SCR_W/2 - 100, backBtnY = STATUS_H + 278, backBtnW = 200, backBtnH = 48;
+  _fillRoundRect(backBtnX, backBtnY, backBtnW, backBtnH, 8, gfx->color565(25, 20, 40));
+  _drawRoundRect(backBtnX, backBtnY, backBtnW, backBtnH, 8, C_MIDGREY);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_MIDGREY); gfx->setTextSize(1);
+  gfx->setCursor(backBtnX + backBtnW/2 - 28, backBtnY + 30);
+  gfx->print("< Back");
+  gfx->setFont(NULL); gfx->setTextSize(1);
+
   Serial.printf("[UI] Gift option screen: slot %d\n", slotIdx);
 }
 
@@ -1394,6 +1405,7 @@ int getTouchedSlot() {
 // ============================================================
 //  GET TOUCHED GIFT OPTION — 0=item only, 1=water, -1=none
 // ============================================================
+// Returns: 0=Item Only, 1=+Sacred Water, 2=Back, -1=none
 int getTouchedGiftOption() {
   _touch.read();
   if (!_touch.isTouched) return -1;
@@ -1417,7 +1429,117 @@ int getTouchedGiftOption() {
       return 1;
     }
   }
+  // R-153: Back button — bottom centre
+  int backBtnX = SCR_W/2 - 100, backBtnY = STATUS_H + 278, backBtnW = 200, backBtnH = 48;
+  if (tx >= backBtnX && tx <= backBtnX + backBtnW &&
+      ty >= backBtnY && ty <= backBtnY + backBtnH) {
+    _lastGiftTouchMs = millis();
+    Serial.println("[UI] Gift touch: Back");
+    return 2;
+  }
   return -1;
+}
+
+// ============================================================
+//  DRAW CONFIRM SCREEN  (R-153: order summary before createOrder())
+// ============================================================
+void drawConfirmScreen(int slotIdx, bool wantWater) {
+  g_idleDrawn = false;
+  gfx->fillScreen(C_BG);
+  _drawStatusBar(SB_CONFIRM);
+
+  SlotConfig& s = g_slots[slotIdx];
+  int total = s.price + (wantWater ? 20 : 0);
+
+  gfx->setFont(&FreeSansBold18pt7b);
+  gfx->setTextColor(C_GOLD); gfx->setTextSize(1);
+  const char* title = "Confirm your order";
+  int tw = strlen(title) * 12;
+  gfx->setCursor(SCR_W/2 - tw/2, STATUS_H + 42);
+  gfx->print(title);
+  gfx->setFont(NULL); gfx->setTextSize(1);
+
+  int boxW = 500, boxH = 200;
+  int boxX = (SCR_W - boxW) / 2;
+  int boxY = STATUS_H + 60;
+  _fillRoundRect(boxX, boxY, boxW, boxH, 12, gfx->color565(20, 18, 35));
+  _drawRoundRect(boxX, boxY, boxW, boxH, 12, C_GOLD);
+
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
+  gfx->setCursor(boxX + 24, boxY + 38);
+  gfx->print(s.name_en);
+  gfx->setFont(NULL); gfx->setTextSize(1);
+
+  gfx->setTextColor(wantWater ? gfx->color565(79, 195, 247) : C_MIDGREY);
+  gfx->setCursor(boxX + 24, boxY + 72);
+  gfx->print(wantWater ? "+ Sacred Water blessing" : "Item only (no water)");
+
+  gfx->drawFastHLine(boxX + 16, boxY + 100, boxW - 32, gfx->color565(60, 50, 90));
+
+  gfx->setFont(&FreeSansBold18pt7b);
+  gfx->setTextColor(C_GOLD); gfx->setTextSize(1);
+  char totalBuf[24]; snprintf(totalBuf, 24, "Total: %d THB", total);
+  int totalW = strlen(totalBuf) * 12;
+  gfx->setCursor(SCR_W/2 - totalW/2, boxY + 152);
+  gfx->print(totalBuf);
+  gfx->setFont(NULL); gfx->setTextSize(1);
+
+  int btnY = boxY + boxH + 24;
+  int btnW = 220, btnH = 52;
+  int backX = SCR_W/2 - 260;
+  int confX = SCR_W/2 + 40;
+
+  _fillRoundRect(backX, btnY, btnW, btnH, 10, gfx->color565(25, 20, 40));
+  _drawRoundRect(backX, btnY, btnW, btnH, 10, C_MIDGREY);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_MIDGREY); gfx->setTextSize(1);
+  gfx->setCursor(backX + btnW/2 - 28, btnY + 30);
+  gfx->print("< Back");
+  gfx->setFont(NULL); gfx->setTextSize(1);
+
+  _fillRoundRect(confX, btnY, btnW, btnH, 10, gfx->color565(20, 60, 20));
+  for (int t = 0; t < 2; t++)
+    _drawRoundRect(confX+t, btnY+t, btnW-t*2, btnH-t*2, 10-t, C_GREEN);
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_GREEN); gfx->setTextSize(1);
+  gfx->setCursor(confX + btnW/2 - 42, btnY + 30);
+  gfx->print("Confirm >");
+  gfx->setFont(NULL); gfx->setTextSize(1);
+
+  Serial.printf("[UI] Confirm screen: slot %d water=%d total=%d\n", slotIdx, wantWater, total);
+}
+
+// ============================================================
+//  GET TOUCHED CONFIRM — 1=Confirm, -1=Back, 0=none
+// ============================================================
+int getTouchedConfirm() {
+  _touch.read();
+  if (!_touch.isTouched) return 0;
+  int tx = _touch.points[0].x;
+  int ty = _touch.points[0].y;
+  if (millis() - _lastConfirmTouchMs < 80) return 0;
+
+  int boxW = 500, boxH = 200;
+  int boxY = STATUS_H + 60;
+  int btnY = boxY + boxH + 24;
+  int btnW = 220, btnH = 52;
+  int backX = SCR_W/2 - 260;
+  int confX = SCR_W/2 + 40;
+
+  if (ty >= btnY && ty <= btnY + btnH) {
+    if (tx >= backX && tx <= backX + btnW) {
+      _lastConfirmTouchMs = millis();
+      Serial.println("[UI] Confirm touch: Back");
+      return -1;
+    }
+    if (tx >= confX && tx <= confX + btnW) {
+      _lastConfirmTouchMs = millis();
+      Serial.println("[UI] Confirm touch: Confirm");
+      return 1;
+    }
+  }
+  return 0;
 }
 
 // ============================================================
