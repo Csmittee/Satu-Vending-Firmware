@@ -1,11 +1,22 @@
 # RULES.md — Satu 1.0 Universal Rules
-> Version 1.4 — 2026-06-19
-> Changes: Added R-147; moved domain rules (R-85 to R-142) to .claude/rules/ domain files
-> Previous: v1.3 — 2026-06-18
+> Version 1.5 — 2026-06-19
+> Changes: Added R-148 (gift screen entry guard) + R-149 (vend loop command poll)
+> Previous: v1.4 — 2026-06-19
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
 
 ---
+
+- **R-149: vendProduct() spin loop polls backend commands every 500ms (2026-06-19).**
+  sensor_triggered command = treated as real IR sensor fire → sensorFired=true → motor stop.
+  Poll cadence: 500ms (50 × SENSOR_POLL_MS). Real sensor still polled every 10ms — unchanged.
+  pollCommands() called from hardware.h spin loop only — not from other hardware.h functions.
+  Root cause this solves: vendProduct() blocks loop() for up to 30s — commands queue but never drain.
+
+- **R-148: STATE_GIFT_OPTION entry guard — ignore all touches for first 250ms after state entry (2026-06-19).**
+  Prevents carry-over touch from STATE_PRODUCT_SELECTION confirm tap triggering gift card immediately.
+  Implementation: `if (elapsed < 250) break;` — first line inside STATE_GIFT_OPTION case.
+  elapsed = millis() - stateStartTime, already computed at top of runStateMachine().
 
 - **R-147: THREE-FILE MACHINE BUILDER ARCHITECTURE — PERMANENT (2026-06-19):**
   satu-machine-builder.html = Section A (Single Flow) + Section B (Fleet)

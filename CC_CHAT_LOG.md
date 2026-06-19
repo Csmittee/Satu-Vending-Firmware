@@ -1,9 +1,17 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 1.0 — 2026-06-18
-> Changes: Initial creation — seed entry for governance wiring session
+> Version 1.1 — 2026-06-19
+> Changes: Added session entry for firmware R7 (R-148/R-149 fixes)
+> Previous: v1.0 — 2026-06-18
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
 
+---
+## 2026-06-19 — CC_PROMPT_firmware_fix_vend_loop_and_gift_touch_v1
+**Did:** Fixed Bug 1 (carry-over touch) + Bug 2 (vend loop command poll). Files: firmware/satu_vending.ino (entry guard + include reorder), firmware/hardware.h (spin loop pollCommands every 500ms).
+**Updated:** RULES.md v1.5 (R-148, R-149), KNOWN_GOOD.md, PROJECT_STATE.md v1.2, CC_CHAT_LOG.md v1.1
+**New files:** NONE
+**Pending Chat verify:** Serial output confirms motor stops within ~1s of IR Trigger button — expected `[HW] sensor_triggered command received — stopping motor after ~XXXms`. Gift screen must show ≥250ms gap after product selection confirm.
+**Flags:** OVERRIDE — include reorder in satu_vending.ino (network.h moved before hardware.h). Required so CommandList/pollCommands() are visible at hardware.h compile time. Logic unchanged — pure dependency resolution. CI must be ✅ GREEN before flash.
 ---
 ## 2026-06-18 — CC_BUILD_PROMPT_governance_v1 (Governance Wiring — Firmware Repo)
 **Did:** Updated CLAUDE.md — added CC_SKILL.md + CC_CHAT_LOG.md to Key Files, removed deleted hardware repo, added version header v1.1. Updated RULES.md — R-138 to R-141 added (CC_CHAT_LOG, CC_SKILL, HTML size limit, doc versioning), version bumped to 1.3. Updated KNOWLEDGE_MAP.md — added CC_SKILL/CC_CHAT_LOG entries, removed hardware repo refs, added .claude/claude_project/ section, version bumped to 1.1. Created CC_CHAT_LOG.md (this file).

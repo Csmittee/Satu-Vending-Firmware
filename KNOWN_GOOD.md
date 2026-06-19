@@ -4,6 +4,22 @@
 
 ---
 
+## 2026-06-19 — Firmware R7 (R-148/R-149) — CI ⬜ pending
+- satu_vending.ino R7: STATE_GIFT_OPTION entry guard (R-148) — 250ms touch ignore on entry; network.h included before hardware.h (compile dependency fix)
+- hardware.h R7: vendProduct() spin loop polls pollCommands() every 500ms (R-149)
+- Files changed: satu_vending.ino, hardware.h only
+- CI: ⬜ GitHub Actions pending
+- Flash: ⬜ 1 cycle required — owner flash after CI green
+- Expected serial (IR trigger test):
+  ```
+  [HW] Relay N ON — motor SPINNING + flap UNLOCKED
+  [HW] sensor_triggered command received — stopping motor after ~XXXms
+  [HW] Relay N OFF — motor stopped (sensor)
+  [HW] Flap re-locked via TIMEOUT (3000ms) — proximity not wired or stuck
+  [HW] Flap LOCKED — pin extended
+  [STATE] Complete — slot=N ...
+  ```
+
 ## 2026-06-17 — Firmware R6 (R-128/R-129/R-131/R-137) — CI pending ⬜
 - **config.h R6:** RELAY_FLAP=12, VEND_MAX_SPIN_MS=30000, SENSOR_POLL_MS=10, FLAP_RELOCK_TIMEOUT=3000, FLAP_PROXIMITY_MCP_PIN=-1, SPEAKER_PIN=-1
 - **hardware.h R6:** vendProduct() bool/sensor-driven stop, unlockFlap(), lockFlap() added; unlockDoor()/lockDoor() removed

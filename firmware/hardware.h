@@ -1,6 +1,7 @@
 // ============================================================
-// hardware.h — Satu Vending Machine Hardware Layer
+// hardware.h — Satu Vending Machine Hardware Layer  R7
 // Board: ESP32-S3 (ESP32-8048S070C)
+// R7 — R-149: vendProduct() spin loop polls pollCommands() every 500ms
 // ============================================================
 // HARDWARE:
 //   MCP1 (0x20): GPA0-7 = IR sensors 1-8  | GPB0-5 = Relays 1-6
@@ -318,14 +319,34 @@ bool vendProduct(int lane) {
   // Step 2: spin loop — sensor poll every SENSOR_POLL_MS
   unsigned long spinStart = millis();
   bool sensorFired = false;
+  static unsigned long lastCmdPollMs = 0;
 
   while (millis() - spinStart < VEND_MAX_SPIN_MS) {
+
+    // Primary: real IR sensor
     if (readSensor(lane)) {
       sensorFired = true;
       Serial.printf("[HW] Sensor %d TRIGGERED — item detected after %lums\n",
                     lane + 1, millis() - spinStart);
       break;
     }
+
+    // Secondary: backend sensor_triggered command (R-149)
+    // Poll every 500ms to avoid I2C bus contention with sensor reads
+    if (millis() - lastCmdPollMs >= 500) {
+      lastCmdPollMs = millis();
+      CommandList cmds = pollCommands();
+      for (int i = 0; i < cmds.count; i++) {
+        if (cmds.commands[i] == "sensor_triggered") {
+          sensorFired = true;
+          Serial.printf("[HW] sensor_triggered command received — stopping motor after %lums\n",
+                        millis() - spinStart);
+          break;
+        }
+      }
+      if (sensorFired) break;
+    }
+
     delay(SENSOR_POLL_MS);
   }
 

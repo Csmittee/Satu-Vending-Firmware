@@ -1,9 +1,18 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Version 1.1 — 2026-06-18
-> Compiled by: Chat S15 (chaijohn-personal session — first proper STATE doc for Satu)
+> Version 1.2 — 2026-06-19
+> Changes: Added R7 session log (R-148 gift guard + R-149 vend loop command poll)
+> Previous: v1.1 — 2026-06-18
 > Status: Phase 1 active — ~55% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-19 — R-148 gift guard + R-149 vend loop command poll
+- Bug 1 fixed: carry-over touch from product selection no longer auto-selects gift option. Entry guard (250ms) added to STATE_GIFT_OPTION in satu_vending.ino.
+- Bug 2 fixed: sensor_triggered backend command now stops motor within ~1s. pollCommands() called every 500ms inside vendProduct() spin loop in hardware.h.
+- Include reorder in satu_vending.ino: network.h moved before hardware.h (compile dependency for CommandList — no logic change).
+- Files: satu_vending.ino, hardware.h
+- Rules: R-148, R-149
+- CI: ⬜ pending. Flash: 1 cycle required.
 
 ### 2026-06-18 — Governance docs wiring: CC_SKILL + CC_CHAT_LOG + R-138 to R-141 (R-84)
 - **SCOPE:** Docs only. Zero .ino, .h, or src/ file changes.
