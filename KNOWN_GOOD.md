@@ -4,6 +4,50 @@
 
 ---
 
+## 2026-06-19 — Firmware R9 (R-153 STATE_CONFIRMING) — ✅ CONFIRMED ON HARDWARE
+- **Build:** state_machine.h + satu_vending.ino + ui.h R9 — config.h now tracked in repo (R-86)
+- **Board:** SATU-4R473R (MAC: 3C:DC:75:5D:DD:2C)
+- **Branch:** claude/optimistic-goodall-0p7gil — PR #36
+- **Flash:** ✅ CONFIRMED — owner flashed 2026-06-19
+- **Test:** HW Trigger used for payment confirmation (fake mode)
+- **Full flow confirmed from serial:**
+  ```
+  [STATE] 2 → 5    (IDLE → PRODUCT_SELECTION)
+  [UI] Touch: slot 0 (Small Amulet 100THB)
+  [STATE] 5 → 6    (PRODUCT_SELECTION → GIFT_OPTION)
+  [UI] Gift option screen: slot 0
+  [UI] Gift touch: Item Only
+  [STATE] 6 → 7    (GIFT_OPTION → CONFIRMING)
+  [UI] Confirm screen: slot 0 water=0 total=100
+  [UI] Confirm touch: Confirm
+  [NET] Order SATU-20260619-996361 — 10 THB — water=0
+  [STATE] 7 → 8    (CONFIRMING → AWAITING_PAYMENT)
+  [UI] QR PNG URL: ...
+  [NET] fetchImageBytes: HTTP 200 Content-Length=27458
+  [UI] PNG decode: rc=0 rows=165 w=165 h=165
+  [UI] QR screen drawn
+  [NET] Order SATU-20260619-996361: paid   ← HW Trigger webhook
+  [STATE] Payment confirmed via poll
+  [UI] Payment accepted banner shown
+  [STATE] 8 → 9    (AWAITING_PAYMENT → VENDING)
+  [HW] Relay 12 → ON / Flap UNLOCKED
+  [HW] Relay 1 → ON — motor SPINNING + flap UNLOCKED
+  [HW] sensor_triggered — stopping motor after 2790ms
+  [HW] Relay 1 → OFF — motor stopped (sensor)
+  [HW] Relay 12 → OFF / Flap LOCKED
+  [HW] Flap re-locked via TIMEOUT (3000ms)
+  [STATE] 9 → 10   (VENDING → COMPLETING)
+  [UI] Completion: slot=0 lucky=79 water=0
+  [NET] Completion report: HTTP 200
+  [STATE] 10 → 2   (COMPLETING → IDLE)
+  [UI] Idle screen drawn (5x2 grid)
+  ```
+- **Also confirmed:** Back button on gift option screen (→ product selection). Payment timeout path (7→10→2).
+- **QR UX:** White box during fetch eliminated — customer now sees Confirm screen during QR fetch. Backlight flash on PNG decode is imperceptible (~100ms). No re-fetch after QR appears.
+- **D1 safety:** createOrder() only called on Confirm touch. Abandoned flows = zero D1 rows.
+
+---
+
 ## 2026-06-19 — Firmware R7 (R-148/R-149) — CI ⬜ pending
 - satu_vending.ino R7: STATE_GIFT_OPTION entry guard (R-148) — 250ms touch ignore on entry; network.h included before hardware.h (compile dependency fix)
 - hardware.h R7: vendProduct() spin loop polls pollCommands() every 500ms (R-149)

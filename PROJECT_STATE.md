@@ -1,10 +1,26 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Version 1.2 — 2026-06-19
-> Changes: Added R7 session log (R-148 gift guard + R-149 vend loop command poll)
-> Previous: v1.1 — 2026-06-18
-> Status: Phase 1 active — ~55% complete
+> Version 1.3 — 2026-06-19
+> Changes: R9 session log — STATE_CONFIRMING confirmed on hardware, config.h tracked in repo
+> Previous: v1.2 — 2026-06-19
+> Status: Phase 1 active — ~60% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-19 — R9: STATE_CONFIRMING + Back buttons + config.h tracked + QR UX fix
+- **R-153 (STATE_CONFIRMING):** New confirm screen inserted between gift option and QR payment screen.
+  Customer selects product → selects water option → confirms order → QR appears.
+  `createOrder()` now called ONLY on Confirm touch — zero D1 rows from abandoned flows (owner requirement).
+- **Back buttons:** Gift option screen now has Back → product selection. Confirm screen has Back → gift option.
+- **QR UX fixed:** White-box-while-fetching issue eliminated. QR fetch happens while customer is on confirm screen.
+  By the time customer taps Confirm, QR is ready. Backlight flash on PNG decode = ~100ms, imperceptible.
+- **config.h tracked in repo (R-86 v1.3):** config.h removed from .gitignore. Owner downloads from GitHub
+  as part of normal flash workflow. CI continues to generate its own inline copy independently.
+  Added PRODUCT_SELECTION_TIMEOUT=15 (R-152) to config.h.
+- **CONFIRMED ON HARDWARE:** Full flow SATU-4R473R 2026-06-19. HW Trigger used for payment.
+  STATE 2→5→6→7→8→9→10→2 all confirmed. Both Back buttons confirmed. Payment timeout path confirmed.
+- **Files:** state_machine.h, satu_vending.ino, ui.h, config.h, .gitignore, RULES-firmware.md v1.3, CC_CHAT_LOG.md v2.0
+- **CI:** ⬜ pending. **Flash:** ✅ CONFIRMED 2026-06-19.
+- **Branch:** claude/optimistic-goodall-0p7gil · PR #36
 
 ### 2026-06-19 — R-148 gift guard + R-149 vend loop command poll
 - Bug 1 fixed: carry-over touch from product selection no longer auto-selects gift option. Entry guard (250ms) added to STATE_GIFT_OPTION in satu_vending.ino.
@@ -289,22 +305,22 @@ Thai temples.
 - [ ] satu-admin.html CORS/401 — /v1/admin-data/:table route missing (JWT admin version, not X-Admin-Token)
 
 #### Firmware ⚠️ IN PROGRESS
-- [x] State machine architecture (state_machine.h) — R6: removed STATE_WAITING_DROP/STATE_DISPENSING/STATE_WAITING_REMOVAL
-- [x] config.h R6 — RELAY_FLAP=12, VEND_MAX_SPIN_MS=30000, SENSOR_POLL_MS=10, FLAP_RELOCK_TIMEOUT=3000
+- [x] State machine architecture (state_machine.h) — R9: STATE_CONFIRMING added (R-153); R6: removed STATE_WAITING_DROP/DISPENSING/REMOVAL
+- [x] config.h R9 — tracked in repo (R-86); PRODUCT_SELECTION_TIMEOUT=15 added (R-152). WIFI fields permanently empty (R-85).
+      R6 constants: RELAY_FLAP=12, VEND_MAX_SPIN_MS=30000, SENSOR_POLL_MS=10, FLAP_RELOCK_TIMEOUT=3000
       VEND_PULSE_MS / DROP_TIMEOUT / REMOVAL_TIMEOUT deleted permanently (R-128)
-- [x] config.h.example — tracked template, WIFI_SSID="" WIFI_PASSWORD="" intentional (R5)
 - [x] hardware.h R6 — 4 authorized R6 changes complete:
       unlockFlap() + lockFlap() added (R-129) · vendProduct() returns bool + sensor-driven (R-128)
       Boot message: "[HW] MCP2 OK — flap LOCKED on boot" · Relay 12 comment updated
       ALL OTHER hardware.h content R2 LOCKED — never modify
 - [x] network.h R5 — NVS-first WiFi, saveWifiAndReboot(), /hello, /order, /completion, /factory-reset, fetchImageBytes()
-- [x] satu_vending.ino R6 — _onPaymentConfirmed(), _onItemDropped(), _onLaneEmpty() · sync vend flow
-- [x] ui.h R6 — showPaymentAccepted() 1.5s green banner (R-131) · font audit complete (R-137)
-      _pngDrawRow returns 1 (R-89/R-117) · static lineBuf (R-119) · pause-decode-resume (R-117)
-- [x] ui.h PNG decode — ✅ CONFIRMED ON HARDWARE 2026-06-15 16:41:32 — rc=0 rows=165 w=165 h=165
+- [x] satu_vending.ino R9 — STATE_CONFIRMING case (R-153) · gift option Back → product selection · R6 sync vend flow
+- [x] ui.h R9 — drawConfirmScreen() · getTouchedConfirm() · Back button on gift option screen (R-153)
+      R6: showPaymentAccepted() · font audit (R-137) · _pngDrawRow returns 1 (R-89/R-117) · static lineBuf (R-119)
+- [x] ui.h PNG decode — ✅ CONFIRMED ON HARDWARE 2026-06-15 rc=0 rows=165 · QR UX fixed via confirm screen buffer
+- [x] Full end-to-end test R9 — ✅ CONFIRMED ON HARDWARE 2026-06-19 — SATU-4R473R all states confirmed
 - [ ] ui.h — service mode 5 tabs NOT COMPLETE — stubs only, next firmware CC session
 - [ ] FLAP_PROXIMITY_MCP_PIN — assign MCP2 GPA pin when solenoid wired (-1 = stub, safe)
-- [ ] Full end-to-end test on real hardware (R6 vend + flap + banner) — PENDING owner flash ⬜
 - [ ] OTA firmware update — explicitly deferred (not in Phase 1 scope)
 
 #### Infrastructure ✅ ADDED 2026-06-13
