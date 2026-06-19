@@ -113,6 +113,7 @@ extern const int mcp2_relays[6];
 // ── Vend + Flap timing (R-128, R-129) ────────────────────────────────────
 #define VEND_MAX_SPIN_MS      30000  // R-128: motor safety cutoff (30s = ~10 turns)
 #define SENSOR_POLL_MS            10  // R-128: IR sensor read interval during spin
+#define PRODUCT_SELECTION_TIMEOUT 15
 #define FLAP_RELOCK_TIMEOUT     3000  // R-129: max wait for proximity before force-lock
 
 // ── Flap proximity switch (R-129) ─────────────────────────────────────────
