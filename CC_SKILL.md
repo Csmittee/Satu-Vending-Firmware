@@ -1,7 +1,7 @@
 # CC_SKILL.md — Satu 1.0
-> Version 1.1 — 2026-06-19
-> Changes: Added SKILL 7 — Autonomous Docs Permission (owner-granted standing permission)
-> Previous: v1.0 — 2026-06-18
+> Version 1.2 — 2026-06-19
+> Changes: Added SKILL 8 — Rules Hygiene Scan
+> Previous: v1.1 — 2026-06-19
 > Location: Repo root (both repos) — CC reads every session
 
 ---
@@ -194,6 +194,36 @@ CC proceeds with all mandatory closing tasks (CC_CHAT_LOG, RULES.md, PROJECT_STA
 - `schema.sql`
 - `wrangler.toml`
 - `hardware.h` (R2 LOCKED always)
+
+---
+
+## SKILL 8 — RULES HYGIENE SCAN
+
+**Trigger:** After every major build milestone (not every PR).
+
+**Purpose:** Prevent rules entropy — rules accumulate over time, outdated ones never removed.
+
+**CC process:**
+1. Read `RULES.md` + all `.claude/rules/RULES-*.md` in full
+2. For each rule, evaluate against current repo state:
+   - Does the file/function it references still exist?
+   - Is it superseded by a newer rule covering the same concern?
+   - Is it about a bug that is now closed and irrelevant?
+3. Produce a flagged list — three categories only: KEEP / REMOVE / REVIEW
+4. Present list to owner — never auto-delete anything
+5. Owner approves → CC commits docs-only PR, no code touched
+
+**Output format:**
+```
+KEEP   R-xxx — reason still relevant
+REMOVE R-xxx — reason: superseded by R-yyy / file deleted / bug closed
+REVIEW R-xxx — reason: references unknown file or ambiguous state
+```
+
+**Constraints:**
+- Owner approval required before any rule is deleted
+- Docs-only — never touches `src/`, `firmware/`, `public/`, `schema.sql`, `wrangler.toml`
+- CI skip acceptable — docs-only PR, merge without waiting
 
 ---
 
