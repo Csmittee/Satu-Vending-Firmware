@@ -1,7 +1,7 @@
 # RULES-firmware.md — Satu 1.0
-> Version 1.1 — 2026-06-19
-> Changes: Added R-85 to R-123 moved from RULES.md
-> Previous: v1.0 — 2026-06-11
+> Version 1.2 — 2026-06-19
+> Changes: R-86 updated — config.h.example removed from repo, CI generates config.h inline
+> Previous: v1.1 — 2026-06-19
 > Domain: Arduino/ESP32 firmware, library versions, NVS, compile constraints
 > Load this file when: Any firmware discussion · compile errors · flash issues · NVS/config work
 
@@ -26,8 +26,7 @@
 
 ## WiFi / Credentials (moved from RULES.md 2026-06-19)
 - R-86: config.h = gitignored local file for pin constants and build config only.
-        config.h.example = tracked template — WIFI_SSID="" WIFI_PASSWORD="" intentional.
-        On new machine: copy config.h.example → config.h, leave WiFi empty, flash, enter on screen.
+        config.h is gitignored. No config.h.example in repo — CI generates config.h inline via compile-check.yml.
 - R-85: WiFi credentials NEVER in source files or git — NVS only (nvs_ssid / nvs_pass).
         config.h WIFI_SSID and WIFI_PASSWORD MUST remain empty strings ("") permanently.
         Credentials entered via drawWifiSetupScreen() → saveWifiAndReboot() → NVS. Never fill config.h WiFi fields.
