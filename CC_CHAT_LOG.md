@@ -1,10 +1,17 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 1.7 — 2026-06-19
-> Changes: Added session entry for config.h.example cleanup — file deleted from repo
-> Previous: v1.6 — 2026-06-19
+> Version 1.8 — 2026-06-19
+> Changes: Added session entry for config.h untrack — git rm --cached (R-86 full enforcement)
+> Previous: v1.7 — 2026-06-19
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
 
+---
+## 2026-06-19 — Cleanup: firmware/config.h untracked via git rm --cached (R-86 full enforcement)
+**Did:** git rm --cached firmware/config.h. File was committed 2 days ago despite being in .gitignore. git rm --cached removes it from tracking without deleting owner's local copy. .gitignore now takes full effect.
+**Updated:** CC_CHAT_LOG.md v1.8
+**New files:** NONE
+**Pending Chat verify:** After merge, confirm firmware/config.h no longer appears in GitHub repo file listing.
+**Flags:** NONE
 ---
 ## 2026-06-19 — Cleanup: config.h.example deleted from repo (R-86 enforcement)
 **Did:** Deleted firmware/config.h.example. CI already has PRODUCT_SELECTION_TIMEOUT 15 in compile-check.yml heredoc (PR #35). R-86 says no config.h.example in repo — this removes the contradiction created in R8.
