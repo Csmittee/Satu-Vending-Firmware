@@ -26,6 +26,22 @@ Arduino_ESP32RGBPanel *_bus = new Arduino_ESP32RGBPanel(
 Arduino_RGB_Display *gfx = new Arduino_RGB_Display(800, 480, _bus, 0, true);
 TAMC_GT911 _touch(19, 20, -1, -1, 800, 480);
 
+// R-150: Touch read cache — one GT911 I2C read per idle tick prevents event consumption.
+// GT911 clears its interrupt flag after each read(); a second read in the same tick
+// returns isTouched=false even if finger is still down. touchReadOnce() shares one read
+// across all checks within a 4ms window (idle tick is ~10ms with delay(10) in loop()).
+static unsigned long _touchCacheMs = 0;
+static inline void touchReadOnce() {
+  unsigned long _now = millis();
+  if (_now - _touchCacheMs > 4) { _touch.read(); _touchCacheMs = _now; }
+}
+
+// R-151: Gift option debounce reset — module-level so setState() can reset it on entry.
+// Static local inside getTouchedGiftOption() would persist across state transitions and
+// allow carry-over touches to fire immediately on re-entry.
+static unsigned long _lastGiftTouchMs = 0;
+static void resetGiftTouchDebounce() { _lastGiftTouchMs = millis(); }
+
 // ============================================================
 //  COLOUR PALETTE
 // ============================================================
@@ -60,7 +76,7 @@ static int g_active_tab = 0;  // ui.h-private
 
 // Config globals (populated from NVS by loadConfigFromNVS())
 int  g_cfg_idle    = 60;
-int  g_cfg_sel     = 15;
+int  g_cfg_sel     = PRODUCT_SELECTION_TIMEOUT;
 bool g_cfg_water   = true;
 bool g_cfg_lucky   = true;
 static bool g_lang_th = false;  // ui.h-private
@@ -1360,7 +1376,7 @@ int getTouchedSlotXY(int tx, int ty) {
 }
 
 int getTouchedSlot() {
-  _touch.read();
+  touchReadOnce();  // R-150: shared read — see touchReadOnce() above
   if (!_touch.isTouched) return -1;
   int tx = _touch.points[0].x;
   int ty = _touch.points[0].y;
@@ -1387,16 +1403,16 @@ int getTouchedGiftOption() {
   int cardY = STATUS_H + 60;
   int cardAX = SCR_W/2 - cardW - 30;
   int cardBX = SCR_W/2 + 30;
-  static unsigned long lastGiftTouchMs = 0;
-  if (millis() - lastGiftTouchMs < 80) return -1;
+  // R-151: use module-level _lastGiftTouchMs (reset by setState on STATE_GIFT_OPTION entry)
+  if (millis() - _lastGiftTouchMs < 80) return -1;
   if (ty >= cardY && ty <= cardY + cardH) {
     if (tx >= cardAX && tx <= cardAX + cardW) {
-      lastGiftTouchMs = millis();
+      _lastGiftTouchMs = millis();
       Serial.println("[UI] Gift touch: Item Only");
       return 0;
     }
     if (tx >= cardBX && tx <= cardBX + cardW) {
-      lastGiftTouchMs = millis();
+      _lastGiftTouchMs = millis();
       Serial.println("[UI] Gift touch: +Sacred Water");
       return 1;
     }
@@ -1412,7 +1428,7 @@ bool checkServiceGesture() {
   static unsigned long firstTapMs = 0;
   static unsigned long lastSvcTap = 0;
 
-  _touch.read();
+  touchReadOnce();  // R-150: shared read — same tick as getTouchedSlot in STATE_IDLE
   if (!_touch.isTouched) return false;
 
   int tx = _touch.points[0].x;

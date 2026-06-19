@@ -1,10 +1,24 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 1.3 — 2026-06-19
-> Changes: Added session entry for CI paths filter (compile-check.yml)
-> Previous: v1.2 — 2026-06-19
+> Version 1.5 — 2026-06-19
+> Changes: Added session entry for R-86 docs fix (config.h.example removed from repo)
+> Previous: v1.4 — 2026-06-19
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
 
+---
+## 2026-06-19 — Docs: R-86 updated — config.h.example removed from repo model
+**Did:** Updated RULES-firmware.md R-86: config.h.example is NOT a tracked template in repo. CI generates config.h inline via compile-check.yml. Removed "copy config.h.example → config.h" instruction which was incorrect.
+**Updated:** .claude/rules/RULES-firmware.md v1.2, CC_CHAT_LOG.md v1.5
+**New files:** NONE
+**Pending Chat verify:** NONE (docs only)
+**Flags:** NONE
+---
+## 2026-06-19 — Bug A/B/C UX fixes: idle touch, gift carry-over, selection timeout
+**Did:** Bug A: touchReadOnce() in ui.h caches GT911 read for 4ms — 3 reads/tick collapsed to 1. Bug B: resetGiftTouchDebounce() called from setState(STATE_GIFT_OPTION); entry guard 250→500ms; _lastGiftTouchMs moved to module scope. Bug C: PRODUCT_SELECTION_TIMEOUT in config.h.example replaces magic number 15 in g_cfg_sel.
+**Updated:** firmware/ui.h, firmware/satu_vending.ino (R8), firmware/config.h.example (CREATE), RULES.md v1.6 (R-150, R-151, R-152), CC_CHAT_LOG.md v1.4
+**New files:** firmware/config.h.example
+**Pending Chat verify:** Flash, serial monitor: (A) single tap on idle grid should log `[UI] Touch: slot X` immediately. (B) Tap product confirm then immediately tap gift area — must NOT fire within 500ms. (C) Leave product selection idle for 15s — should return to idle screen.
+**Flags:** NONE. Flash cycles: 1.
 ---
 ## 2026-06-19 — CI paths filter: compile-check.yml skips non-firmware changes
 **Did:** Added `paths: ['firmware/**']` filter to both push and pull_request triggers in .github/workflows/compile-check.yml. CI no longer runs on docs-only commits (CLAUDE.md, RULES.md, CC_CHAT_LOG.md etc.).

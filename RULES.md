@@ -1,11 +1,29 @@
 # RULES.md — Satu 1.0 Universal Rules
-> Version 1.5 — 2026-06-19
-> Changes: Added R-148 (gift screen entry guard) + R-149 (vend loop command poll)
-> Previous: v1.4 — 2026-06-19
+> Version 1.6 — 2026-06-19
+> Changes: Added R-150 (idle touch single-read), R-151 (gift debounce reset), R-152 (PRODUCT_SELECTION_TIMEOUT)
+> Previous: v1.5 — 2026-06-19
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
 
 ---
+
+- **R-152: PRODUCT_SELECTION_TIMEOUT in config.h.example (2026-06-19).**
+  Default: 15 seconds. Controls product selection screen timeout before return to idle.
+  ui.h g_cfg_sel initialises from this constant. Operator can override via NVS key cfg_sel.
+  Never hardcode the value in ui.h.
+
+- **R-151: STATE_GIFT_OPTION carry-over touch fix — two-layer defence (2026-06-19).**
+  Layer 1: entry guard raised to 500ms (was 250ms). Layer 2: setState() calls
+  resetGiftTouchDebounce() on STATE_GIFT_OPTION entry, setting _lastGiftTouchMs=millis().
+  Without the reset, the static debounce stays at zero/old and passes immediately on re-entry.
+  _lastGiftTouchMs lives at module scope in ui.h — NOT as a static local inside getTouchedGiftOption().
+
+- **R-150: One GT911 touch read per idle tick — touchReadOnce() pattern (2026-06-19).**
+  GT911 clears its interrupt flag after each I2C read. STATE_IDLE had 3 reads per tick:
+  debug hold, checkServiceGesture(), getTouchedSlot(). First read consumed the tap; later
+  reads returned isTouched=false → first 2 taps dropped, 3rd tap happened to be the only read.
+  Fix: touchReadOnce() caches the read for 4ms. All idle-path functions call touchReadOnce()
+  not _touch.read(). Functions outside the idle path (animation loops, keyboard) keep _touch.read().
 
 - **R-149: vendProduct() spin loop polls backend commands every 500ms (2026-06-19).**
   sensor_triggered command = treated as real IR sensor fire → sensorFired=true → motor stop.

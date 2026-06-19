@@ -26,6 +26,9 @@
 //   R7   — R-148: STATE_GIFT_OPTION entry guard 250ms (carry-over touch fix)
 //          R-149: vendProduct() polls commands every 500ms (sensor_triggered fix)
 //          Include order: network.h before hardware.h (CommandList dependency)
+//   R8   — R-150: touchReadOnce() shared GT911 read per idle tick (3-tap drop fix)
+//          R-151: resetGiftTouchDebounce() on STATE_GIFT_OPTION entry + guard 500ms
+//          R-152: PRODUCT_SELECTION_TIMEOUT in config.h replaces magic number 15
 // ============================================================
 
 #include "config.h"
@@ -68,6 +71,7 @@ void setState(MachineState newState) {
   currentState   = newState;
   stateStartTime = millis();
   Serial.printf("[STATE] %d → %d\n", (int)lastState, (int)newState);
+  if (newState == STATE_GIFT_OPTION) resetGiftTouchDebounce();  // R-151
 }
 
 // ── Forward declarations ──────────────────────────────────────────────────────
@@ -205,7 +209,7 @@ static void _clearNVS() {
 void setup() {
   Serial.begin(115200);
   delay(500);
-  Serial.println("\n[SATU] Booting R6...");
+  Serial.println("\n[SATU] Booting R8...");
 
   initHardware();
   Serial.println("[SATU] Hardware OK");
@@ -306,7 +310,7 @@ void runStateMachine() {
       {
         static unsigned long debugHoldStart = 0;
         static bool          debugHolding   = false;
-        _touch.read();
+        touchReadOnce();  // R-150: single GT911 read shared with checkServiceGesture + getTouchedSlot
         if (_touch.isTouched &&
             _touch.points[0].x < 80 &&
             _touch.points[0].y > 400) {
@@ -377,7 +381,7 @@ void runStateMachine() {
 
     // ── GIFT_OPTION ──────────────────────────────────────────────────────────────────
     case STATE_GIFT_OPTION: {
-      if (elapsed < 250) break;   // R-148: entry guard — ignore carry-over touch from product selection
+      if (elapsed < 500) break;   // R-148/R-151: 500ms entry guard + debounce reset in setState()
       int choice = getTouchedGiftOption();
       if (choice == 0) {
         wantSacredWater = false;
