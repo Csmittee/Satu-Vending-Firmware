@@ -1,10 +1,17 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 1.5 — 2026-06-19
-> Changes: Added session entry for R-86 docs fix (config.h.example removed from repo)
-> Previous: v1.4 — 2026-06-19
+> Version 1.6 — 2026-06-19
+> Changes: Added session entry for SKILL 8 — Rules Hygiene Scan added to CC_SKILL.md
+> Previous: v1.5 — 2026-06-19
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
 
+---
+## 2026-06-19 — Docs: SKILL 8 — Rules Hygiene Scan added to CC_SKILL.md
+**Did:** Added SKILL 8 (Rules Hygiene Scan) to CC_SKILL.md after SKILL 7. Trigger: major build milestones. Output: KEEP/REMOVE/REVIEW list for owner approval. Docs-only, never auto-deletes rules. Bumped CC_SKILL.md v1.1→v1.2.
+**Updated:** CC_SKILL.md v1.2, CC_CHAT_LOG.md v1.6
+**New files:** NONE
+**Pending Chat verify:** NONE (docs only)
+**Flags:** NONE
 ---
 ## 2026-06-19 — Docs: R-86 updated — config.h.example removed from repo model
 **Did:** Updated RULES-firmware.md R-86: config.h.example is NOT a tracked template in repo. CI generates config.h inline via compile-check.yml. Removed "copy config.h.example → config.h" instruction which was incorrect.
