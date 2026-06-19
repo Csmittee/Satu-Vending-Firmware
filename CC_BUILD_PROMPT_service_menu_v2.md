@@ -539,11 +539,15 @@ R-154: Service mode action codes reserved: 500-502 Self Test, 600-612 Devices,
 4. Update KNOWN_GOOD.md at TOP:
    `2026-06-19 — Service mode 5 tabs functional — Self Test / Free Play / Devices / Settings / Firmware`
 
-5. Update CC_CHAT_LOG.md at TOP with session entry (CC_SKILL.md format)
+5. Update CLAUDE.md — add firmware/ui_service.h to Key Files section
 
-6. Commit: `feat: service mode 5 tabs functional — R-154 R-155 R-156`
+6. Update KNOWLEDGE_MAP.md — add ui_service.h entry under Firmware file locations
 
-7. Merge to main after GitHub Actions compile GREEN
+7. Update CC_CHAT_LOG.md at TOP with session entry (CC_SKILL.md format)
+
+8. Commit: `feat: service mode 5 tabs functional — R-154 R-155 R-156`
+
+9. Merge to main after GitHub Actions compile GREEN
 
 **CHAT_HANDOFF.md is Chat's responsibility — CC must never write it.**
 
