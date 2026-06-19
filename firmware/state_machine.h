@@ -9,6 +9,7 @@
 //   R5 — Added: STATE_WIFI_SETUP (first-boot NVS provisioning)
 //   R6 — Removed: STATE_WAITING_DROP, STATE_DISPENSING, STATE_WAITING_REMOVAL
 //        vendProduct() is synchronous (R-128/R-129) — no async drop/removal states
+//   R9 — Added: STATE_CONFIRMING (R-153: confirm screen before order creation)
 // ============================================================
 
 #ifndef STATE_MACHINE_H
@@ -24,6 +25,7 @@ enum MachineState {
   STATE_AUTHENTICATING,     // reading ID card
   STATE_PRODUCT_SELECTION,  // slot highlighted, waiting for confirm tap
   STATE_GIFT_OPTION,        // Item Only vs +Sacred Water choice   ← R3
+  STATE_CONFIRMING,         // order summary + confirm/back         ← R9
   STATE_AWAITING_PAYMENT,   // QR shown, waiting for PromptPay
   STATE_VENDING,            // vendProduct() running synchronously  ← R6
   STATE_COMPLETING,         // lucky number + thank you screen

@@ -1,10 +1,31 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 1.7 — 2026-06-19
-> Changes: Added session entry for config.h.example cleanup — file deleted from repo
-> Previous: v1.6 — 2026-06-19
+> Version 2.0 — 2026-06-19
+> Changes: STATE_CONFIRMING added — confirm screen before createOrder(), Back buttons on gift option
+> Previous: v1.9 — 2026-06-19
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
 
+---
+## 2026-06-19 — R-153: STATE_CONFIRMING — confirm screen before order creation
+**Did:** (1) Added STATE_CONFIRMING to state_machine.h enum (between STATE_GIFT_OPTION and STATE_AWAITING_PAYMENT, R9 changelog). (2) Updated satu_vending.ino: STATE_GIFT_OPTION choices now transition to STATE_CONFIRMING (not directly to _proceedToPayment); added Back (choice 2) → STATE_PRODUCT_SELECTION; added STATE_CONFIRMING case with 300ms entry guard, Confirm→_proceedToPayment(), Back→STATE_GIFT_OPTION, 30s timeout→idle. (3) Updated ui.h: added _lastConfirmTouchMs debounce variable; added Back button to drawGiftOptionScreen() (bottom centre 200×48); updated getTouchedGiftOption() to return 2 for Back; added drawConfirmScreen(slotIdx, wantWater) — shows product name, water option, total THB in summary box, Back and Confirm buttons; added getTouchedConfirm() returns 1=Confirm, -1=Back, 0=none. Key safety: createOrder() now called ONLY on Confirm touch — no D1 rows from abandoned flows. Customer waits for QR after confirming (owner accepted this trade-off).
+**Updated:** firmware/state_machine.h, firmware/satu_vending.ino, firmware/ui.h, CC_CHAT_LOG.md v2.0
+**New files:** NONE
+**Pending Chat verify:** Flash, test full flow: Product select → Gift option (verify Back→product screen) → Confirm screen (verify Back→gift option, Confirm→QR). Verify D1 has no new rows after abandoning at gift or confirm screen.
+**Flags:** NONE. Screen layout: confirm box 500×200 centred at y=104, Back btn x=140 y=328, Confirm btn x=440 y=328. Both 220×52px.
+---
+## 2026-06-19 — config.h: tracked in repo, R-86 updated to owner flash workflow model
+**Did:** (1) Removed `config.h` from .gitignore so file can be tracked. (2) Updated firmware/config.h header to reflect tracked status; added `PRODUCT_SELECTION_TIMEOUT 15` (R-152) to Timeouts section. (3) Updated RULES-firmware.md R-86 v1.2→v1.3: config.h is tracked with empty WiFi strings; CC updates in same PR as new constants; owner downloads from GitHub firmware folder as part of flash workflow; CI generates its own inline copy independently. Root cause fixed: local config.h drift caused PRODUCT_SELECTION_TIMEOUT compile error — owner won't miss updates now because file timestamp will show in GitHub.
+**Updated:** firmware/config.h, .gitignore, .claude/rules/RULES-firmware.md v1.3, CC_CHAT_LOG.md v1.9
+**New files:** NONE
+**Pending Chat verify:** Confirm firmware/config.h appears in GitHub firmware folder with today's commit. Confirm PRODUCT_SELECTION_TIMEOUT 15 is present. Next flash: download config.h from GitHub as usual.
+**Flags:** NONE
+---
+## 2026-06-19 — Cleanup: firmware/config.h untracked via git rm --cached (R-86 full enforcement)
+**Did:** git rm --cached firmware/config.h. File was committed 2 days ago despite being in .gitignore. git rm --cached removes it from tracking without deleting owner's local copy. .gitignore now takes full effect.
+**Updated:** CC_CHAT_LOG.md v1.8
+**New files:** NONE
+**Pending Chat verify:** After merge, confirm firmware/config.h no longer appears in GitHub repo file listing.
+**Flags:** NONE
 ---
 ## 2026-06-19 — Cleanup: config.h.example deleted from repo (R-86 enforcement)
 **Did:** Deleted firmware/config.h.example. CI already has PRODUCT_SELECTION_TIMEOUT 15 in compile-check.yml heredoc (PR #35). R-86 says no config.h.example in repo — this removes the contradiction created in R8.

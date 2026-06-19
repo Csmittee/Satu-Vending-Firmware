@@ -1,11 +1,11 @@
 // ============================================================
-// config.h.example — Satu Vending Machine Configuration Template
+// config.h — Satu Vending Machine Configuration
 // ============================================================
-// SETUP: Copy this file to config.h and fill in your values.
-//        config.h is gitignored — credentials NEVER enter git.
-//        WIFI_SSID and WIFI_PASSWORD left empty here — intentional.
-//        On first boot with empty credentials the machine shows
-//        the WiFi Setup touchscreen and saves to NVS automatically.
+// TRACKED IN REPO (R-86). WiFi fields intentionally empty (R-85).
+// CC updates this file in the same PR as any new constant addition.
+// Owner downloads from GitHub firmware folder as part of flash workflow.
+// WiFi credentials entered via touchscreen → saved to NVS (nvs_ssid / nvs_pass).
+// CI generates its own config.h inline via compile-check.yml independently.
 // ============================================================
 // CHANGE LOG:
 //   R3   — Added MCP3_ADDR, WATER_PUMP_RELAY, DOOR_LOCK_RELAY, VEND_PULSE_MS
@@ -20,6 +20,8 @@
 //          RELAY_FLAP added (R-129 — replaces RELAY_DOOR_LOCK)
 //          VEND_MAX_SPIN_MS, SENSOR_POLL_MS, FLAP_RELOCK_TIMEOUT added (R-128/R-129)
 //          FLAP_PROXIMITY_MCP_PIN, SPEAKER_PIN added
+//   R9   — PRODUCT_SELECTION_TIMEOUT added (R-152, 15s idle → idle screen)
+//          File now tracked in repo (R-86 update)
 // ============================================================
 // NVS KEYS ("satu" namespace, all ≤15 chars):
 //   device_id  — assigned device ID (string)
@@ -109,6 +111,7 @@ extern const int mcp2_relays[6];
 #define PAYMENT_TIMEOUT       30000   // 30s QR window (R-102, was 120s)
 #define VEND_TIMEOUT          10000   // 10s relay watchdog
 #define HEARTBEAT_INTERVAL   300000   // 5 min
+#define PRODUCT_SELECTION_TIMEOUT 15  // R-152: idle seconds on selection screen → return to idle
 
 // ── Vend + Flap timing (R-128, R-129) ────────────────────────────────────
 #define VEND_MAX_SPIN_MS      30000  // R-128: motor safety cutoff (30s = ~10 turns)

@@ -29,6 +29,9 @@
 //   R8   — R-150: touchReadOnce() shared GT911 read per idle tick (3-tap drop fix)
 //          R-151: resetGiftTouchDebounce() on STATE_GIFT_OPTION entry + guard 500ms
 //          R-152: PRODUCT_SELECTION_TIMEOUT in config.h replaces magic number 15
+//   R9   — R-153: STATE_CONFIRMING — confirm screen between gift option and QR
+//          Back added to gift option screen → returns to STATE_PRODUCT_SELECTION
+//          createOrder() now only called on Confirm touch (no D1 rows from abandoned flows)
 // ============================================================
 
 #include "config.h"
@@ -385,12 +388,35 @@ void runStateMachine() {
       int choice = getTouchedGiftOption();
       if (choice == 0) {
         wantSacredWater = false;
-        _proceedToPayment();
+        setState(STATE_CONFIRMING);
+        drawConfirmScreen(selectedSlot, wantSacredWater);
       } else if (choice == 1) {
         wantSacredWater = true;
-        _proceedToPayment();
+        setState(STATE_CONFIRMING);
+        drawConfirmScreen(selectedSlot, wantSacredWater);
+      } else if (choice == 2) {  // R-153: Back → return to product selection
+        setState(STATE_PRODUCT_SELECTION);
+        drawProductSelection(selectedSlot);
       }
       if (elapsed > 10000) {
+        setState(STATE_IDLE);
+        drawIdleScreen();
+      }
+      break;
+    }
+
+    // ── CONFIRMING ────────────────────────────────────────────────────────────────
+    // R-153: order summary screen. createOrder() not called until Confirm is touched.
+    case STATE_CONFIRMING: {
+      if (elapsed < 300) break;  // entry guard — prevent carry-over touch from gift option
+      int action = getTouchedConfirm();
+      if (action == 1) {        // Confirm
+        _proceedToPayment();
+      } else if (action == -1) {  // Back
+        setState(STATE_GIFT_OPTION);
+        drawGiftOptionScreen(selectedSlot);
+      }
+      if (elapsed > 30000) {
         setState(STATE_IDLE);
         drawIdleScreen();
       }
