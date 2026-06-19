@@ -25,9 +25,10 @@ Before doing anything else, read IN FULL:
 4. PROJECT_STATE.md
 5. config.h            ← NOW TRACKED IN REPO (R9) — download from GitHub
 6. hardware.h          ← READ ONLY — R2 LOCKED (exception: g_mcp1_ok/g_mcp2_ok flags only)
-7. ui.h                ← PRIMARY FILE for this prompt
-8. satu_vending.ino
-9. state_machine.h
+7. ui.h           ← include target — add #include "ui_service.h" at bottom
+8. ui_service.h   ← PRIMARY FILE — create new, include guard required
+9. satu_vending.ino
+10. state_machine.h
 
 State the name of every file you read before writing a single line.
 Then execute: CC_BUILD_PROMPT_service_menu_v2.md
@@ -44,8 +45,8 @@ The 5-tab service mode in ui.h has stub bodies only. All 5 tab body functions
 This prompt replaces all 5 stubs with complete functional implementations.
 Touch action handlers in satu_vending.ino get new action codes.
 
-**This prompt touches ui.h, satu_vending.ino, and config.h (SPEAKER_PIN only if missing).**
-No changes to hardware.h, network.h, state_machine.h.
+**This prompt touches ui_service.h (NEW FILE), ui.h (add include only), 
+satu_vending.ino, and config.h (SPEAKER_PIN only if missing).**
 
 **Scope: Functional only. No login screen. No Thai language. No fancy graphics.
 English labels, working buttons, real hardware interaction. That is all.**
@@ -438,6 +439,7 @@ Do NOT hardcode coordinates here — derive them from the same constants used to
 - state_machine.h — do not touch (STATE_CONFIRMING already added by R9)
 - config.h — verify SPEAKER_PIN present before adding. No other additions.
 - NUM_SLOTS — config.h only. Never redefine.
+- ui_service.h include guard: #ifndef UI_SERVICE_H / #define UI_SERVICE_H / #endif
 - idleAnimation() — hardware.h only. Never touch from ui.h.
 - NVS keys — only from UI_SPEC.md approved table. "vol" is the only new key.
 - PAYMENT_MODE — stays fake.
@@ -466,6 +468,8 @@ Do NOT hardcode coordinates here — derive them from the same constants used to
 - [ ] Free play 301–321 handler confirmed or added in satu_vending.ino
 - [ ] SPEAKER_PIN already in config.h — verified before adding
 - [ ] GitHub Actions compile GREEN before merge
+- [ ] - [ ] ui_service.h has correct include guard — #ifndef UI_SERVICE_H
+- [ ] ui.h has #include "ui_service.h" at bottom — only change to ui.h
 
 ---
 
