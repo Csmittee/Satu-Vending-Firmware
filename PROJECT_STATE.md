@@ -1,10 +1,19 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Version 1.2 — 2026-06-19
-> Changes: Added R7 session log (R-148 gift guard + R-149 vend loop command poll)
-> Previous: v1.1 — 2026-06-18
-> Status: Phase 1 active — ~55% complete
+> Version 1.3 — 2026-06-19
+> Changes: Added R8 session log (service mode 5 tabs R-154/R-155/R-156)
+> Previous: v1.2 — 2026-06-19
+> Status: Phase 1 active — ~65% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-19 — Service mode 5 tabs complete (R-154 / R-155 / R-156)
+- FIX 1: hardware.h — g_mcp1_ok / g_mcp2_ok bool globals added + set in initMCP23017() after each begin_I2C() call.
+- NEW: firmware/ui_service.h — all 5 _drawSvcBody_* functions + _getTouchedServiceExtra(). Self Test (Quick 10 / Technical 14 items), Free Play (gold/dimgrey/darkred slot grid), Devices (relay 2×6 grid + IR sensor readout + test backend), Settings (network / boot PIN / prices / audio / factory reset), Firmware (MAC / heap / security / print to serial).
+- MODIFY: firmware/ui.h — 5 stubs replaced with #include "ui_service.h"; getTouchedServiceContent() extended with action codes 500-502 (self test), 600-612 (relay toggle), 700 (volume), 800 (print serial). Slot grid 301-321 updated. Forward declaration for _getTouchedServiceExtra() added.
+- MODIFY: firmware/satu_vending.ino — Free Play handler updated (301-321). New handlers: 500 Quick Test, 501 Technical Test, 502 Clear, 600 Test Backend, 601-612 Toggle Relay, 700 Volume cycle, 800 Print to Serial.
+- Action code reservation: R-154 (500-800 reserved), R-155 (self test modes), R-156 (R12 LOCKED/UNLOCKED display).
+- Files: firmware/hardware.h, firmware/ui_service.h (new), firmware/ui.h, firmware/satu_vending.ino
+- CI: ⬜ pending. Flash: ⬜ pending.
 
 ### 2026-06-19 — R-148 gift guard + R-149 vend loop command poll
 - Bug 1 fixed: carry-over touch from product selection no longer auto-selects gift option. Entry guard (250ms) added to STATE_GIFT_OPTION in satu_vending.ino.

@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-06-19 — Service mode 5 tabs functional (R-154/R-155/R-156) — CI ⬜ pending
+- firmware/hardware.h: g_mcp1_ok / g_mcp2_ok bool globals added; set in initMCP23017()
+- firmware/ui_service.h: NEW FILE — all 5 _drawSvcBody_* + _getTouchedServiceExtra(); action codes 500-800
+- firmware/ui.h: 5 stubs removed; #include "ui_service.h" added; getTouchedServiceContent() extended 500-800
+- firmware/satu_vending.ino: handlers for action 500-502, 600-612, 700, 800; Free Play 301-321 updated
+- CI: ⬜ GitHub Actions pending
+- Flash: ⬜ Owner flash required after CI green
+- Test path: Enter service mode → all 5 tabs render → Quick Self Test (action 500) runs 10 items → relay toggle (601-612) → volume cycle (700) → print to serial (800)
+
+---
+
 ## 2026-06-19 — Firmware R7 (R-148/R-149) — CI ⬜ pending
 - satu_vending.ino R7: STATE_GIFT_OPTION entry guard (R-148) — 250ms touch ignore on entry; network.h included before hardware.h (compile dependency fix)
 - hardware.h R7: vendProduct() spin loop polls pollCommands() every 500ms (R-149)

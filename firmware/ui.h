@@ -1143,129 +1143,8 @@ static void _drawSvcTabBar(int activeTab) {
   }
 }
 
-static void _drawSvcBody_SelfTest(int bodyX) {
-  gfx->setFont(&FreeSansBold18pt7b);
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
-  gfx->setCursor(bodyX + 16, STATUS_H + 36);
-  gfx->print("Self Test");
-  gfx->setFont(NULL); gfx->setTextSize(1);
-  gfx->setTextColor(C_GREY); gfx->setTextSize(1);
-  gfx->setCursor(bodyX + 16, STATUS_H + 46);
-  gfx->print("Tap a slot to test motor");
-  // Show slot status grid
-  int cols = g_grid_cols > 0 ? g_grid_cols : 5;
-  for (int i = 0; i < NUM_SLOTS && i < 21; i++) {
-    int col = i % cols;
-    int row = i / cols;
-    int cx = bodyX + 16 + col * 44;
-    int cy = STATUS_H + 70 + row * 44;
-    uint16_t bg = g_slots[i].enabled ? C_GREEN : C_DARKGREY;
-    gfx->fillRoundRect(cx, cy, 38, 38, 4, bg);
-    gfx->setFont(&FreeSansBold12pt7b);
-    gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
-    char nb[4]; snprintf(nb, 4, "%d", i+1);
-    gfx->setCursor(cx + 19 - strlen(nb)*4, cy + 25);
-    gfx->print(nb);
-    gfx->setFont(NULL); gfx->setTextSize(1);
-  }
-}
-
-static void _drawSvcBody_FreePlay(int bodyX) {
-  gfx->setFont(&FreeSansBold18pt7b);
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
-  gfx->setCursor(bodyX + 16, STATUS_H + 36);
-  gfx->print("Free Play");
-  gfx->setFont(NULL); gfx->setTextSize(1);
-  gfx->setTextColor(C_GREY); gfx->setTextSize(1);
-  gfx->setCursor(bodyX + 16, STATUS_H + 46);
-  gfx->print("Tap slot to vend without payment");
-  // Same mini-grid
-  int cols = g_grid_cols > 0 ? g_grid_cols : 5;
-  for (int i = 0; i < NUM_SLOTS && i < 21; i++) {
-    int col = i % cols;
-    int row = i / cols;
-    int cx = bodyX + 16 + col * 44;
-    int cy = STATUS_H + 70 + row * 44;
-    gfx->fillRoundRect(cx, cy, 38, 38, 4, C_BGCELL);
-    _drawRoundRect(cx, cy, 38, 38, 4, C_GOLD);
-    gfx->setFont(&FreeSansBold12pt7b);
-    gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
-    char nb[4]; snprintf(nb, 4, "%d", i+1);
-    gfx->setCursor(cx + 19 - strlen(nb)*4, cy + 25);
-    gfx->print(nb);
-    gfx->setFont(NULL); gfx->setTextSize(1);
-  }
-}
-
-static void _drawSvcBody_Devices(int bodyX) {
-  gfx->setFont(&FreeSansBold18pt7b);
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
-  gfx->setCursor(bodyX + 16, STATUS_H + 36);
-  gfx->print("Devices");
-  gfx->setFont(NULL); gfx->setTextSize(1);
-  gfx->setTextColor(C_GREY); gfx->setTextSize(1);
-  int y = STATUS_H + 50;
-  // MCP23017
-  gfx->setCursor(bodyX+16, y); gfx->print("MCP23017 0x20:"); y+=16;
-  gfx->setCursor(bodyX+16, y); gfx->print("MCP23017 0x21:"); y+=16;
-  gfx->setCursor(bodyX+16, y); gfx->print("MCP23017 0x22:"); y+=16;
-  y+=8;
-  gfx->setCursor(bodyX+16, y); gfx->print("WS2812B x40: OK"); y+=16;
-  gfx->setCursor(bodyX+16, y); gfx->print("IR Sensors: ..."); y+=16;
-  gfx->setCursor(bodyX+16, y); gfx->print("Touch GT911: OK"); y+=16;
-}
-
-static void _drawSvcBody_Settings(int bodyX) {
-  gfx->setFont(&FreeSansBold18pt7b);
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
-  gfx->setCursor(bodyX + 16, STATUS_H + 36);
-  gfx->print("Settings");
-  gfx->setFont(NULL); gfx->setTextSize(1);
-
-  int y = STATUS_H + 52;
-  // Action buttons
-  // [401] Factory Reset
-  _fillRoundRect(bodyX + 16, y, 260, 44, 8, C_RED);
-  _drawRoundRect(bodyX + 16, y, 260, 44, 8, gfx->color565(200, 50, 50));
-  gfx->setFont(&FreeSansBold12pt7b);
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
-  gfx->setCursor(bodyX + 36, y + 26);
-  gfx->print("Factory Reset (401)");
-  gfx->setFont(NULL); gfx->setTextSize(1);
-  y += 56;
-
-  // [402] Toggle Boot PIN
-  _fillRoundRect(bodyX + 16, y, 260, 44, 8, gfx->color565(30, 60, 120));
-  _drawRoundRect(bodyX + 16, y, 260, 44, 8, C_GOLD);
-  gfx->setFont(&FreeSansBold12pt7b);
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
-  gfx->setCursor(bodyX + 36, y + 26);
-  gfx->print("Toggle Boot PIN (402)");
-  gfx->setFont(NULL); gfx->setTextSize(1);
-  y += 56;
-
-  // Lang toggle
-  _fillRoundRect(bodyX + 16, y, 260, 44, 8, gfx->color565(20, 40, 20));
-  _drawRoundRect(bodyX + 16, y, 260, 44, 8, C_GREEN);
-  gfx->setFont(&FreeSansBold12pt7b);
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
-  gfx->setCursor(bodyX + 36, y + 26);
-  gfx->print(g_lang_th ? "Lang: TH" : "Lang: EN");
-  gfx->setFont(NULL); gfx->setTextSize(1);
-}
-
-static void _drawSvcBody_Firmware(int bodyX) {
-  gfx->setFont(&FreeSansBold18pt7b);
-  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
-  gfx->setCursor(bodyX + 16, STATUS_H + 36);
-  gfx->print("Firmware");
-  gfx->setFont(NULL); gfx->setTextSize(1);
-  gfx->setTextColor(C_GREY); gfx->setTextSize(1);
-  int y = STATUS_H + 50;
-  gfx->setCursor(bodyX+16, y); gfx->print("Version: " FW_VERSION); y+=20;
-  gfx->setCursor(bodyX+16, y); gfx->print("OTA: not implemented"); y+=20;
-  gfx->setCursor(bodyX+16, y); gfx->print("Build: " __DATE__ " " __TIME__);
-}
+// _drawSvcBody_* and _getTouchedServiceExtra defined in ui_service.h
+#include "ui_service.h"
 
 void drawServiceScreen(int tab) {
   gfx->fillScreen(C_BG);
@@ -1327,7 +1206,11 @@ bool checkServiceExit() {
   return false;
 }
 
-// Returns action code (301=motor test, 401=factory reset, 402=toggle boot PIN, 0=none)
+// Forward declaration — full definition in ui_service.h (included at end of this file)
+int _getTouchedServiceExtra(int tab, int tx, int ty);
+
+// Returns action code: 301-321 slot tap, 401 factory reset, 402 boot PIN,
+//   500-502 self-test, 600-612 devices, 700 volume, 800 print. 0=none.
 int getTouchedServiceContent(int tab) {
   _touch.read();
   if (!_touch.isTouched) return 0;
@@ -1340,13 +1223,14 @@ int getTouchedServiceContent(int tab) {
 
   if (tab == TAB_SETTINGS) {
     int bodyX = SVC_BODY_X;
-    int y401  = STATUS_H + 52;
-    int y402  = y401 + 56;
+    // y-positions match _drawSvcBody_Settings in ui_service.h
+    const int y401 = 370; // _S_Y401
+    const int y402 = 168; // _S_Y402
     if (ty >= y401 && ty <= y401 + 44 && tx >= bodyX + 16 && tx <= bodyX + 276) {
       _lastSvcCntMs = millis();
       return 401;
     }
-    if (ty >= y402 && ty <= y402 + 44 && tx >= bodyX + 16 && tx <= bodyX + 276) {
+    if (ty >= y402 && ty <= y402 + 38 && tx >= bodyX + 16 && tx <= bodyX + 236) {
       _lastSvcCntMs = millis();
       return 402;
     }
@@ -1355,17 +1239,26 @@ int getTouchedServiceContent(int tab) {
   if (tab == TAB_SELFTEST || tab == TAB_FREEPLAY) {
     int bodyX = SVC_BODY_X;
     int cols  = g_grid_cols > 0 ? g_grid_cols : 5;
+    const int cw = 44, ch = 44;
     for (int i = 0; i < NUM_SLOTS && i < 21; i++) {
       int col = i % cols;
       int row = i / cols;
-      int cx = bodyX + 16 + col * 44;
-      int cy = STATUS_H + 70 + row * 44;
-      if (tx >= cx && tx <= cx + 38 && ty >= cy && ty <= cy + 38) {
+      int cx = bodyX + 16 + col * (cw + 2);
+      int cy = STATUS_H + 68 + row * (ch + 2);
+      if (tx >= cx && tx <= cx + cw && ty >= cy && ty <= cy + ch) {
         _lastSvcCntMs = millis();
         return 300 + i + 1;  // 301 = slot 1, 302 = slot 2...
       }
     }
   }
+
+  // New action codes 500-800 handled by helper in ui_service.h
+  int extra = _getTouchedServiceExtra(tab, tx, ty);
+  if (extra > 0) {
+    _lastSvcCntMs = millis();
+    return extra;
+  }
+
   return 0;
 }
 

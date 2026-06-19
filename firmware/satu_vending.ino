@@ -523,8 +523,59 @@ void runStateMachine() {
           if (g_service_tab == TAB_SELFTEST) {
             vendProduct(slotToTest);
           } else if (g_service_tab == TAB_FREEPLAY) {
-            vendProduct(slotToTest);
+            bool ok = vendProduct(slotToTest);
+            svcLog("Free play: slot " + String(slotToTest + 1) + " - " + (ok ? "OK" : "EMPTY"));
           }
+        } else if (action == 500) {
+          svcLog("Running Quick Test (10 items)...");
+          _runSelfTest(SVC_BODY_X, false);
+          drawServiceScreen(TAB_SELFTEST);
+          svcLog("Quick Test complete");
+        } else if (action == 501) {
+          svcLog("Running Technical Test (14 items)...");
+          _runSelfTest(SVC_BODY_X, true);
+          drawServiceScreen(TAB_SELFTEST);
+          svcLog("Technical Test complete");
+        } else if (action == 502) {
+          _stm = 0; _stN = 0;
+          drawServiceScreen(TAB_SELFTEST);
+          svcLog("Results cleared");
+        } else if (action == 600) {
+          svcLog("Testing backend...");
+          sendHeartbeat();
+          bool online = (WiFi.status() == WL_CONNECTED);
+          svcLog(online ? "Backend OK" : "Backend UNREACHABLE");
+        } else if (action >= 601 && action <= 612) {
+          int relayNum = action - 600;  // 1-indexed
+          _relState[relayNum] = !_relState[relayNum];
+          setRelay(relayNum, _relState[relayNum]);
+          svcLog("R" + String(relayNum) + (_relState[relayNum] ? " ON" : " OFF"));
+          drawServiceScreen(TAB_DEVICES);
+        } else if (action == 700) {
+          Preferences prefs;
+          prefs.begin("satu", false);
+          int vol = prefs.getInt("vol", 50);
+          vol = (vol + 10);
+          if (vol > 100) vol = 0;
+          prefs.putInt("vol", vol);
+          prefs.end();
+          svcLog("Volume: " + String(vol) + "%");
+          drawServiceScreen(TAB_SETTINGS);
+        } else if (action == 800) {
+          {
+            uint8_t mac[6];
+            esp_read_mac(mac, ESP_MAC_WIFI_STA);
+            Serial.println("[SVC] ===== DEVICE INFO =====");
+            Serial.printf("[SVC] Device ID : %s\n",  g_deviceId.c_str());
+            Serial.printf("[SVC] MAC       : %02X:%02X:%02X:%02X:%02X:%02X\n",
+                          mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+            Serial.printf("[SVC] Firmware  : %s  Build: %s %s\n",
+                          FW_VERSION, __DATE__, __TIME__);
+            Serial.printf("[SVC] Free heap : %lu B  PSRAM: %lu B\n",
+                          ESP.getFreeHeap(), ESP.getFreePsram());
+            Serial.println("[SVC] ======================");
+          }
+          svcLog("Printed to serial");
         }
       }
       break;

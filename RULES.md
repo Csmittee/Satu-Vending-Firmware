@@ -1,11 +1,29 @@
 # RULES.md — Satu 1.0 Universal Rules
-> Version 1.6 — 2026-06-19
-> Changes: Added R-150 (idle touch single-read), R-151 (gift debounce reset), R-152 (PRODUCT_SELECTION_TIMEOUT)
-> Previous: v1.5 — 2026-06-19
+> Version 1.7 — 2026-06-19
+> Changes: Added R-154 (service action codes), R-155 (self test modes), R-156 (relay R12 LOCKED/UNLOCKED display)
+> Previous: v1.6 — 2026-06-19
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
 
 ---
+
+- **R-156: SERVICE MODE DEVICES TAB — relay R12 display (2026-06-19).**
+  Relay 12 (RELAY_FLAP) is the solenoid pin lock. Display shows LOCKED / UNLOCKED, NOT ON / OFF.
+  LOCKED = relay OFF (pin extended, fail-secure on power loss) — cell colour red.
+  UNLOCKED = relay ON (pin retracted, door can open) — cell colour green.
+  Never show ON/OFF for R12 in any service UI.
+
+- **R-155: SELF TEST TWO MODES (2026-06-19).**
+  Quick (10 items): MCP1, MCP2, IR 1-10(sim), Relay 1-6(sim), Relay 7-12(sim), Flap(sim), Pump(sim), LEDs(sim), WiFi, Heap≥100KB.
+  Technical (14 items): adds WS2812B GPIO5(sim), Display(sim), GT911(sim), NVS(sim), live backend heartbeat.
+  Items marked (sim) = simulated pass — hardware not actually actuated during test.
+  Live items: MCP1/MCP2 (real begin_I2C), WiFi (WL_CONNECTED), Heap (getFreeHeap), heartbeat (sendHeartbeat + WiFi proxy).
+  Results stored in file-scope statics _stP[]/\_stN — persist across tab redraws until next run or action 502 (clear).
+
+- **R-154: SERVICE MODE ACTION CODES RESERVED (2026-06-19).**
+  500=Quick Self Test · 501=Technical Self Test · 502=Clear Results
+  600=Test Backend · 601-612=Toggle Relay 1-12 · 700=Volume cycle · 800=Print to Serial
+  Never reuse these codes for any other purpose.
 
 - **R-152: PRODUCT_SELECTION_TIMEOUT in config.h.example (2026-06-19).**
   Default: 15 seconds. Controls product selection screen timeout before return to idle.
