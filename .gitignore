@@ -3,8 +3,8 @@
 # Covers: firmware repo, backend repo, hardware repo
 # ============================================================
 
-# ── FIRMWARE — Arduino secrets (CRITICAL — never commit WiFi creds) ──────────
-config.h
+# ── FIRMWARE — Arduino build secrets (CRITICAL — never commit WiFi creds) ────
+# config.h is TRACKED in repo (empty WiFi strings, R-85). See R-86.
 config.h.bak
 
 # ── NODE / Cloudflare Workers ────────────────────────────────────────────────

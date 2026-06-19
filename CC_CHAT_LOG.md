@@ -1,10 +1,17 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 1.8 — 2026-06-19
-> Changes: Added session entry for config.h untrack — git rm --cached (R-86 full enforcement)
-> Previous: v1.7 — 2026-06-19
+> Version 1.9 — 2026-06-19
+> Changes: config.h now tracked in repo — R-86 model updated to owner flash workflow
+> Previous: v1.8 — 2026-06-19
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
 
+---
+## 2026-06-19 — config.h: tracked in repo, R-86 updated to owner flash workflow model
+**Did:** (1) Removed `config.h` from .gitignore so file can be tracked. (2) Updated firmware/config.h header to reflect tracked status; added `PRODUCT_SELECTION_TIMEOUT 15` (R-152) to Timeouts section. (3) Updated RULES-firmware.md R-86 v1.2→v1.3: config.h is tracked with empty WiFi strings; CC updates in same PR as new constants; owner downloads from GitHub firmware folder as part of flash workflow; CI generates its own inline copy independently. Root cause fixed: local config.h drift caused PRODUCT_SELECTION_TIMEOUT compile error — owner won't miss updates now because file timestamp will show in GitHub.
+**Updated:** firmware/config.h, .gitignore, .claude/rules/RULES-firmware.md v1.3, CC_CHAT_LOG.md v1.9
+**New files:** NONE
+**Pending Chat verify:** Confirm firmware/config.h appears in GitHub firmware folder with today's commit. Confirm PRODUCT_SELECTION_TIMEOUT 15 is present. Next flash: download config.h from GitHub as usual.
+**Flags:** NONE
 ---
 ## 2026-06-19 — Cleanup: firmware/config.h untracked via git rm --cached (R-86 full enforcement)
 **Did:** git rm --cached firmware/config.h. File was committed 2 days ago despite being in .gitignore. git rm --cached removes it from tracking without deleting owner's local copy. .gitignore now takes full effect.

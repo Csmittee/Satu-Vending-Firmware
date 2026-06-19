@@ -1,7 +1,7 @@
 # RULES-firmware.md — Satu 1.0
-> Version 1.2 — 2026-06-19
-> Changes: R-86 updated — config.h.example removed from repo, CI generates config.h inline
-> Previous: v1.1 — 2026-06-19
+> Version 1.3 — 2026-06-19
+> Changes: R-86 updated — config.h is now tracked in repo (owner flash workflow model)
+> Previous: v1.2 — 2026-06-19
 > Domain: Arduino/ESP32 firmware, library versions, NVS, compile constraints
 > Load this file when: Any firmware discussion · compile errors · flash issues · NVS/config work
 
@@ -25,8 +25,11 @@
 - R-20: Variable declarations inside switch/case blocks MUST have braces `{}` — compile error otherwise
 
 ## WiFi / Credentials (moved from RULES.md 2026-06-19)
-- R-86: config.h = gitignored local file for pin constants and build config only.
-        config.h is gitignored. No config.h.example in repo — CI generates config.h inline via compile-check.yml.
+- R-86: config.h = TRACKED IN REPO with empty WiFi strings (R-85 enforced).
+        CC updates config.h in the same PR whenever a new constant is added.
+        Owner downloads from GitHub firmware folder as part of normal flash workflow — if config.h has a fresh commit, download it.
+        CI still generates its own config.h inline via compile-check.yml independently (two separate files, kept in sync by CC).
+        No config.h.example in repo.
 - R-85: WiFi credentials NEVER in source files or git — NVS only (nvs_ssid / nvs_pass).
         config.h WIFI_SSID and WIFI_PASSWORD MUST remain empty strings ("") permanently.
         Credentials entered via drawWifiSetupScreen() → saveWifiAndReboot() → NVS. Never fill config.h WiFi fields.
