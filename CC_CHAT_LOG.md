@@ -1,10 +1,17 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 2.3 — 2026-06-20
-> Changes: Service menu visual fix pass (13 issues, R-158) + CI artifact upload (R-157)
-> Changes: 3-file artifact fix session entry
-> Previous: v2.2 — 2026-06-20
+> Version 2.4 — 2026-06-20
+> Changes: R12 service menu visual fix pass (remaining issues from R11 QA photo review)
+> Previous: v2.3 — 2026-06-20
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
+
+---
+## 2026-06-20 — Service menu R12 remaining visual fixes — CC_BUILD_PROMPT_service_menu_fix_v2
+**Did:** Complete rewrite of firmware/ui_service.h (R12). Log panel moved from right-side (x=670, w=126) to bottom (_BLOG_Y=SCR_H-80=400, h=72, 4 entries). Content text scale NULL size 2 throughout. Self Test: Quick=140px w, Technical=180px w, Clear=90px w, all h=36; subtitle size 2. Devices: relay/IR cells both cw=96 ch=44; WARNING banner 18px gap; Test Backend centered. Settings: label/value columns (130px label); Boot PIN at _BDY+120=164; Factory Reset h=34 at _BDY+306=350; Volume at _BDY+286=330. Firmware: label/value columns (140px label); Print to Serial at _BDY+312=356; OTA stubs at _BDY+290. Sidebar: _drawSvcTabBar updated to NULL size 2, two-line labels for Self/Test and Free/Play. getTouchedServiceContent: y401=370→350 (h44→h34), y402=168→164; TAB_SELFTEST removed from slot grid check (prevents button collision with new button y=126).
+**Updated:** firmware/ui_service.h, firmware/ui.h, PROJECT_STATE.md v1.6, CC_CHAT_LOG.md v2.4
+**New files:** docs/prompts/CC_BUILD_PROMPT_service_menu_fix_v2.md (archived ✅ COMPLETE — 2026-06-20 — service menu R12 visual fix)
+**Pending Chat verify:** Flash; enter service mode; confirm all 5 tabs; confirm log panel at bottom; confirm sidebar text size 2 two-line; confirm Self Test buttons 140/180/90px; confirm Devices cells 96px wide; confirm Settings Factory Reset at y=350 h=34; confirm Firmware Print to Serial visible.
+**Flags:** Free Play tab untouched (passed R11 QA). hardware.h LOCKED — not touched. PAYMENT_MODE stays fake. satu_vending.ino NOT touched.
 
 ---
 ## 2026-06-20 — Service menu 13 visual fixes (R-158) — CC_BUILD_PROMPT_service_menu_fix_v1

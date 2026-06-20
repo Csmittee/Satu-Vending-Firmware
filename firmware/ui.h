@@ -1126,9 +1126,10 @@ void drawErrorScreen(String message) {
 #define SVC_BODY_X (SVC_TAB_W + 4)
 
 static void _drawSvcTabBar(int activeTab) {
-  const char* tabLabels[5] = {"Self\nTest","Free\nPlay","Devices","Settings","Firmware"};
-  const char* tabSingle[5] = {"Self-Test","FreePlay","Devices","Settings","Firmware"};
-  int tabH = (SCR_H - STATUS_H) / 5;
+  const char* tabL1[5] = {"Self",  "Free", "Devices", "Settings", "Firmware"};
+  const char* tabL2[5] = {"Test",  "Play", "",        "",         ""};
+  int tabH = (SCR_H - STATUS_H) / 5;  // 87px
+  gfx->setFont(NULL); gfx->setTextSize(2);
   for (int i = 0; i < 5; i++) {
     int ty = STATUS_H + i * tabH;
     uint16_t bg = (i == activeTab) ? C_DARKGOLD : gfx->color565(20,16,30);
@@ -1136,10 +1137,20 @@ static void _drawSvcTabBar(int activeTab) {
     gfx->fillRect(0, ty, SVC_TAB_W, tabH - 1, bg);
     gfx->drawRect(0, ty, SVC_TAB_W, tabH - 1, bd);
     gfx->setTextColor(i == activeTab ? C_BLACK : C_GREY);
-    gfx->setTextSize(1);
-    int lw = strlen(tabSingle[i]) * 6;
-    gfx->setCursor(SVC_TAB_W/2 - lw/2, ty + tabH/2 - 4);
-    gfx->print(tabSingle[i]);
+    bool twoLine = (tabL2[i][0] != '\0');
+    if (twoLine) {
+      int l1w = strlen(tabL1[i]) * 12;
+      int l2w = strlen(tabL2[i]) * 12;
+      int cy = ty + tabH/2 - 16;
+      gfx->setCursor(SVC_TAB_W/2 - l1w/2, cy);
+      gfx->print(tabL1[i]);
+      gfx->setCursor(SVC_TAB_W/2 - l2w/2, cy + 18);
+      gfx->print(tabL2[i]);
+    } else {
+      int lw = strlen(tabL1[i]) * 12;
+      gfx->setCursor(SVC_TAB_W/2 - lw/2, ty + tabH/2 - 8);
+      gfx->print(tabL1[i]);
+    }
   }
 }
 
@@ -1223,20 +1234,20 @@ int getTouchedServiceContent(int tab) {
 
   if (tab == TAB_SETTINGS) {
     int bodyX = SVC_BODY_X;
-    // y-positions match _drawSvcBody_Settings in ui_service.h
-    const int y401 = 370; // _S_Y401
-    const int y402 = 168; // _S_Y402
-    if (ty >= y401 && ty <= y401 + 44 && tx >= bodyX + 16 && tx <= bodyX + 276) {
+    // y-positions match _S_Y401/_S_Y402 defines in ui_service.h
+    const int y401 = 350; // _S_Y401
+    const int y402 = 164; // _S_Y402
+    if (ty >= y401 && ty <= y401 + 34 && tx >= bodyX + 16 && tx <= bodyX + 276) {
       _lastSvcCntMs = millis();
       return 401;
     }
-    if (ty >= y402 && ty <= y402 + 38 && tx >= bodyX + 16 && tx <= bodyX + 236) {
+    if (ty >= y402 && ty <= y402 + 36 && tx >= bodyX + 16 && tx <= bodyX + 236) {
       _lastSvcCntMs = millis();
       return 402;
     }
   }
 
-  if (tab == TAB_SELFTEST || tab == TAB_FREEPLAY) {
+  if (tab == TAB_FREEPLAY) {
     int bodyX = SVC_BODY_X;
     int cols  = g_grid_cols > 0 ? g_grid_cols : 5;
     const int cw = 44, ch = 44;

@@ -1,10 +1,22 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Version 1.5 — 2026-06-20
-> Changes: Added R10 session log (service menu 13 visual fixes, R-158) + CI artifact session (R-157)
-> Previous: v1.4 — 2026-06-20
+> Version 1.6 — 2026-06-20
+> Changes: Added R12 session log (service menu remaining visual fixes from R11 QA photo review)
+> Previous: v1.5 — 2026-06-20
 > Status: Phase 1 active — ~67% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-20 — Service menu R12 remaining visual fixes (CC_BUILD_PROMPT_service_menu_fix_v2)
+- REWRITE: firmware/ui_service.h — complete rewrite implementing R12 visual corrections.
+- CHANGE: Log panel moved from right-side (x=670 w=126) to bottom (y=400 h=72 4-entry).
+- CHANGE: All body content text now NULL size 2 (was size 1 — too small).
+- TAB 0 Self Test: Quick=140px, Technical=180px, Clear=90px, all h=36; subtitle size 2.
+- TAB 2 Devices: relay + IR cells both cw=96 ch=44 (was relay 86, IR 80/36); WARNING 18px gap.
+- TAB 3 Settings: label/value columns (130px label). Boot PIN at y=164 (h=36). Factory Reset h=34 at y=350. Volume at y=330.
+- TAB 4 Firmware: label/value columns (140px label). Print to Serial at y=356 h=36. OTA stubs at y=290.
+- TAB 1 Free Play: UNTOUCHED (passed R11 QA).
+- MODIFY: firmware/ui.h — _drawSvcTabBar now NULL size 2 with two-line labels (Self/Test, Free/Play). getTouchedServiceContent: y401=350 (was 370), y402=164 (was 168), h44→h34 for Factory Reset. TAB_SELFTEST removed from slot grid touch check.
+- CI: ⬜ pending. Flash: ⬜ pending (owner to QA all 5 tabs).
 
 ### 2026-06-20 — Service menu 13 visual fixes (R-158)
 - REWRITE: firmware/ui_service.h — complete rewrite implementing all 13 visual fixes from owner photo QA.
