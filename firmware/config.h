@@ -22,6 +22,7 @@
 //          FLAP_PROXIMITY_MCP_PIN, SPEAKER_PIN added
 //   R9   — PRODUCT_SELECTION_TIMEOUT added (R-152, 15s idle → idle screen)
 //          File now tracked in repo (R-86 update)
+//   R14  — MACHINE_LANES 10 added (R-163: Devices tab grid driven by config constant)
 // ============================================================
 // NVS KEYS ("satu" namespace, all ≤15 chars):
 //   device_id  — assigned device ID (string)
@@ -66,6 +67,7 @@ const char* API_BASE_URL = "https://api.janishammer.com";
 #define NUM_SLOTS      21   // R4: max supported slots (3×7)
 #define NUM_COLS        7   // R4: max columns
 #define MAX_SLOTS_HW   21   // physical max lanes this board supports
+#define MACHINE_LANES  10   // R-163: lane count for current build (10/15/21). 10=5×2, 15=5×3, 21=7×3
 
 // ============================================================
 // Pin Mapping (ESP32-S3)

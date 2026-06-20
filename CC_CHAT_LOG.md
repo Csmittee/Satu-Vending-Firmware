@@ -1,9 +1,17 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 2.6 — 2026-06-20
-> Changes: Governance Docs v2 — HARDWARE_SPEC + UI_SPEC + SATU_ROADMAP wired into governance
-> Previous: v2.5 — 2026-06-20
+> Version 2.7 — 2026-06-20
+> Changes: FIX 2 — Devices tab grid now driven by MACHINE_LANES in config.h (R-163)
+> Previous: v2.6 — 2026-06-20
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
+
+---
+## 2026-06-20 — Devices tab MACHINE_LANES grid (FIX 2 / R-163)
+**Did:** (1) FIX 1 — tab-change guard already present at satu_vending.ino:489 (`if (newTab >= 0 && newTab != g_service_tab)`) — no code change needed. (2) FIX 2 — firmware/config.h: added `#define MACHINE_LANES 10` (R14) after MAX_SLOTS_HW. (3) .github/workflows/compile-check.yml: added `#define MACHINE_LANES 10` to CI inline config.h to stay in sync (R-86). (4) firmware/ui_service.h TAB 2 Devices: replaced hardcoded 12-relay / 10-sensor / 3-stub layout with MACHINE_LANES-driven grid. New defines: _DEV_COLS (5 if ≤10, else 7), _DEV_CW (86 or 68), _DEV_ROWS (ceil division), _DEV_SP_Y (special row below lane grid), _DEV_WARN_Y/IH_Y/IR1_Y/TBES_Y all recalculated. Lane relays R1–MACHINE_LANES drawn in grid; R11+R12 in fixed special row below grid; WARNING banner; IR sensors S1–MACHINE_LANES in same column count. Stub row (Pump R11/LED Test/Speaker) removed. Touch handler replaced with _DEV_ROWS loop returning 600+r per relay, 611/612 for special row. Action codes 601–612 remain compatible with satu_vending.ino:548 handler. (5) RULES.md v2.0: prepended R-163.
+**Updated:** firmware/config.h, .github/workflows/compile-check.yml, firmware/ui_service.h, RULES.md v2.0, CC_CHAT_LOG.md v2.7, PROJECT_STATE.md v1.9
+**New files:** NONE
+**Pending Chat verify:** CI green → flash → enter service mode → Devices tab: confirm 5-col × 2-row relay grid R1-R10, special row R11 pump + R12 flap below, WARNING banner, IR S1-S10 5×2 grid, Test Backend button. Tap relay to toggle, confirm action 601-610 fires correctly. Confirm no stub row.
+**Flags:** FIX 1 guard already existed — satu_vending.ino NOT touched. hardware.h LOCKED. PAYMENT_MODE stays fake.
 
 ---
 ## 2026-06-20 — CC_BUILD_PROMPT_governance_docs_v2 (Governance Docs v2)

@@ -1,11 +1,17 @@
 # RULES.md — Satu 1.0 Universal Rules
-> Version 1.10 — 2026-06-20
-> Changes: Added R-162 (SATU_ROADMAP.md source of truth), R-161 (UI_SPEC.md source of truth), R-160 (HARDWARE_SPEC.md source of truth)
-> Previous: v1.9 — 2026-06-20
+> Version 2.0 — 2026-06-20
+> Changes: Added R-163 (Devices tab MACHINE_LANES grid)
+> Previous: v1.10 — 2026-06-20
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
 
 ---
+
+- **R-163: DEVICES TAB GRID — driven by MACHINE_LANES in config.h (2026-06-20).**
+  MACHINE_LANES = lane count for current hardware build: 10 (5×2), 15 (5×3), or 21 (7×3).
+  Never hardcode relay or IR sensor counts in ui_service.h. Lane relays R1–MACHINE_LANES
+  shown in grid (cols=5 if ≤10 lanes, cols=7 if 21 lanes). R11 (pump) and R12 (flap)
+  always shown as fixed special relay cells below the lane relay grid, never in the lane grid.
 
 - **R-162: SATU_ROADMAP.md IS THE PRODUCT DIRECTION SOURCE OF TRUTH (2026-06-20).**
   This file answers "where are we heading" — PROJECT_STATE.md answers "where are we now".
