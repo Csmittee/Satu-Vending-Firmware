@@ -101,7 +101,16 @@ jobs:
           arduino-cli compile \
             --fqbn esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,PSRAM=opi,UploadSpeed=460800 \
             --warnings default \
+            --output-dir ./build \
             satu_vending/
+
+      - name: Upload firmware artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: satu-firmware-${{ github.run_number }}
+          path: ./build/satu_vending.ino.bin
+          retention-days: 7
 
       - name: Compile result
         if: always()

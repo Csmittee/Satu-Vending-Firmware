@@ -1,7 +1,7 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Version 1.4 — 2026-06-20
-> Changes: Added R9 session log (service menu 13 visual fixes, R-158)
-> Previous: v1.3 — 2026-06-19
+> Version 1.5 — 2026-06-20
+> Changes: Added R10 session log (service menu 13 visual fixes, R-158) + CI artifact session (R-157)
+> Previous: v1.4 — 2026-06-20
 > Status: Phase 1 active — ~67% complete
 
 ## SESSION LOG (newest first)
@@ -19,6 +19,17 @@
 - satu_vending.ino NOT touched. All action codes 500-800 unchanged.
 - CI: ⬜ pending. Flash: ⬜ pending.
 
+### 2026-06-20 — CI artifact upload (R-157) — CC_BUILD_PROMPT_ci_artifact_v1
+- SCOPE: CI/workflow only. Zero firmware source files touched.
+- ADD: `--output-dir ./build` to arduino-cli compile step in compile-check.yml.
+  Without this flag arduino-cli writes .bin to an unpredictable /tmp/arduino-sketch-*/ path.
+- ADD: `actions/upload-artifact@v4` step — artifact name `satu-firmware-N`, path `./build/satu_vending.ino.bin`, retention 7 days.
+- ADD: "Flashing Without Arduino IDE" section to CLAUDE.md — 5-step esptool.py flash workflow.
+- R-157 added to RULES.md: CI artifact rule + esptool.py flash command documented.
+- Files changed: .github/workflows/compile-check.yml, CLAUDE.md v1.5
+- CI: does not trigger (CI trigger is firmware/** only — this was a docs-only push)
+- Flash: 0 cycles needed. Owner downloads .bin from CI artifact after next firmware PR.
+
 ### 2026-06-19 — Service mode 5 tabs complete (R-154 / R-155 / R-156)
 - FIX 1: hardware.h — g_mcp1_ok / g_mcp2_ok bool globals added + set in initMCP23017() after each begin_I2C() call.
 - NEW: firmware/ui_service.h — all 5 _drawSvcBody_* functions + _getTouchedServiceExtra(). Self Test (Quick 10 / Technical 14 items), Free Play (gold/dimgrey/darkred slot grid), Devices (relay 2×6 grid + IR sensor readout + test backend), Settings (network / boot PIN / prices / audio / factory reset), Firmware (MAC / heap / security / print to serial).
@@ -26,7 +37,7 @@
 - MODIFY: firmware/satu_vending.ino — Free Play handler updated (301-321). New handlers: 500 Quick Test, 501 Technical Test, 502 Clear, 600 Test Backend, 601-612 Toggle Relay, 700 Volume cycle, 800 Print to Serial.
 - Action code reservation: R-154 (500-800 reserved), R-155 (self test modes), R-156 (R12 LOCKED/UNLOCKED display).
 - Files: firmware/hardware.h, firmware/ui_service.h (new), firmware/ui.h, firmware/satu_vending.ino
-- CI: ⬜ pending. Flash: ⬜ pending.
+- CI: ⏹️ pending. Flash: ⏹️ pending.
 
 ### 2026-06-19 — R-148 gift guard + R-149 vend loop command poll
 - Bug 1 fixed: carry-over touch from product selection no longer auto-selects gift option. Entry guard (250ms) added to STATE_GIFT_OPTION in satu_vending.ino.
@@ -34,7 +45,7 @@
 - Include reorder in satu_vending.ino: network.h moved before hardware.h (compile dependency for CommandList — no logic change).
 - Files: satu_vending.ino, hardware.h
 - Rules: R-148, R-149
-- CI: ⬜ pending. Flash: 1 cycle required.
+- CI: ⏹️ pending. Flash: 1 cycle required.
 
 ### 2026-06-18 — Governance docs wiring: CC_SKILL + CC_CHAT_LOG + R-138 to R-141 (R-84)
 - **SCOPE:** Docs only. Zero .ino, .h, or src/ file changes.
@@ -69,8 +80,8 @@
   prepended, CC_BUILD_PROMPT archived to docs/prompts/ with ✅ COMPLETE stamp.
 - **Files changed:** firmware/config.h (R6), firmware/hardware.h (R6), firmware/state_machine.h,
   firmware/satu_vending.ino (R6), firmware/ui.h (R6)
-- **CI:** ⬜ PENDING — waiting for GitHub Actions compile check
-- **Flash:** ⬜ PENDING — owner to flash and confirm vend + flap + banner on SATU-4R473R
+- **CI:** ⏹️ PENDING — waiting for GitHub Actions compile check
+- **Flash:** ⏹️ PENDING — owner to flash and confirm vend + flap + banner on SATU-4R473R
 - **Branch:** claude/magical-feynman-rrkais · PR pending
 
 ### 2026-06-16 — CI fixes + workflow docs (no CC_PROMPT — inline session)
@@ -141,7 +152,7 @@
 - **EMERGENCY FALLBACK:** `drawQrFromBitmap()` preserved in ui.h with guard comment — R-114
 - **RULES.md:** R-117, R-118, R-119, R-120 prepended at TOP · R-116 status updated to CLOSED
 - **CI:** Pending — waiting for GitHub Actions compile check
-- **Flash:** ⬜ PENDING owner flash — expected: `[UI] PNG decode: rc=0 rows=165 w=165 h=165`
+- **Flash:** ⏹️ PENDING owner flash — expected: `[UI] PNG decode: rc=0 rows=165 w=165 h=165`
 
 ### 2026-06-15 — Bitmap experiment revert + rules update
 - **DISCOVERY:** Firmware PR #17 WAS merged to main on 2026-06-14 (not closed without merge as previously stated)
@@ -285,7 +296,7 @@ Thai temples.
 
 ## PHASE STATUS
 
-### Phase 1 — Prototyping (~55% complete) ← CURRENT
+### Phase 1 — Prototyping (~65% complete) ← CURRENT
 
 #### Backend & API ✅ COMPLETE
 - [x] Cloudflare Workers + D1 backend (index.js, machine.js, order.js, webhook.js, admin.js)
@@ -326,15 +337,17 @@ Thai temples.
 - [x] ui.h PNG decode — ✅ CONFIRMED ON HARDWARE 2026-06-15 16:41:32 — rc=0 rows=165 w=165 h=165
 - [ ] ui.h — service mode 5 tabs NOT COMPLETE — stubs only, next firmware CC session
 - [ ] FLAP_PROXIMITY_MCP_PIN — assign MCP2 GPA pin when solenoid wired (-1 = stub, safe)
-- [ ] Full end-to-end test on real hardware (R6 vend + flap + banner) — PENDING owner flash ⬜
+- [ ] Full end-to-end test on real hardware (R6 vend + flap + banner) — PENDING owner flash ⏹️
 - [ ] OTA firmware update — explicitly deferred (not in Phase 1 scope)
 
-#### Infrastructure ✅ ADDED 2026-06-13
+#### Infrastructure ✅ ACTIVE
 - [x] GitHub Actions compile check: ACTIVE — .github/workflows/compile-check.yml
-- Triggers on: all pushes to any branch + all PRs to main
+- [x] Artifact upload: ACTIVE (R-157) — satu-firmware-N downloadable from Actions tab after CI green
+- Binary: satu_vending.ino.bin — flash with esptool.py (command in CLAUDE.md)
+- Triggers on: push to firmware/** + PR to main with firmware/** changes
 - Est. compile time: 3-5 minutes (vs 10+ min local Arduino IDE)
 - Board: ESP32S3 | Core: 2.0.17 LOCKED | Libraries: 6 at locked versions
-- CC waits for green ✅ before opening PR (R-90)
+- Artifact retention: 7 days per run — download before expiry
 
 #### Hardware ⚠️ IN PROGRESS
 - [x] ESP32-S3 display board — ARRIVED · first hardware test 2026-06-16 ✅
@@ -440,13 +453,16 @@ network.h           — WiFi, NVS, /hello, /order, /completion, /factory-reset, 
 ui.h                — all screen drawing, touch detection, showPaymentAccepted() (R-131),
                       FreeSansBold fonts (R-137), PNG pause-decode-resume (R-117)
                       5-tab service mode — STUBS ONLY — next CC session
+ui_service.h        — service mode 5-tab body implementations (_drawSvcBody_* + _getTouchedServiceExtra())
 state_machine.h     — enum MachineState (R6: DROP/DISPENSING/REMOVAL states removed)
+.github/workflows/
+  compile-check.yml — auto-compile CI — produces satu-firmware-N artifact (R-157)
 ```
 
 ### Project Knowledge Docs (repo root)
 ```
-CLAUDE.md           — project compass, stack, 5 rules, key files, repos (35 lines max)
-RULES.md            — lessons learned R-85 to R-141 (newest at top)
+CLAUDE.md           — project compass, stack, 5 rules, key files, repos + flash instructions
+RULES.md            — lessons learned R-85 to R-157 (newest at top)
 CC_SKILL.md         — CC session skills: Chat Override Guard, Structural Change Guard, etc.
 CC_CHAT_LOG.md      — CC session log (newest entry at top, max 10 lines per entry)
 PROJECT_STATE.md    — this file

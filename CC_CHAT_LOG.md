@@ -1,18 +1,24 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 2.2 — 2026-06-20
-> Changes: Service menu visual fix pass (13 issues) — R-158 added
-> Previous: v2.1 — 2026-06-19
+> Version 2.3 — 2026-06-20
+> Changes: Service menu visual fix pass (13 issues, R-158) + CI artifact upload (R-157)
+> Previous: v2.2 — 2026-06-20
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
 
 ---
 ## 2026-06-20 — Service menu 13 visual fixes (R-158) — CC_BUILD_PROMPT_service_menu_fix_v1
 **Did:** Complete rewrite of firmware/ui_service.h fixing all 13 visual issues from owner photo QA. GLOBAL: added _svcLogPanel() right-side log panel (x=670, w=126) with 10-entry circular buffer; called _svcLogDraw() at end of every _drawSvcBody_*. TAB 0 Self Test: btnY moved _BDY+60→_BDY+72; subtitle at _BDY+52; resY=166; lineH=18; results drawn in left zone only (not past x=670); _svcLogPanel() called per result. TAB 1 Free Play: fixed 7×3 grid (not g_grid_cols); cw=72 ch=50 gap=4; gridY=_BDY+72; instruction text at _BDY+60. TAB 2 Devices: _REL_CW 107→86 (6 cells now fit left zone); _IR_CW 62→80, _IR_CH 28→36; _IR_ROW1_Y gap +38→+52; new stub row Pump/LED/Speaker at y=327; _TBEKY recalculated=371; stub taps log locally (return 0). TAB 3 Settings: all Y positions now _BDY-relative (_S_Y402=_BDY+138=182, _S_VOLY=_BDY+318=362, _S_Y401=_BDY+348=392); lane prices show L1-L7 row then L8-L10 row. TAB 4 Firmware: all Y positions _BDY-relative (info rows at _BDY+82+16×n, SECURITY at _BDY+192, OTA at _BDY+274/_BDY+292, _FW_PRINT_Y=_BDY+348=392). _getTouchedServiceExtra(): btnY corrected, stub row added, 702 (Boot PIN) and 701 (Factory Reset) hit-tests added.
-**Updated:** firmware/ui_service.h, RULES.md v1.8, PROJECT_STATE.md v1.4, CC_CHAT_LOG.md v2.2
-**New files:** NONE
+**Updated:** firmware/ui_service.h, RULES.md v1.9, PROJECT_STATE.md v1.5, CC_CHAT_LOG.md v2.3
+**New files:** docs/prompts/CC_BUILD_PROMPT_service_menu_fix_v1.md (archived ✅ COMPLETE)
 **Pending Chat verify:** Flash; enter service mode; check all 5 tabs against photo QA list; confirm log panel visible on right; confirm Free Play is 7×3; confirm relay cells narrower (86px); confirm Settings/Firmware Y positions match spec.
-**Flags:** CC_BUILD_PROMPT_service_menu_fix_v1.md was not found on disk (prompt may have been provided as context only). No archive step needed. Log panel right edge at 796px (4px margin from SCR_W=800). satu_vending.ino NOT touched — all action codes 500-800 unchanged.
+**Flags:** Log panel right edge at 796px (4px margin from SCR_W=800). satu_vending.ino NOT touched — all action codes 500-800 unchanged.
 
+## 2026-06-20 — CI artifact upload — CC_BUILD_PROMPT_ci_artifact_v1
+**Did:** (1) Added `--output-dir ./build` to arduino-cli compile step — minimum change needed so .bin lands at a predictable path (without this flag arduino-cli writes to an unpredictable /tmp/arduino-sketch-XXXXXXXX/ location). (2) Added `actions/upload-artifact@v4` step after compile: artifact `satu-firmware-${{ github.run_number }}`, path `./build/satu_vending.ino.bin`, retention 7 days. (3) Added "Flashing Without Arduino IDE" section to CLAUDE.md — 5-step esptool.py flash workflow referencing CI artifact download. Zero firmware source files touched this session.
+**Updated:** .github/workflows/compile-check.yml, CLAUDE.md v1.5, RULES.md v1.8, PROJECT_STATE.md v1.4, KNOWLEDGE_MAP.md v1.3, CC_CHAT_LOG.md v2.2
+**New files:** docs/prompts/CC_BUILD_PROMPT_ci_artifact_v1.md (archived)
+**Pending Chat verify:** Push any firmware/ change → CI runs → Actions tab shows artifact `satu-firmware-N` → download zip → confirm satu_vending.ino.bin inside. Test esptool.py flash from downloaded .bin on SATU-4R473R.
+**Flags:** NONE. `--output-dir` is an output path flag only — zero effect on binary content, FQBN, or locked library versions. PAYMENT_MODE stays fake.
 ---
 ## 2026-06-19 — Service mode 5 tabs (R-154/R-155/R-156) — CC_BUILD_PROMPT_service_menu_v2
 **Did:** (1) hardware.h: added g_mcp1_ok/g_mcp2_ok bool globals set in initMCP23017() after each begin_I2C() — only permitted change to R2-locked file. (2) NEW firmware/ui_service.h: all 5 _drawSvcBody_* + _getTouchedServiceExtra(); Self Test (Quick 10 items / Technical 14 items with live heartbeat), Free Play (slot grid gold=enabled/dimgrey=empty/darkred=disabled), Devices (relay 2×6 grid 601-612 + IR sensor live read + Test Backend 600), Settings (network info / boot PIN toggle 402 / volume cycle 700 / factory reset 401), Firmware (MAC/heap/security amber badges / print to serial 800). (3) ui.h: stubs removed; #include "ui_service.h" placed BEFORE drawServiceScreen() to satisfy forward reference; getTouchedServiceContent() extended actions 500-800; forward decl _getTouchedServiceExtra added. (4) satu_vending.ino: action handlers 500-502, 600-612, 700, 800; Free Play 301-321 uses vendProduct(); sendHeartbeat() called void (no return); g_deviceId.c_str() used directly (same translation unit). Key architectural note: include moved from end of ui.h to before drawServiceScreen() to avoid forward-reference error.

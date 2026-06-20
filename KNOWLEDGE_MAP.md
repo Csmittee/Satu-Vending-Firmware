@@ -1,7 +1,7 @@
 # SATU — Knowledge Architecture Guide (Firmware)
-> Version 1.2 — 2026-06-19
-> Changes: Added ui_service.h to firmware file list
-> Previous: v1.1 — 2026-06-18
+> Version 1.3 — 2026-06-20
+> Changes: Added CI artifact note; compile-check.yml entry in file locations
+> Previous: v1.2 — 2026-06-19
 
 ## Document Map — What to Read for What Task
 
@@ -20,6 +20,7 @@
 | Hardware wiring / BOM | satu-machine-builder.html (Wiring tab) | hardware.h pin arrays |
 | Workflow / session modes | .claude/claude_project/WORKFLOW_SKILL.md | CLAUDE.md |
 | Business / legal | satu-business-model.html | work_instruction.txt |
+| Flashing firmware | CLAUDE.md “Flashing Without Arduino IDE” | .github/workflows/compile-check.yml |
 
 ---
 
@@ -49,6 +50,15 @@ src/middleware/rateLimit.js — D1-backed rate limiting
 schema.sql              — authoritative D1 schema
 wrangler.toml           — Cloudflare config, routes, cron
 public/                 — static HTML files (simulator, testers, admin)
+```
+
+### CI / Flashing
+```
+.github/workflows/compile-check.yml — auto-compile on push/PR to firmware/**
+  └ Produces artifact: satu-firmware-N (N = run number) — downloadable from Actions tab
+  └ Binary: satu_vending.ino.bin — flash with esptool.py (see CLAUDE.md for command)
+  └ Retention: 7 days per run — download before artifact expires
+  └ Board: ESP32S3 Dev Module · Core 2.0.17 LOCKED · Libraries: 6 at locked versions
 ```
 
 ### Repo root docs
