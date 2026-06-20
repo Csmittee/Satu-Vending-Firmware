@@ -1,7 +1,7 @@
 # CLAUDE.md — Satu Project Compass
-> Version 1.6 — 2026-06-20
-> Changes: Fixed flash command to 3-file esptool.py (bootloader + partitions + app)
-> Previous: v1.5 — 2026-06-20
+> Version 1.7 — 2026-06-20
+> Changes: Added hardware/HARDWARE_SPEC.md, SATU_ROADMAP.md to Key Files; updated UI_SPEC.md read trigger
+> Previous: v1.6 — 2026-06-20
 <!-- max 35 lines · never grows · CC reads this on every session start -->
 
 ## Stack
@@ -29,7 +29,9 @@
 - `CC_CHAT_LOG.md` — CC→Chat log · Chat reads last 3 entries each session open
 - `PROJECT_STATE.md` — phase status · roadmap · CC updates after every fix/PR
 - `KNOWN_GOOD.md` — last confirmed test snapshot · updated by Chat/owner after each test session
-- `UI_SPEC.md` — screen inventory · grid system · service mode tabs · NVS key table · read before any ui.h change
+- `hardware/HARDWARE_SPEC.md` — hardware single source of truth · read before touching pins, relays, sensors, or BOM · (firmware repo only)
+- `UI_SPEC.md` — UI specification bible · read before touching any screen, font, layout, or service tab
+- `SATU_ROADMAP.md` — product direction guide · read bullet summaries on every session open · read full section when architecture, commercial, or hardware model decision arises
 - `SECURITY.md` — auth layers · ownership model · security gaps · read before any auth/ownership/reset code
 - `KNOWLEDGE_MAP.md` — navigation guide · what to read for each task
 - `public/satu-hw-trigger.html`       — HW Trigger standalone tool · Section C extracted from machine builder
