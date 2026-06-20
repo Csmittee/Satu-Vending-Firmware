@@ -1,9 +1,17 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 2.5 — 2026-06-20
-> Changes: R13 service menu QA photo fix pass (6 targeted fixes from owner flash QA)
-> Previous: v2.4 — 2026-06-20
+> Version 2.6 — 2026-06-20
+> Changes: Governance Docs v2 — HARDWARE_SPEC + UI_SPEC + SATU_ROADMAP wired into governance
+> Previous: v2.5 — 2026-06-20
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
+
+---
+## 2026-06-20 — CC_BUILD_PROMPT_governance_docs_v2 (Governance Docs v2)
+**Did:** Renamed hardware/HARDWARE_TRUTH.md → hardware/HARDWARE_SPEC.md (v1.1) with CHANGE LOG + MCP3 expansion note. Updated UI_SPEC.md v2.0 — added CHANGE LOG, Type Scale section, Log Panel section. Placed SATU_ROADMAP.md at root of BOTH repos. Updated CLAUDE.md (both repos) — added hardware/HARDWARE_SPEC.md, UI_SPEC.md, SATU_ROADMAP.md to Key Files. Updated KNOWLEDGE_MAP.md (both repos) — 3 Document Map rows + File Locations entries. Added R-160/R-161/R-162 to RULES.md (both repos). Updated WORKFLOW_SKILL.md (both repos) v2.2 — new step 3 + 4 trigger rows.
+**Updated:** hardware/HARDWARE_SPEC.md v1.1, UI_SPEC.md v2.0, SATU_ROADMAP.md (new), CLAUDE.md v1.7/v1.4, KNOWLEDGE_MAP.md v1.4/v1.3, RULES.md v1.10/v1.5, WORKFLOW_SKILL.md v2.2 (both repos), CC_CHAT_LOG.md v2.6/v1.2, PROJECT_STATE.md v1.8
+**New files:** hardware/HARDWARE_SPEC.md, SATU_ROADMAP.md (both repos)
+**Deleted:** hardware/HARDWARE_TRUTH.md (firmware only), CC_BUILD_PROMPT_governance_docs_v2.md (root)
+**Flags:** Docs-only. Zero source files touched. hardware.h LOCKED. PAYMENT_MODE stays fake. CI not triggered.
 
 ---
 ## 2026-06-20 — Service menu R13 QA fixes (6 targeted corrections after R12 flash)
@@ -52,7 +60,7 @@
 
 ---
 ## 2026-06-19 — R-153: STATE_CONFIRMING — confirm screen before order creation
-**Did:** (1) Added STATE_CONFIRMING to state_machine.h enum (between STATE_GIFT_OPTION and STATE_AWAITING_PAYMENT, R9 changelog). (2) Updated satu_vending.ino: STATE_GIFT_OPTION choices now transition to STATE_CONFIRMING (not directly to _proceedToPayment); added Back (choice 2) → STATE_PRODUCT_SELECTION; added STATE_CONFIRMING case with 300ms entry guard, Confirm→_proceedToPayment(), Back→STATE_GIFT_OPTION, 30s timeout→idle. (3) Updated ui.h: added _lastConfirmTouchMs debounce variable; added Back button to drawGiftOptionScreen() (bottom centre 200×48); updated getTouchedGiftOption() to return 2 for Back; added drawConfirmScreen(slotIdx, wantWater) — shows product name, water option, total THB in summary box, Back and Confirm buttons; added getTouchedConfirm() returns 1=Confirm, -1=Back, 0=none. Key safety: createOrder() now called ONLY on Confirm touch — no D1 rows from abandoned flows. Customer waits for QR after confirming (owner accepted this trade-off).
+**Did:** (1) Added STATE_CONFIRMING to state_machine.h enum (between STATE_GIFT_OPTION and STATE_AWAITING_PAYMENT, R9 changelog). (2) Updated satu_vending.ino: STATE_GIFT_OPTION choices now transition to STATE_CONFIRMING (not directly to _proceedToPayment); added Back (choice 2) → STATE_GIFT_OPTION; added STATE_CONFIRMING case with 300ms entry guard, Confirm→_proceedToPayment(), Back→STATE_GIFT_OPTION, 30s timeout→idle. (3) Updated ui.h: added _lastConfirmTouchMs debounce variable; added Back button to drawGiftOptionScreen() (bottom centre 200×48); updated getTouchedGiftOption() to return 2 for Back; added drawConfirmScreen(slotIdx, wantWater) — shows product name, water option, total THB in summary box, Back and Confirm buttons; added getTouchedConfirm() returns 1=Confirm, -1=Back, 0=none. Key safety: createOrder() now called ONLY on Confirm touch — no D1 rows from abandoned flows. Customer waits for QR after confirming (owner accepted this trade-off).
 **Updated:** firmware/state_machine.h, firmware/satu_vending.ino, firmware/ui.h, CC_CHAT_LOG.md v2.0
 **New files:** NONE
 **Pending Chat verify:** Flash, test full flow: Product select → Gift option (verify Back→product screen) → Confirm screen (verify Back→gift option, Confirm→QR). Verify D1 has no new rows after abandoning at gift or confirm screen.
