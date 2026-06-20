@@ -1,4 +1,5 @@
 # CC_BUILD_PROMPT_service_menu_fix_v2.md
+> ✅ COMPLETE — 2026-06-20 — service menu R12 visual fix
 > Created by: Chat — 2026-06-20
 > Session goal: R12 — Fix remaining visual issues from R11 QA photo review
 > Repo: Satu-Vending-Firmware
