@@ -2,9 +2,10 @@
 #define UI_SERVICE_H
 
 // ui_service.h — Service mode tab bodies (all 5 tabs)
-// Version: R12 — 2026-06-20
-// Changes: Bottom log panel, size-2 content text, fixed button sizes,
-//          Devices relay/IR grid cw=96, Settings/Firmware label columns.
+// Version: R13 — 2026-06-20
+// Changes: Devices cw=80 ch=36 + RELAYS heading + WARNING/IR gap +8px;
+//          Settings/Firmware headings → NULL size 1 C_GREEN underline;
+//          6px gap after every heading; all Y positions recalculated.
 // Included at bottom of ui.h — all ui.h symbols visible here.
 // network.h and hardware.h are included before ui.h in satu_vending.ino.
 
@@ -27,7 +28,6 @@ static bool _relState[13] = {false};
 
 static String _svcLogBuf[_BLOG_MAX];
 
-// Convenience shorthands used across all tab bodies
 #define _LM  (SVC_BODY_X + 16)   // left margin = 130
 #define _BDY STATUS_H             // body top = 44
 
@@ -59,12 +59,25 @@ void _svcLogPanel(String msg) {
   Serial.println("[SVC] " + msg);
 }
 
+// Large heading — FreeSansBold12pt7b. Used in Devices tab only.
 static void _svcHeading(int x, int y, const char* txt, uint16_t col = 0xFFFF) {
   gfx->setFont(&FreeSansBold12pt7b);
   gfx->setTextColor(col); gfx->setTextSize(1);
   gfx->setCursor(x, y);
   gfx->print(txt);
   gfx->setFont(NULL); gfx->setTextSize(2);
+}
+
+// Small heading — NULL size 1 + C_GREEN + underline. Used in Settings + Firmware.
+// setCursor y = top-left of char (NULL font). Char height = 8px.
+// Caller puts next content at y + 16 (8px text + 2px underline + 6px gap).
+static void _svcHeadingSm(int x, int y, const char* txt) {
+  gfx->setFont(NULL); gfx->setTextSize(1);
+  gfx->setTextColor(C_GREEN);
+  gfx->setCursor(x, y);
+  gfx->print(txt);
+  gfx->drawFastHLine(x, y + 9, strlen(txt) * 6, gfx->color565(0, 100, 0));
+  gfx->setTextSize(2);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -215,22 +228,39 @@ static void _drawSvcBody_FreePlay(int bodyX) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // TAB 2 — DEVICES
 // ═══════════════════════════════════════════════════════════════════════════════
-#define _DEV_CW      96
-#define _DEV_CH      44
+// R13 changes: cw=80 ch=36 (was 96/44). RELAYS heading added above relay grid.
+// WARNING→IR heading gap increased by 8px (+38 instead of +30).
+// All Y positions recalculated to keep bottom ≤ 392 (log panel at 400).
+//
+// Layout:
+//   _DEV_RH_Y  = 96  — RELAYS heading baseline (FreeSansBold12pt7b)
+//   _DEV_R1_Y  = 104 — relay row 1 top
+//   _DEV_R2_Y  = 144 — relay row 2 top
+//   _DEV_WARN_Y= 184 — WARNING banner top
+//   _DEV_IH_Y  = 222 — IR SENSORS heading baseline (+38 = extra 8px gap over old +30)
+//   _DEV_IR1_Y = 230 — IR row 1 top
+//   _DEV_IR2_Y = 270 — IR row 2 top
+//   _DEV_STUB_Y= 312 — stub buttons top
+//   _DEV_TBES_Y= 354 — Test Backend top (bottom=390 ≤ 392 ✓)
+#define _DEV_CW      80
+#define _DEV_CH      36
 #define _DEV_GAP     4
 #define _DEV_LX      (SVC_BODY_X + 8)
-#define _DEV_R1_Y    (_BDY + 38)
-#define _DEV_R2_Y    (_DEV_R1_Y + _DEV_CH + _DEV_GAP)
-#define _DEV_WARN_Y  (_DEV_R2_Y + _DEV_CH + 4)
-#define _DEV_IH_Y    (_DEV_WARN_Y + 30)
-#define _DEV_IR1_Y   (_DEV_IH_Y + 8)
-#define _DEV_IR2_Y   (_DEV_IR1_Y + _DEV_CH + _DEV_GAP)
-#define _DEV_STUB_Y  (_DEV_IR2_Y + _DEV_CH + 6)
-#define _DEV_TBES_Y  (_DEV_STUB_Y + 36 + 6)
+#define _DEV_RH_Y    (_BDY + 52)                          // RELAYS heading baseline = 96
+#define _DEV_R1_Y    (_BDY + 60)                          // relay row 1 top = 104
+#define _DEV_R2_Y    (_DEV_R1_Y + _DEV_CH + _DEV_GAP)    // = 144
+#define _DEV_WARN_Y  (_DEV_R2_Y + _DEV_CH + 4)           // = 184
+#define _DEV_IH_Y    (_DEV_WARN_Y + 38)                   // = 222 (was +30, +8px gap)
+#define _DEV_IR1_Y   (_DEV_IH_Y + 8)                     // = 230
+#define _DEV_IR2_Y   (_DEV_IR1_Y + _DEV_CH + _DEV_GAP)   // = 270
+#define _DEV_STUB_Y  (_DEV_IR2_Y + _DEV_CH + 6)          // = 312
+#define _DEV_TBES_Y  (_DEV_STUB_Y + 36 + 6)              // = 354
 
 static void _drawSvcBody_Devices(int bodyX) {
   gfx->setFont(&FreeSansBold18pt7b); gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
   gfx->setCursor(bodyX + 16, _BDY + 28); gfx->print("Devices");
+  // RELAYS heading
+  _svcHeading(_DEV_LX, _DEV_RH_Y, "RELAYS", C_MIDGREY);
   gfx->setFont(NULL); gfx->setTextSize(1);
   // Relay grid R1-R12 (two rows of 6)
   for (int r = 1; r <= 12; r++) {
@@ -252,13 +282,13 @@ static void _drawSvcBody_Devices(int bodyX) {
     gfx->setFont(NULL); gfx->setTextSize(1); gfx->setTextColor(fg);
     char topLine[6]; snprintf(topLine, sizeof(topLine), "R%d", r);
     int tw = strlen(topLine) * 6;
-    gfx->setCursor(cx + _DEV_CW/2 - tw/2, cy + 10); gfx->print(topLine);
+    gfx->setCursor(cx + _DEV_CW/2 - tw/2, cy + 8); gfx->print(topLine);
     const char* stateLabel;
     if (r == 12)      stateLabel = on ? "UNLOCKED" : "LOCKED";
     else if (r == 11) stateLabel = on ? "PUMP ON"  : "PUMP";
     else              stateLabel = on ? "ON"        : "OFF";
     int sl = strlen(stateLabel) * 6;
-    gfx->setCursor(cx + _DEV_CW/2 - sl/2, cy + 28); gfx->print(stateLabel);
+    gfx->setCursor(cx + _DEV_CW/2 - sl/2, cy + 22); gfx->print(stateLabel);
   }
   // WARNING banner
   gfx->fillRect(_DEV_LX, _DEV_WARN_Y, _BLOG_W - 14, 18, gfx->color565(50,30,0));
@@ -279,10 +309,10 @@ static void _drawSvcBody_Devices(int bodyX) {
     gfx->setFont(NULL); gfx->setTextSize(1); gfx->setTextColor(fg);
     char sn[5]; snprintf(sn, sizeof(sn), "S%d", s+1);
     int snw = strlen(sn) * 6;
-    gfx->setCursor(cx + _DEV_CW/2 - snw/2, cy + 10); gfx->print(sn);
+    gfx->setCursor(cx + _DEV_CW/2 - snw/2, cy + 8); gfx->print(sn);
     const char* slabel = triggered ? "BLOCK" : "CLEAR";
     int slw = strlen(slabel) * 6;
-    gfx->setCursor(cx + _DEV_CW/2 - slw/2, cy + 28); gfx->print(slabel);
+    gfx->setCursor(cx + _DEV_CW/2 - slw/2, cy + 22); gfx->print(slabel);
   }
   // Stub buttons row: Pump R11 / LED Test / Speaker
   _fillRoundRect(_DEV_LX,       _DEV_STUB_Y, 180, 36, 4, gfx->color565(15,20,40));
@@ -308,12 +338,26 @@ static void _drawSvcBody_Devices(int bodyX) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // TAB 3 — SETTINGS
 // ═══════════════════════════════════════════════════════════════════════════════
-// All Y positions relative to _BDY (=44). Working top-down with tight 4px gaps.
-// Boot PIN button at _BDY+120 = y164. Factory Reset at _BDY+306 = y350 (h=34 → bottom=384).
-// Volume row at _BDY+286 = y330. Content max y = SCR_H-88 = 392.
-#define _S_Y402  (_BDY + 120)   // Boot PIN button top    = 164
-#define _S_Y401  (_BDY + 306)   // Factory Reset top      = 350
-#define _S_VOLY  (_BDY + 286)   // Volume row top         = 330
+// R13 changes: all _svcHeading → _svcHeadingSm (NULL size 1, C_GREEN, underline).
+// 6px gap after every heading. All Y positions recalculated top-down.
+//
+// Layout (top-left anchored, NULL size 2 body = 16px row height):
+//   y82  — "NETWORK" heading        (8px text + underline + 6px gap = 16px total)
+//   y98  — WiFi SSID row
+//   y116 — IP Addr row
+//   y140 — "SERVICE ACCESS" heading (+8px gap before section)
+//   y156 — Boot PIN button (h=36)   → bottom 192
+//   y200 — "DISPLAY CONFIG" heading (+8px gap before section)
+//   y216 — Idle row
+//   y240 — "LANE PRICES" heading    (+8px gap before section)
+//   y256 — Lane row 1
+//   y274 — Lane row 2
+//   y298 — "AUDIO" heading          (+8px gap before section)
+//   y314 — Volume row
+//   y340 — Factory Reset (h=34)     → bottom 374 ≤ 392 ✓
+#define _S_Y402  (_BDY + 112)   // Boot PIN button top    = 156
+#define _S_Y401  (_BDY + 296)   // Factory Reset top      = 340
+#define _S_VOLY  (_BDY + 270)   // Volume row top         = 314
 #define _S_VOLH  16
 
 static void _drawSvcBody_Settings(int bodyX) {
@@ -321,21 +365,21 @@ static void _drawSvcBody_Settings(int bodyX) {
   gfx->setFont(&FreeSansBold18pt7b); gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
   gfx->setCursor(x, _BDY + 28); gfx->print("Settings");
 
-  // NETWORK section
-  _svcHeading(x, _BDY + 50, "NETWORK", C_MIDGREY);
+  // NETWORK — heading at y=82, content at y=98/116
+  _svcHeadingSm(x, _BDY + 38, "NETWORK");  // y=82
   Preferences _sp; _sp.begin("satu", true);
   String ssid = _sp.getString("nvs_ssid", "(none)"); _sp.end();
   gfx->setFont(NULL); gfx->setTextSize(2);
-  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 58); gfx->print("WiFi SSID");
-  gfx->setTextColor(C_WHITE); gfx->setCursor(lv, _BDY + 58); gfx->print(ssid.c_str());
-  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 78); gfx->print("IP Addr");
-  gfx->setTextColor(C_WHITE); gfx->setCursor(lv, _BDY + 78); gfx->print(WiFi.localIP().toString().c_str());
+  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 54); gfx->print("WiFi SSID");  // y=98
+  gfx->setTextColor(C_WHITE); gfx->setCursor(lv, _BDY + 54); gfx->print(ssid.c_str());
+  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 72); gfx->print("IP Addr");    // y=116
+  gfx->setTextColor(C_WHITE); gfx->setCursor(lv, _BDY + 72); gfx->print(WiFi.localIP().toString().c_str());
 
-  // SERVICE ACCESS section
-  _svcHeading(x, _BDY + 112, "SERVICE ACCESS", C_MIDGREY);
+  // SERVICE ACCESS — heading at y=140, Boot PIN at y=156
+  _svcHeadingSm(x, _BDY + 96, "SERVICE ACCESS");  // y=140
   Preferences _bp; _bp.begin("satu", true);
   bool pinOn = _bp.getBool("boot_pin", false); _bp.end();
-  int y = _S_Y402;
+  int y = _S_Y402;  // 156
   uint16_t pinBg  = pinOn ? gfx->color565(0,50,0)   : gfx->color565(30,30,30);
   uint16_t pinBdr = pinOn ? C_GREEN : C_MIDGREY;
   _fillRoundRect(x, y, 220, 36, 6, pinBg); _drawRoundRect(x, y, 220, 36, 6, pinBdr);
@@ -345,20 +389,20 @@ static void _drawSvcBody_Settings(int bodyX) {
   char pinLabel[20]; snprintf(pinLabel, sizeof(pinLabel), "Boot PIN: %s", pinOn ? "ON" : "OFF");
   gfx->print(pinLabel);
 
-  // DISPLAY CONFIG section
-  _svcHeading(x, _BDY + 182, "DISPLAY CONFIG", C_MIDGREY);
+  // DISPLAY CONFIG — heading at y=200, Idle row at y=216
+  _svcHeadingSm(x, _BDY + 156, "DISPLAY CONFIG");  // y=200
   gfx->setFont(NULL); gfx->setTextSize(2);
-  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 198); gfx->print("Idle");
-  gfx->setTextColor(C_WHITE); gfx->setCursor(lv, _BDY + 198);
+  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 172); gfx->print("Idle");       // y=216
+  gfx->setTextColor(C_WHITE); gfx->setCursor(lv, _BDY + 172);
   char cfgBuf[64];
   snprintf(cfgBuf, sizeof(cfgBuf), "%ds  Sel:%ds  Water:%s  Grid:%dx%d",
            g_cfg_idle, g_cfg_sel, g_cfg_water ? "ON" : "OFF", g_grid_rows, g_grid_cols);
   gfx->print(cfgBuf);
 
-  // LANE PRICES section
-  _svcHeading(x, _BDY + 228, "LANE PRICES", C_MIDGREY);
+  // LANE PRICES — heading at y=240, rows at y=256/274
+  _svcHeadingSm(x, _BDY + 196, "LANE PRICES");  // y=240
   gfx->setFont(NULL); gfx->setTextSize(2);
-  gfx->setCursor(x, _BDY + 244);
+  gfx->setCursor(x, _BDY + 212);  // y=256
   for (int col = 0; col < 7 && col < NUM_SLOTS; col++) {
     gfx->setTextColor(C_GREY);
     char lbl[5]; snprintf(lbl, sizeof(lbl), "L%d:", col+1); gfx->print(lbl);
@@ -367,7 +411,7 @@ static void _drawSvcBody_Settings(int bodyX) {
     snprintf(prb, sizeof(prb), g_slots[col].configured && g_slots[col].price > 0 ? "%dB " : "-- ", (int)g_slots[col].price);
     gfx->print(prb);
   }
-  gfx->setCursor(x, _BDY + 264);
+  gfx->setCursor(x, _BDY + 230);  // y=274
   for (int col = 7; col < 10 && col < NUM_SLOTS; col++) {
     gfx->setTextColor(C_GREY);
     char lbl[6]; snprintf(lbl, sizeof(lbl), "L%d:", col+1); gfx->print(lbl);
@@ -377,18 +421,18 @@ static void _drawSvcBody_Settings(int bodyX) {
     gfx->print(prb);
   }
 
-  // AUDIO section
-  _svcHeading(x, _BDY + 282, "AUDIO", C_MIDGREY);
+  // AUDIO — heading at y=298, Volume at y=314
+  _svcHeadingSm(x, _BDY + 254, "AUDIO");  // y=298
   Preferences _vp; _vp.begin("satu", true); int vol = _vp.getInt("vol", 50); _vp.end();
-  y = _S_VOLY;
+  y = _S_VOLY;  // 314
   gfx->setFont(NULL); gfx->setTextSize(2);
   gfx->setTextColor(C_GREY);  gfx->setCursor(x,  y); gfx->print("Volume");
   gfx->setTextColor(C_WHITE); gfx->setCursor(lv, y);
   char vbuf[16]; snprintf(vbuf, sizeof(vbuf), "%d%%", vol); gfx->print(vbuf);
   if (SPEAKER_PIN >= 0) { gfx->setTextColor(C_GREY); gfx->print("  Tap to cycle +10"); }
 
-  // Factory Reset button (w=260 h=34)
-  y = _S_Y401;
+  // Factory Reset button (w=260 h=34, top=340 bottom=374 ≤ 392)
+  y = _S_Y401;  // 340
   _fillRoundRect(x, y, 260, 34, 8, gfx->color565(60,0,0));
   _drawRoundRect(x, y, 260, 34, 8, gfx->color565(180,50,50));
   gfx->setTextColor(C_WHITE); gfx->setCursor(x + 16, y + 9);
@@ -400,34 +444,51 @@ static void _drawSvcBody_Settings(int bodyX) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // TAB 4 — FIRMWARE
 // ═══════════════════════════════════════════════════════════════════════════════
-// Print to Serial button at _BDY+312 = y356, h=36 → bottom=392.
-#define _FW_PRINT_Y  (_BDY + 312)   // 356
+// R13 changes: all _svcHeading → _svcHeadingSm (NULL size 1, C_GREEN, underline).
+// 6px gap after every heading. All Y positions recalculated top-down.
+//
+// Layout:
+//   y82  — "CURRENT FIRMWARE" heading
+//   y98  — Version row
+//   y116 — Build row
+//   y134 — Board row
+//   y152 — Flash/RAM row
+//   y170 — MAC row
+//   y188 — Heap free row
+//   y212 — "SECURITY (dev mode)" heading (+8px gap before section)
+//   y228 — Encrypt row
+//   y246 — Sec Boot row
+//   y264 — JTAG row
+//   y288 — "REMOTE OTA (stub)" heading (+8px gap before section)
+//   y304 — OTA buttons (h=28)          → bottom 332
+//   y338 — Print to Serial (h=36)      → bottom 374 ≤ 392 ✓
+#define _FW_PRINT_Y  (_BDY + 294)   // 338
 
 static void _drawSvcBody_Firmware(int bodyX) {
   int x = bodyX + 16, lv = x + 140;  // label col=140, value col=270
   gfx->setFont(&FreeSansBold18pt7b); gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
   gfx->setCursor(x, _BDY + 28); gfx->print("Firmware");
 
-  // CURRENT FIRMWARE section
-  _svcHeading(x, _BDY + 50, "CURRENT FIRMWARE", C_MIDGREY);
+  // CURRENT FIRMWARE — heading at y=82, rows at y=98..188
+  _svcHeadingSm(x, _BDY + 38, "CURRENT FIRMWARE");  // y=82
   uint8_t mac[6]; esp_read_mac(mac, ESP_MAC_WIFI_STA);
   char macStr[18];
   snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X",
            mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
   gfx->setFont(NULL); gfx->setTextSize(2);
-  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 58); gfx->print("Version");
-  gfx->setTextColor(C_WHITE); gfx->setCursor(lv, _BDY + 58); gfx->print(FW_VERSION);
-  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 78); gfx->print("Build");
-  gfx->setTextColor(C_WHITE); gfx->setCursor(lv, _BDY + 78);
+  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 54); gfx->print("Version");    // y=98
+  gfx->setTextColor(C_WHITE); gfx->setCursor(lv, _BDY + 54); gfx->print(FW_VERSION);
+  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 72); gfx->print("Build");      // y=116
+  gfx->setTextColor(C_WHITE); gfx->setCursor(lv, _BDY + 72);
   gfx->print(__DATE__); gfx->print(" "); gfx->print(__TIME__);
-  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 98); gfx->print("Board");
-  gfx->setTextColor(C_WHITE); gfx->setCursor(lv, _BDY + 98); gfx->print("ESP32-8048S070C");
-  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 118); gfx->print("Flash/RAM");
-  gfx->setTextColor(C_WHITE); gfx->setCursor(lv, _BDY + 118); gfx->print("16MB / 8MB OPI");
-  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 138); gfx->print("MAC");
-  gfx->setTextColor(C_WHITE); gfx->setCursor(lv, _BDY + 138); gfx->print(macStr);
-  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 158); gfx->print("Heap free");
-  gfx->setTextColor(C_WHITE); gfx->setCursor(lv, _BDY + 158);
+  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 90); gfx->print("Board");      // y=134
+  gfx->setTextColor(C_WHITE); gfx->setCursor(lv, _BDY + 90); gfx->print("ESP32-8048S070C");
+  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 108); gfx->print("Flash/RAM"); // y=152
+  gfx->setTextColor(C_WHITE); gfx->setCursor(lv, _BDY + 108); gfx->print("16MB / 8MB OPI");
+  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 126); gfx->print("MAC");       // y=170
+  gfx->setTextColor(C_WHITE); gfx->setCursor(lv, _BDY + 126); gfx->print(macStr);
+  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 144); gfx->print("Heap free"); // y=188
+  gfx->setTextColor(C_WHITE); gfx->setCursor(lv, _BDY + 144);
   char heapBuf[20]; snprintf(heapBuf, sizeof(heapBuf), "%lu KB", ESP.getFreeHeap()/1024);
   gfx->print(heapBuf);
   gfx->setTextColor(C_GREY); gfx->print("  PSRAM: ");
@@ -435,20 +496,20 @@ static void _drawSvcBody_Firmware(int bodyX) {
   char psramBuf[20]; snprintf(psramBuf, sizeof(psramBuf), "%lu KB", ESP.getFreePsram()/1024);
   gfx->print(psramBuf);
 
-  // SECURITY section
-  _svcHeading(x, _BDY + 192, "SECURITY (dev mode)", C_MIDGREY);
+  // SECURITY — heading at y=212, rows at y=228/246/264
+  _svcHeadingSm(x, _BDY + 168, "SECURITY (dev mode)");  // y=212
   const uint16_t amber = gfx->color565(180,120,0);
   gfx->setFont(NULL); gfx->setTextSize(2);
-  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 208); gfx->print("Encrypt");
-  gfx->setTextColor(amber);   gfx->setCursor(lv, _BDY + 208); gfx->print("DISABLED");
-  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 228); gfx->print("Sec Boot");
-  gfx->setTextColor(amber);   gfx->setCursor(lv, _BDY + 228); gfx->print("DISABLED");
-  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 248); gfx->print("JTAG");
-  gfx->setTextColor(amber);   gfx->setCursor(lv, _BDY + 248); gfx->print("ENABLED (burn eFuse)");
+  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 184); gfx->print("Encrypt");   // y=228
+  gfx->setTextColor(amber);   gfx->setCursor(lv, _BDY + 184); gfx->print("DISABLED");
+  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 202); gfx->print("Sec Boot");  // y=246
+  gfx->setTextColor(amber);   gfx->setCursor(lv, _BDY + 202); gfx->print("DISABLED");
+  gfx->setTextColor(C_GREY);  gfx->setCursor(x,  _BDY + 220); gfx->print("JTAG");      // y=264
+  gfx->setTextColor(amber);   gfx->setCursor(lv, _BDY + 220); gfx->print("ENABLED (burn eFuse)");
 
-  // REMOTE OTA stub
-  _svcHeading(x, _BDY + 278, "REMOTE OTA (stub)", C_MIDGREY);
-  int otaY = _BDY + 290;
+  // REMOTE OTA — heading at y=288, buttons at y=304
+  _svcHeadingSm(x, _BDY + 244, "REMOTE OTA (stub)");  // y=288
+  int otaY = _BDY + 260;  // y=304
   _fillRoundRect(x,       otaY, 160, 28, 6, gfx->color565(20,20,40));
   _drawRoundRect(x,       otaY, 160, 28, 6, C_DARKGREY);
   _fillRoundRect(x + 168, otaY, 140, 28, 6, gfx->color565(20,20,40));
@@ -457,8 +518,8 @@ static void _drawSvcBody_Firmware(int bodyX) {
   gfx->setCursor(x + 8,       otaY + 6); gfx->print("Check Update");
   gfx->setCursor(x + 168 + 8, otaY + 6); gfx->print("Force OTA");
 
-  // Print to Serial button (w=200 h=36, bottom=392)
-  int y = _FW_PRINT_Y;
+  // Print to Serial button (w=200 h=36, top=338 bottom=374 ≤ 392)
+  int y = _FW_PRINT_Y;  // 338
   _fillRoundRect(x, y, 200, 36, 6, gfx->color565(10,30,10));
   _drawRoundRect(x, y, 200, 36, 6, C_GREEN);
   gfx->setTextColor(C_GREEN); gfx->setCursor(x + 12, y + 10);
