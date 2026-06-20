@@ -1235,8 +1235,8 @@ int getTouchedServiceContent(int tab) {
   if (tab == TAB_SETTINGS) {
     int bodyX = SVC_BODY_X;
     // y-positions match _S_Y401/_S_Y402 defines in ui_service.h
-    const int y401 = 350; // _S_Y401
-    const int y402 = 164; // _S_Y402
+    const int y401 = 340; // _S_Y401
+    const int y402 = 156; // _S_Y402
     if (ty >= y401 && ty <= y401 + 34 && tx >= bodyX + 16 && tx <= bodyX + 276) {
       _lastSvcCntMs = millis();
       return 401;

@@ -1,9 +1,17 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 2.4 — 2026-06-20
-> Changes: R12 service menu visual fix pass (remaining issues from R11 QA photo review)
-> Previous: v2.3 — 2026-06-20
+> Version 2.5 — 2026-06-20
+> Changes: R13 service menu QA photo fix pass (6 targeted fixes from owner flash QA)
+> Previous: v2.4 — 2026-06-20
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
+
+---
+## 2026-06-20 — Service menu R13 QA fixes (6 targeted corrections after R12 flash)
+**Did:** Targeted rewrite of firmware/ui_service.h only (R13). (1) DEVICES: added "RELAYS" heading using FreeSansBold12pt7b + C_MIDGREY at _DEV_RH_Y=_BDY+52=96 above relay grid. (2) DEVICES: WARNING→IR gap increased +8px (_DEV_IH_Y = _DEV_WARN_Y+38 was +30). (3) DEVICES: cells reduced cw=96→80 ch=44→36; all Devices Y positions recalculated with chained #defines (R1_Y=104, R2_Y=144, WARN_Y=184, IH_Y=222, IR1_Y=230, IR2_Y=270, STUB_Y=312, TBES_Y=354). (4+5) SETTINGS + FIRMWARE: added _svcHeadingSm() helper — NULL size 1, C_GREEN, underline (6px darker) — replaces all FreeSansBold12pt7b section headings in both tabs. (6) All Settings + Firmware sections have ≥6px gap between heading and first content row. Settings Y recalculated: Boot PIN y=156 (was 164), Factory Reset y=340 (was 350), Volume y=314 (was 330). Firmware Y recalculated: Print to Serial y=338 (was 356). All bottom edges verified ≤392 (log panel boundary). firmware/ui.h: getTouchedServiceContent y401=350→340, y402=164→156 (matches new _S_Y401/_S_Y402).
+**Updated:** firmware/ui_service.h, firmware/ui.h, PROJECT_STATE.md v1.7, CC_CHAT_LOG.md v2.5
+**New files:** NONE
+**Pending Chat verify:** Flash; enter service mode; DEVICES: confirm RELAYS heading visible, WARNING/IR gap wider, cells 80×36; SETTINGS: confirm small green underlined headings, Boot PIN tappable at y=156, Factory Reset tappable at y=340; FIRMWARE: confirm small green underlined headings, Print to Serial at y=338.
+**Flags:** Free Play + Self Test tabs UNTOUCHED. hardware.h LOCKED. PAYMENT_MODE stays fake. satu_vending.ino NOT touched.
 
 ---
 ## 2026-06-20 — Service menu R12 remaining visual fixes — CC_BUILD_PROMPT_service_menu_fix_v2

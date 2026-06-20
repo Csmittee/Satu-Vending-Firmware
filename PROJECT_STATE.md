@@ -1,10 +1,20 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Version 1.6 — 2026-06-20
-> Changes: Added R12 session log (service menu remaining visual fixes from R11 QA photo review)
-> Previous: v1.5 — 2026-06-20
+> Version 1.7 — 2026-06-20
+> Changes: Added R13 session log (6-fix QA photo correction pass after R12 flash)
+> Previous: v1.6 — 2026-06-20
 > Status: Phase 1 active — ~67% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-20 — Service menu R13 QA fixes (6 targeted corrections after R12 flash)
+- REWRITE: firmware/ui_service.h — targeted R13 rewrite (Devices + Settings + Firmware only).
+- TAB 2 Devices: Added "RELAYS" heading (FreeSansBold12pt7b, C_MIDGREY) at y=96 above relay grid. Gap WARNING→IR increased +8px. Cells reduced cw=96→80 ch=44→36; all Devices Y positions recalculated: R1_Y=104, R2_Y=144, WARN_Y=184, IH_Y=222, IR1_Y=230, IR2_Y=270, STUB_Y=312, TBES_Y=354 (bottom=390 ✓).
+- TAB 3 Settings: All FreeSansBold12pt7b headings → _svcHeadingSm() (NULL size 1, C_GREEN, underline). Y recalculated: Boot PIN y=156 (was 164), Factory Reset y=340 (was 350), Volume y=314 (was 330). All bottom edges ≤392.
+- TAB 4 Firmware: All FreeSansBold12pt7b headings → _svcHeadingSm(). Y recalculated: Print to Serial y=338 (was 356). Bottom=374 ≤392 ✓.
+- NEW helper: _svcHeadingSm(x, y, txt) — NULL size 1, C_GREEN, underline at y+9, restores size 2.
+- MODIFY: firmware/ui.h — getTouchedServiceContent y401=350→340, y402=164→156 (matches new defines).
+- TAB 0 Self Test + TAB 1 Free Play: UNTOUCHED.
+- CI: ⬜ pending. Flash: ⬜ pending (owner to QA all 5 tabs — focus Devices/Settings/Firmware).
 
 ### 2026-06-20 — Service menu R12 remaining visual fixes (CC_BUILD_PROMPT_service_menu_fix_v2)
 - REWRITE: firmware/ui_service.h — complete rewrite implementing R12 visual corrections.
