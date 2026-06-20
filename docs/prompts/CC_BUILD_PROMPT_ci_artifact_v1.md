@@ -1,4 +1,6 @@
 # CC_BUILD_PROMPT_ci_artifact_v1.md
+✅ COMPLETE — 2026-06-20 — CI artifact upload (--output-dir + actions/upload-artifact@v4)
+
 > Created by: Chat — 2026-06-20
 > Session goal: Save compiled .bin as downloadable GitHub Actions artifact
 > Repo: Satu-Vending-Firmware

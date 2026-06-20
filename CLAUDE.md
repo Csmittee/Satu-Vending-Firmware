@@ -1,7 +1,7 @@
 # CLAUDE.md — Satu Project Compass
-> Version 1.4 — 2026-06-19
-> Changes: Added firmware/ui_service.h to Key Files
-> Previous: v1.3 — 2026-06-19
+> Version 1.5 — 2026-06-20
+> Changes: Added "Flashing Without Arduino IDE" section
+> Previous: v1.4 — 2026-06-19
 <!-- max 35 lines · never grows · CC reads this on every session start -->
 
 ## Stack
@@ -39,6 +39,13 @@
 - `firmware/network.h`                — WiFi + API calls
 - `firmware/ui.h`                     — touch display + QR rendering
 - `firmware/ui_service.h`             — service mode 5-tab body implementations + _getTouchedServiceExtra()
+
+## Flashing Without Arduino IDE
+1. Wait for CI green on PR (GitHub Actions compiles on every push to firmware/**)
+2. GitHub → Actions tab → click the run → Download artifact `satu-firmware-N`
+3. Unzip → find `satu_vending.ino.bin`
+4. Find port: `ls /dev/cu.*`
+5. Flash: `esptool.py --chip esp32s3 --port /dev/cu.XXXX --baud 921600 write_flash 0x0 satu_vending.ino.bin`
 
 ## Repos
 - Backend: `Csmittee/Satu-vending-backend`
