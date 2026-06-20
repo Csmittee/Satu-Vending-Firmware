@@ -228,33 +228,32 @@ static void _drawSvcBody_FreePlay(int bodyX) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // TAB 2 — DEVICES
 // ═══════════════════════════════════════════════════════════════════════════════
-// R13 changes: cw=80 ch=36 (was 96/44). RELAYS heading added above relay grid.
-// WARNING→IR heading gap increased by 8px (+38 instead of +30).
-// All Y positions recalculated to keep bottom ≤ 392 (log panel at 400).
-//
-// Layout:
-//   _DEV_RH_Y  = 96  — RELAYS heading baseline (FreeSansBold12pt7b)
-//   _DEV_R1_Y  = 104 — relay row 1 top
-//   _DEV_R2_Y  = 144 — relay row 2 top
-//   _DEV_WARN_Y= 184 — WARNING banner top
-//   _DEV_IH_Y  = 222 — IR SENSORS heading baseline (+38 = extra 8px gap over old +30)
-//   _DEV_IR1_Y = 230 — IR row 1 top
-//   _DEV_IR2_Y = 270 — IR row 2 top
-//   _DEV_STUB_Y= 312 — stub buttons top
-//   _DEV_TBES_Y= 354 — Test Backend top (bottom=390 ≤ 392 ✓)
-#define _DEV_CW      80
+// R14: grid driven by MACHINE_LANES from config.h (R-163).
+// Current build: MACHINE_LANES=10 → 5 cols × 2 rows, cw=86, special row R11+R12.
+// Layout for MACHINE_LANES=10:
+//   _DEV_RH_Y  = 96  — RELAYS heading baseline
+//   _DEV_R1_Y  = 104 — lane relay row 1 top
+//   lane row 2 = 144, bottom = 180
+//   _DEV_SP_Y  = 186 — special relay row (R11 pump + R12 flap), bottom = 222
+//   _DEV_WARN_Y= 228 — WARNING banner top, bottom = 246
+//   _DEV_IH_Y  = 254 — IR SENSORS heading baseline
+//   _DEV_IR1_Y = 262 — IR row 1 top
+//   IR row 2   = 302, bottom = 338
+//   _DEV_TBES_Y= 350 — Test Backend top (bottom=386 ≤ 392 ✓)
+// NOTE: 15-lane and 21-lane builds will overflow IR grid — scrolling needed in future PR.
+#define _DEV_COLS    (MACHINE_LANES <= 10 ? 5 : 7)
+#define _DEV_CW      (_DEV_COLS == 5 ? 86 : 68)
 #define _DEV_CH      36
 #define _DEV_GAP     4
+#define _DEV_ROWS    ((MACHINE_LANES + _DEV_COLS - 1) / _DEV_COLS)
 #define _DEV_LX      (SVC_BODY_X + 8)
-#define _DEV_RH_Y    (_BDY + 52)                          // RELAYS heading baseline = 96
-#define _DEV_R1_Y    (_BDY + 60)                          // relay row 1 top = 104
-#define _DEV_R2_Y    (_DEV_R1_Y + _DEV_CH + _DEV_GAP)    // = 144
-#define _DEV_WARN_Y  (_DEV_R2_Y + _DEV_CH + 4)           // = 184
-#define _DEV_IH_Y    (_DEV_WARN_Y + 38)                   // = 222 (was +30, +8px gap)
-#define _DEV_IR1_Y   (_DEV_IH_Y + 8)                     // = 230
-#define _DEV_IR2_Y   (_DEV_IR1_Y + _DEV_CH + _DEV_GAP)   // = 270
-#define _DEV_STUB_Y  (_DEV_IR2_Y + _DEV_CH + 6)          // = 312
-#define _DEV_TBES_Y  (_DEV_STUB_Y + 36 + 6)              // = 354
+#define _DEV_RH_Y    (_BDY + 52)
+#define _DEV_R1_Y    (_BDY + 60)
+#define _DEV_SP_Y    (_DEV_R1_Y + _DEV_ROWS * (_DEV_CH + _DEV_GAP) + 2)
+#define _DEV_WARN_Y  (_DEV_SP_Y + _DEV_CH + 6)
+#define _DEV_IH_Y    (_DEV_WARN_Y + 26)
+#define _DEV_IR1_Y   (_DEV_IH_Y + 8)
+#define _DEV_TBES_Y  (_DEV_IR1_Y + _DEV_ROWS * (_DEV_CH + _DEV_GAP) + 8)
 
 static void _drawSvcBody_Devices(int bodyX) {
   gfx->setFont(&FreeSansBold18pt7b); gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
@@ -262,33 +261,46 @@ static void _drawSvcBody_Devices(int bodyX) {
   // RELAYS heading
   _svcHeading(_DEV_LX, _DEV_RH_Y, "RELAYS", C_MIDGREY);
   gfx->setFont(NULL); gfx->setTextSize(1);
-  // Relay grid R1-R12 (two rows of 6)
-  for (int r = 1; r <= 12; r++) {
-    int col = (r-1) % 6, row = (r-1) / 6;
+  // Lane relay grid: R1 to MACHINE_LANES
+  for (int r = 1; r <= MACHINE_LANES; r++) {
+    int col = (r-1) % _DEV_COLS, row = (r-1) / _DEV_COLS;
     int cx = _DEV_LX + col * (_DEV_CW + _DEV_GAP);
-    int cy = (row == 0) ? _DEV_R1_Y : _DEV_R2_Y;
+    int cy = _DEV_R1_Y + row * (_DEV_CH + _DEV_GAP);
     bool on = _relState[r];
-    uint16_t bg, fg;
-    if (r == 12) {
-      bg = on ? gfx->color565(0,60,0)   : gfx->color565(70,0,0);
-      fg = on ? C_GREEN : C_RED;
-    } else if (on) {
-      bg = gfx->color565(0,55,0); fg = C_GREEN;
-    } else {
-      bg = gfx->color565(18,18,22); fg = C_GREY;
-    }
+    uint16_t bg = on ? gfx->color565(0,55,0) : gfx->color565(18,18,22);
+    uint16_t fg = on ? C_GREEN : C_GREY;
     _fillRoundRect(cx, cy, _DEV_CW, _DEV_CH, 4, bg);
     _drawRoundRect(cx, cy, _DEV_CW, _DEV_CH, 4, fg);
     gfx->setFont(NULL); gfx->setTextSize(1); gfx->setTextColor(fg);
     char topLine[6]; snprintf(topLine, sizeof(topLine), "R%d", r);
     int tw = strlen(topLine) * 6;
     gfx->setCursor(cx + _DEV_CW/2 - tw/2, cy + 8); gfx->print(topLine);
-    const char* stateLabel;
-    if (r == 12)      stateLabel = on ? "UNLOCKED" : "LOCKED";
-    else if (r == 11) stateLabel = on ? "PUMP ON"  : "PUMP";
-    else              stateLabel = on ? "ON"        : "OFF";
+    const char* stateLabel = on ? "ON" : "OFF";
     int sl = strlen(stateLabel) * 6;
     gfx->setCursor(cx + _DEV_CW/2 - sl/2, cy + 22); gfx->print(stateLabel);
+  }
+  // Special relay row: R11 (pump) + R12 (flap) — always shown below lane grid
+  for (int i = 0; i < 2; i++) {
+    int r = 11 + i;
+    int cx = _DEV_LX + i * (_DEV_CW + _DEV_GAP);
+    bool on = _relState[r];
+    uint16_t bg, fg;
+    if (r == 12) {
+      bg = on ? gfx->color565(0,60,0) : gfx->color565(70,0,0);
+      fg = on ? C_GREEN : C_RED;
+    } else {
+      bg = on ? gfx->color565(0,55,0) : gfx->color565(18,18,22);
+      fg = on ? C_GREEN : C_GREY;
+    }
+    _fillRoundRect(cx, _DEV_SP_Y, _DEV_CW, _DEV_CH, 4, bg);
+    _drawRoundRect(cx, _DEV_SP_Y, _DEV_CW, _DEV_CH, 4, fg);
+    gfx->setFont(NULL); gfx->setTextSize(1); gfx->setTextColor(fg);
+    char topLine[6]; snprintf(topLine, sizeof(topLine), "R%d", r);
+    int tw = strlen(topLine) * 6;
+    gfx->setCursor(cx + _DEV_CW/2 - tw/2, _DEV_SP_Y + 8); gfx->print(topLine);
+    const char* stateLabel = (r == 12) ? (on ? "UNLOCKED" : "LOCKED") : (on ? "PUMP ON" : "PUMP");
+    int sl = strlen(stateLabel) * 6;
+    gfx->setCursor(cx + _DEV_CW/2 - sl/2, _DEV_SP_Y + 22); gfx->print(stateLabel);
   }
   // WARNING banner
   gfx->fillRect(_DEV_LX, _DEV_WARN_Y, _BLOG_W - 14, 18, gfx->color565(50,30,0));
@@ -297,10 +309,10 @@ static void _drawSvcBody_Devices(int bodyX) {
   gfx->print("WARNING: Relays stay ON until tapped again. Exit to reset.");
   // IR SENSORS heading + grid
   _svcHeading(_DEV_LX, _DEV_IH_Y, "IR SENSORS (live)", C_MIDGREY);
-  for (int s = 0; s < 10; s++) {
-    int col = s % 5, row = s / 5;
+  for (int s = 0; s < MACHINE_LANES; s++) {
+    int col = s % _DEV_COLS, row = s / _DEV_COLS;
     int cx = _DEV_LX + col * (_DEV_CW + _DEV_GAP);
-    int cy = (row == 0) ? _DEV_IR1_Y : _DEV_IR2_Y;
+    int cy = _DEV_IR1_Y + row * (_DEV_CH + _DEV_GAP);
     bool triggered = readSensor(s);
     uint16_t bg = triggered ? gfx->color565(80,0,0) : gfx->color565(10,30,10);
     uint16_t fg = triggered ? C_RED : C_GREEN;
@@ -314,22 +326,11 @@ static void _drawSvcBody_Devices(int bodyX) {
     int slw = strlen(slabel) * 6;
     gfx->setCursor(cx + _DEV_CW/2 - slw/2, cy + 22); gfx->print(slabel);
   }
-  // Stub buttons row: Pump R11 / LED Test / Speaker
-  _fillRoundRect(_DEV_LX,       _DEV_STUB_Y, 180, 36, 4, gfx->color565(15,20,40));
-  _drawRoundRect(_DEV_LX,       _DEV_STUB_Y, 180, 36, 4, C_DARKGREY);
-  _fillRoundRect(_DEV_LX + 188, _DEV_STUB_Y, 140, 36, 4, gfx->color565(15,20,40));
-  _drawRoundRect(_DEV_LX + 188, _DEV_STUB_Y, 140, 36, 4, C_DARKGREY);
-  _fillRoundRect(_DEV_LX + 336, _DEV_STUB_Y, 140, 36, 4, gfx->color565(15,20,40));
-  _drawRoundRect(_DEV_LX + 336, _DEV_STUB_Y, 140, 36, 4, C_DARKGREY);
-  gfx->setFont(NULL); gfx->setTextSize(2); gfx->setTextColor(C_MIDGREY);
-  gfx->setCursor(_DEV_LX + 8,       _DEV_STUB_Y + 10); gfx->print("Pump R11");
-  gfx->setCursor(_DEV_LX + 188 + 8, _DEV_STUB_Y + 10); gfx->print("LED Test");
-  gfx->setCursor(_DEV_LX + 336 + 8, _DEV_STUB_Y + 10); gfx->print("Speaker");
-  // Test Backend button (centered, w=200 h=36)
+  // Test Backend button (centred, w=200 h=36)
   int tbX = SVC_BODY_X + (686 - 200) / 2;  // 357
   _fillRoundRect(tbX, _DEV_TBES_Y, 200, 36, 6, gfx->color565(10,30,60));
   _drawRoundRect(tbX, _DEV_TBES_Y, 200, 36, 6, C_GOLD);
-  gfx->setTextColor(C_GOLD);
+  gfx->setFont(NULL); gfx->setTextSize(2); gfx->setTextColor(C_GOLD);
   gfx->setCursor(tbX + 12, _DEV_TBES_Y + 10); gfx->print("Test Backend");
   gfx->setTextSize(1);
   _svcLogDraw();
@@ -542,14 +543,23 @@ int _getTouchedServiceExtra(int tab, int tx, int ty) {
   }
   if (tab == TAB_DEVICES) {
     int stride = _DEV_CW + _DEV_GAP;
-    if (ty >= _DEV_R1_Y && ty <= _DEV_R1_Y + _DEV_CH)
-      for (int col=0; col<6; col++) { int cx=_DEV_LX+col*stride; if(tx>=cx&&tx<=cx+_DEV_CW) return 601+col; }
-    if (ty >= _DEV_R2_Y && ty <= _DEV_R2_Y + _DEV_CH)
-      for (int col=0; col<6; col++) { int cx=_DEV_LX+col*stride; if(tx>=cx&&tx<=cx+_DEV_CW) return 607+col; }
-    if (ty >= _DEV_STUB_Y && ty <= _DEV_STUB_Y + 36) {
-      if (tx >= _DEV_LX       && tx < _DEV_LX + 180)       { _svcLogPanel("Pump: use R11 in relay grid"); return 0; }
-      if (tx >= _DEV_LX + 188 && tx < _DEV_LX + 188 + 140) { _svcLogPanel("LED: stub"); return 0; }
-      if (tx >= _DEV_LX + 336 && tx < _DEV_LX + 336 + 140) { _svcLogPanel("Speaker: stub"); return 0; }
+    // Lane relay rows
+    for (int r_row = 0; r_row < _DEV_ROWS; r_row++) {
+      int cy = _DEV_R1_Y + r_row * (_DEV_CH + _DEV_GAP);
+      if (ty >= cy && ty <= cy + _DEV_CH) {
+        for (int col = 0; col < _DEV_COLS; col++) {
+          int r = r_row * _DEV_COLS + col + 1;
+          if (r > MACHINE_LANES) break;
+          int cx = _DEV_LX + col * stride;
+          if (tx >= cx && tx <= cx + _DEV_CW) return 600 + r;
+        }
+      }
+    }
+    // Special relay row (R11=pump, R12=flap)
+    if (ty >= _DEV_SP_Y && ty <= _DEV_SP_Y + _DEV_CH) {
+      if (tx >= _DEV_LX && tx <= _DEV_LX + _DEV_CW) return 611;
+      int cx2 = _DEV_LX + _DEV_CW + _DEV_GAP;
+      if (tx >= cx2 && tx <= cx2 + _DEV_CW) return 612;
     }
     int tbX = SVC_BODY_X + (686 - 200) / 2;
     if (ty >= _DEV_TBES_Y && ty <= _DEV_TBES_Y + 36 && tx >= tbX && tx <= tbX + 200) {

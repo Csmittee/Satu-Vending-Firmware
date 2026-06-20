@@ -55,6 +55,7 @@ jobs:
           #define NUM_SLOTS      21
           #define NUM_COLS        7
           #define MAX_SLOTS_HW   21
+          #define MACHINE_LANES  10
           #define I2C_SDA        19
           #define I2C_SCL        20
           #define UART_RX        44

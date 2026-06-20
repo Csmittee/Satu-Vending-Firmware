@@ -1,10 +1,24 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Version 1.8 — 2026-06-20
-> Changes: Governance Docs v2 session log — HARDWARE_SPEC + UI_SPEC + SATU_ROADMAP wired into governance
-> Previous: v1.7 — 2026-06-20
+> Version 1.9 — 2026-06-20
+> Changes: Added FIX 2 session log (Devices tab MACHINE_LANES grid, R-163)
+> Previous: v1.8 — 2026-06-20
 > Status: Phase 1 active — ~67% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-20 — Devices tab MACHINE_LANES grid (FIX 2 / R-163)
+- FIX 1: tab-change guard already at satu_vending.ino:489 — no code change needed.
+- CONFIG: firmware/config.h — added `#define MACHINE_LANES 10` (R14). compile-check.yml synced (R-86).
+- REWRITE: firmware/ui_service.h TAB 2 Devices section only (other tabs untouched).
+  - New defines: _DEV_COLS, _DEV_CW, _DEV_ROWS (all MACHINE_LANES-driven). _DEV_SP_Y for special row.
+  - Lane relay grid: R1–MACHINE_LANES in _DEV_ROWS × _DEV_COLS grid (cw=86 for 10-lane build).
+  - Special row: R11 pump + R12 flap always shown below lane grid regardless of MACHINE_LANES.
+  - Stub row (Pump R11/LED Test/Speaker) removed.
+  - IR sensor grid: S1–MACHINE_LANES in same _DEV_COLS layout.
+  - Touch handler: _DEV_ROWS loop, returns 600+r for lane relays; 611/612 for R11/R12. Action codes compatible with satu_vending.ino:548.
+  - All Y bottom edges verified ≤392 for MACHINE_LANES=10.
+- DOCS: RULES.md v2.0 — R-163 prepended. CC_CHAT_LOG.md v2.7. PROJECT_STATE.md v1.9.
+- CI: ⬜ pending. Flash: ⬜ pending (owner to QA Devices tab — relay grid, special row, IR grid, stub row gone).
 
 ### 2026-06-20 — Governance Docs v2 (CC_BUILD_PROMPT_governance_docs_v2)
 - SCOPE: Docs only. Zero .ino, .h, or src/ file changes.
