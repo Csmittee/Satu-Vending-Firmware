@@ -1,7 +1,17 @@
 # SATU — UI Specification R4
+> Version 2.0 — 2026-06-20
+> Changes: Added CHANGE LOG section. Added Type Scale (Service Mode) section. Added Log Panel section.
+> Previous: v1.0 — 2026-05-31
 <!-- Read this before touching ui.h or any drawXxx() function -->
-<!-- Last updated: 2026-05-31 -->
 <!-- Screen: 800×480 px, RGB565, Arduino_GFX, EK9716 driver -->
+
+## CHANGE LOG
+| Date | Change | Who |
+|---|---|---|
+| 2026-06-20 | R12 type scale confirmed: MenuTitle=FreeSansBold18pt7b, SectionHeading=FreeSansBold12pt7b, Content=NULL size 2. Log panel moved to bottom (y=SCR_H-80, h=72, 4 lines). Serial mirror added to _svcLogPanel(). | Owner+Chat |
+| 2026-05-31 | Initial R4 spec | Owner |
+
+---
 
 ## Screen Coordinates
 
@@ -126,6 +136,35 @@ Below the grid, in the remaining space (varies by config):
 | Service PIN overlay | drawPinOverlay() | any → STATE_SERVICE |
 | Service mode | drawServiceScreen(tab) | STATE_SERVICE |
 | Debug info | drawDebugScreen() | any (5s hold gesture) |
+
+---
+
+## Type Scale — Service Mode (R12 confirmed, 2026-06-20)
+
+| Element | Font | Notes |
+|---|---|---|
+| Menu Title | FreeSansBold18pt7b | One per tab, top of body area |
+| Section Heading | FreeSansBold12pt7b | Smaller than title — not 18pt |
+| Content / data rows | NULL size 2 | Up from size 1 — more readable |
+| Button labels | NULL size 2 | Consistent with content rows |
+| Tab sidebar labels | NULL size 2 | Up from size 1 |
+| Log panel text | NULL size 1 | Keep small — 4 lines max |
+
+Rules:
+- setFont(NULL) MUST be called after every FreeSans block — no exception
+- Min gap: Menu Title baseline → first Section Heading top = 28px
+- Min gap: Section Heading baseline → first content row = 12px
+- Min gap: last content row → next Section Heading top = 20px
+
+---
+
+## Log Panel — Bottom Position (R12 confirmed, 2026-06-20)
+
+All service mode tabs share a bottom log panel:
+- Position: x=SVC_BODY_X+8, y=SCR_H-80, w=SCR_W-SVC_BODY_X-16, h=72
+- 4 lines maximum, NULL size 1, newest line at bottom
+- _svcLogPanel(msg) also calls Serial.println("[SVC] " + msg)
+- Content body must stop at y=SCR_H-88 to avoid overlap with log panel
 
 ---
 

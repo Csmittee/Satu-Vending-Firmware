@@ -1,12 +1,36 @@
 # RULES.md — Satu 1.0 Universal Rules
-> Version 1.9 — 2026-06-20
-> Changes: Added R-158 (UI PR checklist) and R-157 (CI artifact upload rule)
-> Changes: Updated R-157 — 3-file flash requirement with correct ESP32-S3 addresses
-> Previous: v1.8 — 2026-06-20
+> Version 1.10 — 2026-06-20
+> Changes: Added R-162 (SATU_ROADMAP.md source of truth), R-161 (UI_SPEC.md source of truth), R-160 (HARDWARE_SPEC.md source of truth)
+> Previous: v1.9 — 2026-06-20
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
 
 ---
+
+- **R-162: SATU_ROADMAP.md IS THE PRODUCT DIRECTION SOURCE OF TRUTH (2026-06-20).**
+  This file answers "where are we heading" — PROJECT_STATE.md answers "where are we now".
+  They must mirror each other: roadmap sets direction, project state tracks position.
+  Chat reads SATU_ROADMAP.md bullet summaries at every session open (mandatory).
+  Full read required when: new firmware architecture, new screen design, commercial
+  decision, SaaS direction, hardware model choice, or new repo created.
+  CC updates SATU_ROADMAP.md when owner confirms a strategic decision.
+  Never add status columns, progress tracking, or completion icons to SATU_ROADMAP.md.
+  That belongs in PROJECT_STATE.md.
+
+- **R-161: UI_SPEC.md IS THE UI SOURCE OF TRUTH (2026-06-20).**
+  All font decisions, layout rules, screen inventory, service tab specs, and NVS keys
+  live here. Any UI decision made in a Chat session must trigger a UI_SPEC.md update
+  in the same CC PR as the UI code change. CC reads UI_SPEC.md before any ui.h or
+  ui_service.h change. Chat flags owner when a UI decision is made in conversation
+  without updating UI_SPEC.md — never silently skip the update.
+
+- **R-160: HARDWARE_SPEC.md IS THE HARDWARE SOURCE OF TRUTH (2026-06-20).**
+  Renamed from HARDWARE_TRUTH.md. Lives at hardware/HARDWARE_SPEC.md in firmware repo.
+  All pin assignments, relay logic, sensor logic, BOM, and wiring decisions live here.
+  Any hardware change must update this file in the same PR.
+  CC reads hardware/HARDWARE_SPEC.md before any hardware.h or config.h read.
+  Chat flags owner if a hardware decision is made in conversation without updating
+  HARDWARE_SPEC.md.
 
 - **R-158: UI PR CHECKLIST — mandatory before any PR touching a .h UI file (2026-06-20).**
   Before opening PR: (1) confirm all Y positions use _BDY-relative expressions, not hardcoded literals;

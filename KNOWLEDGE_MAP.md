@@ -1,7 +1,7 @@
 # SATU — Knowledge Architecture Guide (Firmware)
-> Version 1.3 — 2026-06-20
-> Changes: Added CI artifact note; compile-check.yml entry in file locations
-> Previous: v1.2 — 2026-06-19
+> Version 1.4 — 2026-06-20
+> Changes: Added hardware/HARDWARE_SPEC.md, UI_SPEC.md, SATU_ROADMAP.md to Document Map + File Locations
+> Previous: v1.3 — 2026-06-20
 
 ## Document Map — What to Read for What Task
 
@@ -20,7 +20,10 @@
 | Hardware wiring / BOM | satu-machine-builder.html (Wiring tab) | hardware.h pin arrays |
 | Workflow / session modes | .claude/claude_project/WORKFLOW_SKILL.md | CLAUDE.md |
 | Business / legal | satu-business-model.html | work_instruction.txt |
-| Flashing firmware | CLAUDE.md “Flashing Without Arduino IDE” | .github/workflows/compile-check.yml |
+| Flashing firmware | CLAUDE.md "Flashing Without Arduino IDE" | .github/workflows/compile-check.yml |
+| Hardware change (pins/relays/sensors/BOM) | hardware/HARDWARE_SPEC.md | hardware.h, config.h |
+| UI change (screen/font/layout/service tab) | UI_SPEC.md | firmware/ui.h, ui_service.h |
+| Architecture or product direction question | SATU_ROADMAP.md | PROJECT_STATE.md |
 
 ---
 
@@ -69,14 +72,16 @@ CC_SKILL.md         — CC session protocol, 6 skills, CC_CHAT_LOG format · CC 
 CC_CHAT_LOG.md      — CC→Chat session log · CC writes · Chat reads last 3
 PROJECT_STATE.md    — firmware phase status, known bugs, next actions
 KNOWN_GOOD.md       — firmware compile + flash snapshots (append only)
-UI_SPEC.md          — screen inventory, grid system, service tabs, NVS keys
+UI_SPEC.md          — UI specification bible · screen inventory, grid system, service tabs, NVS keys
+SATU_ROADMAP.md     — product vision and commercial direction · both repos
 SECURITY.md         — auth layers, ownership model, gaps
 CC_BUILD_PROMPT_*.md — CC session prompts (active at root; archived to docs/prompts/ after use)
+hardware/HARDWARE_SPEC.md — hardware single source of truth (renamed from HARDWARE_TRUTH.md) · firmware repo only
 ```
 
 ### .claude/claude_project/ (reference copies — Chat reads, CC rarely needs)
 ```
-WORKFLOW_SKILL.md   — v2.0 governance master reference
+WORKFLOW_SKILL.md   — v2.2 governance master reference
 CHAT_RULE.md        — Chat non-negotiables reference
 ```
 
