@@ -1,7 +1,7 @@
 # CLAUDE.md — Satu Project Compass
-> Version 1.5 — 2026-06-20
-> Changes: Added "Flashing Without Arduino IDE" section
-> Previous: v1.4 — 2026-06-19
+> Version 1.6 — 2026-06-20
+> Changes: Fixed flash command to 3-file esptool.py (bootloader + partitions + app)
+> Previous: v1.5 — 2026-06-20
 <!-- max 35 lines · never grows · CC reads this on every session start -->
 
 ## Stack
@@ -43,9 +43,10 @@
 ## Flashing Without Arduino IDE
 1. Wait for CI green on PR (GitHub Actions compiles on every push to firmware/**)
 2. GitHub → Actions tab → click the run → Download artifact `satu-firmware-N`
-3. Unzip → find `satu_vending.ino.bin`
+3. Unzip → find 3 files: `satu_vending.ino.bootloader.bin` · `satu_vending.ino.partitions.bin` · `satu_vending.ino.bin`
 4. Find port: `ls /dev/cu.*`
-5. Flash: `esptool.py --chip esp32s3 --port /dev/cu.XXXX --baud 921600 write_flash 0x0 satu_vending.ino.bin`
+5. Flash all 3 files — **all 3 required, missing any = black screen**:
+   `esptool.py --chip esp32s3 --port /dev/cu.XXXX --baud 921600 write_flash 0x0 satu_vending.ino.bootloader.bin 0x8000 satu_vending.ino.partitions.bin 0x10000 satu_vending.ino.bin`
 
 ## Repos
 - Backend: `Csmittee/Satu-vending-backend`

@@ -1,16 +1,18 @@
 # RULES.md — Satu 1.0 Universal Rules
-> Version 1.8 — 2026-06-20
-> Changes: Added R-157 (CI artifact upload rule)
-> Previous: v1.7 — 2026-06-19
+> Version 1.9 — 2026-06-20
+> Changes: Updated R-157 — 3-file flash requirement with correct ESP32-S3 addresses
+> Previous: v1.8 — 2026-06-20
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
 
 ---
 
-- **R-157: CI ARTIFACT — GitHub Actions saves compiled .bin as downloadable artifact (2026-06-20).**
-  compile-check.yml: `--output-dir ./build` routes .bin to known path (without it: unpredictable /tmp/arduino-sketch-*/),
-  then `actions/upload-artifact@v4` saves artifact `satu-firmware-N` (N = run number), retention 7 days.
-  Flash: `esptool.py --chip esp32s3 --port /dev/cu.XXXX --baud 921600 write_flash 0x0 satu_vending.ino.bin`
+- **R-157: CI ARTIFACT — 3 files required for full flash from scratch (updated 2026-06-20).**
+  compile-check.yml: `--output-dir ./build` routes all build outputs to known path.
+  `ls -la ./build/` step in CI confirms exact filenames in the run log.
+  Artifact `satu-firmware-N` contains: `satu_vending.ino.bootloader.bin` + `satu_vending.ino.partitions.bin` + `satu_vending.ino.bin`.
+  All 3 must be flashed — missing any = black screen. ESP32-S3 addresses:
+  `esptool.py --chip esp32s3 --port /dev/cu.XXXX --baud 921600 write_flash 0x0 satu_vending.ino.bootloader.bin 0x8000 satu_vending.ino.partitions.bin 0x10000 satu_vending.ino.bin`
   Never change FQBN, board config, or locked library versions in compile-check.yml.
 
 - **R-156: SERVICE MODE DEVICES TAB — relay R12 display (2026-06-19).**
