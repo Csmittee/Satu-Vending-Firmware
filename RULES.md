@@ -1,11 +1,19 @@
 # RULES.md — Satu 1.0 Universal Rules
-> Version 1.7 — 2026-06-19
-> Changes: Added R-154 (service action codes), R-155 (self test modes), R-156 (relay R12 LOCKED/UNLOCKED display)
-> Previous: v1.6 — 2026-06-19
+> Version 1.8 — 2026-06-20
+> Changes: Added R-158 (UI PR checklist)
+> Previous: v1.7 — 2026-06-19
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
 
 ---
+
+- **R-158: UI PR CHECKLIST — mandatory before any PR touching a .h UI file (2026-06-20).**
+  Before opening PR: (1) confirm all Y positions use _BDY-relative expressions, not hardcoded literals;
+  (2) confirm no content drawn past x = SVC_BODY_X + _LOG_X_OFF (=670) in any service tab;
+  (3) confirm _svcLogDraw() called at end of every _drawSvcBody_* function;
+  (4) confirm all hit-tests in _getTouchedServiceExtra() match exact draw Y positions;
+  (5) confirm lineH in result lists matches badge height (never leave clipped/overlapping rows).
+  Failure to complete this checklist was the cause of 13 visual issues caught in owner photo QA session 2026-06-20.
 
 - **R-156: SERVICE MODE DEVICES TAB — relay R12 display (2026-06-19).**
   Relay 12 (RELAY_FLAP) is the solenoid pin lock. Display shows LOCKED / UNLOCKED, NOT ON / OFF.
