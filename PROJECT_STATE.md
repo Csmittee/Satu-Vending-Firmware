@@ -1,10 +1,22 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Version 1.7 — 2026-06-20
-> Changes: Added R13 session log (6-fix QA photo correction pass after R12 flash)
-> Previous: v1.6 — 2026-06-20
+> Version 1.8 — 2026-06-20
+> Changes: Governance Docs v2 session log — HARDWARE_SPEC + UI_SPEC + SATU_ROADMAP wired into governance
+> Previous: v1.7 — 2026-06-20
 > Status: Phase 1 active — ~67% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-20 — Governance Docs v2 (CC_BUILD_PROMPT_governance_docs_v2)
+- SCOPE: Docs only. Zero .ino, .h, or src/ file changes.
+- NEW: hardware/HARDWARE_SPEC.md v1.1 — renamed from HARDWARE_TRUTH.md, CHANGE LOG added, MCP3 21-lane note expanded.
+- NEW: SATU_ROADMAP.md v2.0 — placed at root of both repos. Product vision + commercial direction. Owner-attached, copied as-is.
+- UPDATE: UI_SPEC.md v2.0 — CHANGE LOG + Type Scale (Service Mode) + Log Panel sections added.
+- UPDATE: CLAUDE.md v1.7 — hardware/HARDWARE_SPEC.md + SATU_ROADMAP.md added to Key Files; UI_SPEC.md trigger updated.
+- UPDATE: KNOWLEDGE_MAP.md v1.4 — 3 new Document Map rows (HARDWARE_SPEC/UI_SPEC/ROADMAP) + File Locations.
+- UPDATE: RULES.md v1.10 — R-160/R-161/R-162 prepended (source of truth rules for 3 governance docs).
+- UPDATE: .claude/claude_project/WORKFLOW_SKILL.md v2.2 — new chat session opening step 3 (ROADMAP read) + 4 new trigger rows.
+- Backend repo: SATU_ROADMAP + CLAUDE + KNOWLEDGE_MAP + RULES + WORKFLOW_SKILL + CC_CHAT_LOG all updated.
+- CI: not triggered (docs-only, no firmware/** changes).
 
 ### 2026-06-20 — Service menu R13 QA fixes (6 targeted corrections after R12 flash)
 - REWRITE: firmware/ui_service.h — targeted R13 rewrite (Devices + Settings + Firmware only).
@@ -484,13 +496,16 @@ state_machine.h     — enum MachineState (R6: DROP/DISPENSING/REMOVAL states re
 ### Project Knowledge Docs (repo root)
 ```
 CLAUDE.md           — project compass, stack, 5 rules, key files, repos + flash instructions
-RULES.md            — lessons learned R-85 to R-157 (newest at top)
+RULES.md            — lessons learned R-85 to R-162 (newest at top)
 CC_SKILL.md         — CC session skills: Chat Override Guard, Structural Change Guard, etc.
 CC_CHAT_LOG.md      — CC session log (newest entry at top, max 10 lines per entry)
 PROJECT_STATE.md    — this file
 KNOWLEDGE_MAP.md    — what to read for what task (navigation guide)
 UI_SPEC.md          — screen inventory, grid system, 5-tab service mode, NVS key table
+SATU_ROADMAP.md     — product direction guide (both repos)
 SECURITY.md         — auth layers, ownership model, payment modes, security gaps
+hardware/
+  HARDWARE_SPEC.md  — hardware single source of truth (renamed from HARDWARE_TRUTH.md)
 ```
 
 ---
