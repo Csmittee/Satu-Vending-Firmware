@@ -1,4 +1,5 @@
 # CC_BUILD_PROMPT_service_menu_fix_v1.md
+✅ COMPLETE — executed 2026-06-20 — merged to main via PR
 > Created by: Chat — 2026-06-20
 > Session goal: Fix all 13 visual issues in service menu identified by owner photo QA
 > Repo: Satu-Vending-Firmware

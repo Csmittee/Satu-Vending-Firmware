@@ -1,5 +1,6 @@
 # RULES.md — Satu 1.0 Universal Rules
 > Version 1.9 — 2026-06-20
+> Changes: Added R-158 (UI PR checklist) and R-157 (CI artifact upload rule)
 > Changes: Updated R-157 — 3-file flash requirement with correct ESP32-S3 addresses
 > Previous: v1.8 — 2026-06-20
 > For domain rules: load `.claude/rules/RULES-[domain].md`
@@ -7,6 +8,18 @@
 
 ---
 
+- **R-158: UI PR CHECKLIST — mandatory before any PR touching a .h UI file (2026-06-20).**
+  Before opening PR: (1) confirm all Y positions use _BDY-relative expressions, not hardcoded literals;
+  (2) confirm no content drawn past x = SVC_BODY_X + _LOG_X_OFF (=670) in any service tab;
+  (3) confirm _svcLogDraw() called at end of every _drawSvcBody_* function;
+  (4) confirm all hit-tests in _getTouchedServiceExtra() match exact draw Y positions;
+  (5) confirm lineH in result lists matches badge height (never leave clipped/overlapping rows).
+  Failure to complete this checklist was the cause of 13 visual issues caught in owner photo QA session 2026-06-20.
+
+- **R-157: CI ARTIFACT — GitHub Actions saves compiled .bin as downloadable artifact (2026-06-20).**
+  compile-check.yml: `--output-dir ./build` routes .bin to known path (without it: unpredictable /tmp/arduino-sketch-*/),
+  then `actions/upload-artifact@v4` saves artifact `satu-firmware-N` (N = run number), retention 7 days.
+  Flash: `esptool.py --chip esp32s3 --port /dev/cu.XXXX --baud 921600 write_flash 0x0 satu_vending.ino.bin`
 - **R-157: CI ARTIFACT — 3 files required for full flash from scratch (updated 2026-06-20).**
   compile-check.yml: `--output-dir ./build` routes all build outputs to known path.
   `ls -la ./build/` step in CI confirms exact filenames in the run log.

@@ -1,10 +1,23 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Version 1.4 — 2026-06-20
-> Changes: Added CI artifact session log entry + updated Infrastructure section
-> Previous: v1.3 — 2026-06-19
-> Status: Phase 1 active — ~65% complete
+> Version 1.5 — 2026-06-20
+> Changes: Added R10 session log (service menu 13 visual fixes, R-158) + CI artifact session (R-157)
+> Previous: v1.4 — 2026-06-20
+> Status: Phase 1 active — ~67% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-20 — Service menu 13 visual fixes (R-158)
+- REWRITE: firmware/ui_service.h — complete rewrite implementing all 13 visual fixes from owner photo QA.
+- NEW: _svcLogPanel() + _svcLogDraw() right-side log panel (x=670, w=126, 10-entry circular buffer); present on all 5 tabs.
+- TAB 0 Self Test: btnY _BDY+72 (was +60); subtitle at _BDY+52; lineH=18; results in left zone only; each result logged to panel.
+- TAB 1 Free Play: fixed 7×3 grid (cw=72, ch=50, gap=4); not g_grid_cols; instruction text added at _BDY+60.
+- TAB 2 Devices: _REL_CW=86 (was 107); _IR_CW=80 _IR_CH=36 (was 62/28); _IR_ROW1_Y gap +52 (was +38); stub row (Pump/LED/Speaker) at y=327; _TBEKY=371.
+- TAB 3 Settings: all Y now _BDY-relative; _S_Y402=_BDY+138=182, _S_VOLY=_BDY+318=362, _S_Y401=_BDY+348=392; L1-L7 row + L8-L10 row for prices.
+- TAB 4 Firmware: all Y _BDY-relative; SECURITY heading _BDY+192, OTA buttons _BDY+292, _FW_PRINT_Y=_BDY+348=392.
+- _getTouchedServiceExtra(): btnY corrected; stub row logged locally; 701 (factory reset) and 702 (boot PIN) hit-tests added.
+- R-158 added: UI PR checklist (5 items mandatory before any .h UI file PR).
+- satu_vending.ino NOT touched. All action codes 500-800 unchanged.
+- CI: ⬜ pending. Flash: ⬜ pending.
 
 ### 2026-06-20 — CI artifact upload (R-157) — CC_BUILD_PROMPT_ci_artifact_v1
 - SCOPE: CI/workflow only. Zero firmware source files touched.
@@ -14,7 +27,7 @@
 - ADD: "Flashing Without Arduino IDE" section to CLAUDE.md — 5-step esptool.py flash workflow.
 - R-157 added to RULES.md: CI artifact rule + esptool.py flash command documented.
 - Files changed: .github/workflows/compile-check.yml, CLAUDE.md v1.5
-- CI: ⏳ running (this PR triggers CI since .github/workflows/ is not in paths filter — note: CI trigger is firmware/** only so this is a docs-only push that does NOT trigger compile)
+- CI: does not trigger (CI trigger is firmware/** only — this was a docs-only push)
 - Flash: 0 cycles needed. Owner downloads .bin from CI artifact after next firmware PR.
 
 ### 2026-06-19 — Service mode 5 tabs complete (R-154 / R-155 / R-156)

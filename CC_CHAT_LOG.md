@@ -1,11 +1,19 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
 > Version 2.3 — 2026-06-20
+> Changes: Service menu visual fix pass (13 issues, R-158) + CI artifact upload (R-157)
 > Changes: 3-file artifact fix session entry
 > Previous: v2.2 — 2026-06-20
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
 
 ---
+## 2026-06-20 — Service menu 13 visual fixes (R-158) — CC_BUILD_PROMPT_service_menu_fix_v1
+**Did:** Complete rewrite of firmware/ui_service.h fixing all 13 visual issues from owner photo QA. GLOBAL: added _svcLogPanel() right-side log panel (x=670, w=126) with 10-entry circular buffer; called _svcLogDraw() at end of every _drawSvcBody_*. TAB 0 Self Test: btnY moved _BDY+60→_BDY+72; subtitle at _BDY+52; resY=166; lineH=18; results drawn in left zone only (not past x=670); _svcLogPanel() called per result. TAB 1 Free Play: fixed 7×3 grid (not g_grid_cols); cw=72 ch=50 gap=4; gridY=_BDY+72; instruction text at _BDY+60. TAB 2 Devices: _REL_CW 107→86 (6 cells now fit left zone); _IR_CW 62→80, _IR_CH 28→36; _IR_ROW1_Y gap +38→+52; new stub row Pump/LED/Speaker at y=327; _TBEKY recalculated=371; stub taps log locally (return 0). TAB 3 Settings: all Y positions now _BDY-relative (_S_Y402=_BDY+138=182, _S_VOLY=_BDY+318=362, _S_Y401=_BDY+348=392); lane prices show L1-L7 row then L8-L10 row. TAB 4 Firmware: all Y positions _BDY-relative (info rows at _BDY+82+16×n, SECURITY at _BDY+192, OTA at _BDY+274/_BDY+292, _FW_PRINT_Y=_BDY+348=392). _getTouchedServiceExtra(): btnY corrected, stub row added, 702 (Boot PIN) and 701 (Factory Reset) hit-tests added.
+**Updated:** firmware/ui_service.h, RULES.md v1.9, PROJECT_STATE.md v1.5, CC_CHAT_LOG.md v2.3
+**New files:** docs/prompts/CC_BUILD_PROMPT_service_menu_fix_v1.md (archived ✅ COMPLETE)
+**Pending Chat verify:** Flash; enter service mode; check all 5 tabs against photo QA list; confirm log panel visible on right; confirm Free Play is 7×3; confirm relay cells narrower (86px); confirm Settings/Firmware Y positions match spec.
+**Flags:** Log panel right edge at 796px (4px margin from SCR_W=800). satu_vending.ino NOT touched — all action codes 500-800 unchanged.
+
 ## 2026-06-20 — Artifact 3-file fix (bootloader + partitions + app) — rapid-fire instruction
 **Did:** (1) Added `ls -la ./build/` step after compile in compile-check.yml — CI log now shows exact filenames produced by arduino-cli (not guessing). (2) Updated upload-artifact path to include all 3 .bin files: `satu_vending.ino.bootloader.bin` (flash 0x0), `satu_vending.ino.partitions.bin` (flash 0x8000), `satu_vending.ino.bin` (flash 0x10000). Root cause of black screen: previous artifact only had app bin; esptool needs all 3 for fresh flash. (3) Updated CLAUDE.md v1.5→v1.6 flash command to 3-file esptool.py invocation. (4) Updated RULES.md v1.8→v1.9 R-157 with correct ESP32-S3 addresses and 3-file requirement.
 **Updated:** .github/workflows/compile-check.yml, CLAUDE.md v1.6, RULES.md v1.9, CC_CHAT_LOG.md v2.3
