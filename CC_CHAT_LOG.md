@@ -1,10 +1,17 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 2.2 — 2026-06-20
-> Changes: CI artifact upload session entry
-> Previous: v2.1 — 2026-06-19
+> Version 2.3 — 2026-06-20
+> Changes: 3-file artifact fix session entry
+> Previous: v2.2 — 2026-06-20
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
 
+---
+## 2026-06-20 — Artifact 3-file fix (bootloader + partitions + app) — rapid-fire instruction
+**Did:** (1) Added `ls -la ./build/` step after compile in compile-check.yml — CI log now shows exact filenames produced by arduino-cli (not guessing). (2) Updated upload-artifact path to include all 3 .bin files: `satu_vending.ino.bootloader.bin` (flash 0x0), `satu_vending.ino.partitions.bin` (flash 0x8000), `satu_vending.ino.bin` (flash 0x10000). Root cause of black screen: previous artifact only had app bin; esptool needs all 3 for fresh flash. (3) Updated CLAUDE.md v1.5→v1.6 flash command to 3-file esptool.py invocation. (4) Updated RULES.md v1.8→v1.9 R-157 with correct ESP32-S3 addresses and 3-file requirement.
+**Updated:** .github/workflows/compile-check.yml, CLAUDE.md v1.6, RULES.md v1.9, CC_CHAT_LOG.md v2.3
+**New files:** NONE
+**Pending Chat verify:** Push firmware/ change → CI green → download artifact `satu-firmware-N` → confirm zip contains all 3 .bin files → run 3-file esptool.py command → board boots (no black screen).
+**Flags:** NONE. PAYMENT_MODE stays fake. No firmware source files touched.
 ---
 ## 2026-06-20 — CI artifact upload — CC_BUILD_PROMPT_ci_artifact_v1
 **Did:** (1) Added `--output-dir ./build` to arduino-cli compile step — minimum change needed so .bin lands at a predictable path (without this flag arduino-cli writes to an unpredictable /tmp/arduino-sketch-XXXXXXXX/ location). (2) Added `actions/upload-artifact@v4` step after compile: artifact `satu-firmware-${{ github.run_number }}`, path `./build/satu_vending.ino.bin`, retention 7 days. (3) Added "Flashing Without Arduino IDE" section to CLAUDE.md — 5-step esptool.py flash workflow referencing CI artifact download. Zero firmware source files touched this session.
