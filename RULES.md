@@ -1,11 +1,17 @@
 # RULES.md — Satu 1.0 Universal Rules
-> Version 1.7 — 2026-06-19
-> Changes: Added R-154 (service action codes), R-155 (self test modes), R-156 (relay R12 LOCKED/UNLOCKED display)
-> Previous: v1.6 — 2026-06-19
+> Version 1.8 — 2026-06-20
+> Changes: Added R-157 (CI artifact upload rule)
+> Previous: v1.7 — 2026-06-19
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
 
 ---
+
+- **R-157: CI ARTIFACT — GitHub Actions saves compiled .bin as downloadable artifact (2026-06-20).**
+  compile-check.yml: `--output-dir ./build` routes .bin to known path (without it: unpredictable /tmp/arduino-sketch-*/),
+  then `actions/upload-artifact@v4` saves artifact `satu-firmware-N` (N = run number), retention 7 days.
+  Flash: `esptool.py --chip esp32s3 --port /dev/cu.XXXX --baud 921600 write_flash 0x0 satu_vending.ino.bin`
+  Never change FQBN, board config, or locked library versions in compile-check.yml.
 
 - **R-156: SERVICE MODE DEVICES TAB — relay R12 display (2026-06-19).**
   Relay 12 (RELAY_FLAP) is the solenoid pin lock. Display shows LOCKED / UNLOCKED, NOT ON / OFF.
