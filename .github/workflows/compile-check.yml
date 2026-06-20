@@ -104,12 +104,19 @@ jobs:
             --output-dir ./build \
             satu_vending/
 
-      - name: Upload firmware artifact
+      - name: List build output (confirms exact paths — not guessing)
+        if: success()
+        run: ls -la ./build/
+
+      - name: Upload firmware artifact (3 files required for full flash)
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: satu-firmware-${{ github.run_number }}
-          path: ./build/satu_vending.ino.bin
+          path: |
+            ./build/satu_vending.ino.bootloader.bin
+            ./build/satu_vending.ino.partitions.bin
+            ./build/satu_vending.ino.bin
           retention-days: 7
 
       - name: Compile result
