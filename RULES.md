@@ -1,7 +1,7 @@
 # RULES.md — Satu 1.0 Universal Rules
-> Version 2.2 — 2026-06-21
-> Changes: Added R-165 (HARDWARE_SPEC.md v1.2 — relay 12 = magnetic pin-lock, proximity switch, speaker)
-> Previous: v2.1 — 2026-06-21
+> Version 2.3 — 2026-06-21
+> Changes: R-157 consolidated (was duplicate) and corrected — esptool, baud 460800, write-flash, confirmed port /dev/cu.usbserial-1420, ~/satu-firmware/ paths
+> Previous: v2.2 — 2026-06-21
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
 
@@ -59,16 +59,12 @@
   (5) confirm lineH in result lists matches badge height (never leave clipped/overlapping rows).
   Failure to complete this checklist was the cause of 13 visual issues caught in owner photo QA session 2026-06-20.
 
-- **R-157: CI ARTIFACT — GitHub Actions saves compiled .bin as downloadable artifact (2026-06-20).**
-  compile-check.yml: `--output-dir ./build` routes .bin to known path (without it: unpredictable /tmp/arduino-sketch-*/),
-  then `actions/upload-artifact@v4` saves artifact `satu-firmware-N` (N = run number), retention 7 days.
-  Flash: `esptool.py --chip esp32s3 --port /dev/cu.XXXX --baud 921600 write_flash 0x0 satu_vending.ino.bin`
-- **R-157: CI ARTIFACT — 3 files required for full flash from scratch (updated 2026-06-20).**
+- **R-157: CI ARTIFACT — 3 files required for full flash from scratch (updated 2026-06-21).**
   compile-check.yml: `--output-dir ./build` routes all build outputs to known path.
   `ls -la ./build/` step in CI confirms exact filenames in the run log.
   Artifact `satu-firmware-N` contains: `satu_vending.ino.bootloader.bin` + `satu_vending.ino.partitions.bin` + `satu_vending.ino.bin`.
-  All 3 must be flashed — missing any = black screen. ESP32-S3 addresses:
-  `esptool.py --chip esp32s3 --port /dev/cu.XXXX --baud 921600 write_flash 0x0 satu_vending.ino.bootloader.bin 0x8000 satu_vending.ino.partitions.bin 0x10000 satu_vending.ino.bin`
+  All 3 must be flashed — missing any = black screen. Port confirmed: /dev/cu.usbserial-1420. Baud: 460800.
+  `esptool --chip esp32s3 --port /dev/cu.usbserial-1420 --baud 460800 write-flash 0x0 ~/satu-firmware/satu_vending.ino.bootloader.bin 0x8000 ~/satu-firmware/satu_vending.ino.partitions.bin 0x10000 ~/satu-firmware/satu_vending.ino.bin`
   Never change FQBN, board config, or locked library versions in compile-check.yml.
 
 - **R-156: SERVICE MODE DEVICES TAB — relay R12 display (2026-06-19).**
@@ -82,7 +78,7 @@
   Technical (14 items): adds WS2812B GPIO5(sim), Display(sim), GT911(sim), NVS(sim), live backend heartbeat.
   Items marked (sim) = simulated pass — hardware not actually actuated during test.
   Live items: MCP1/MCP2 (real begin_I2C), WiFi (WL_CONNECTED), Heap (getFreeHeap), heartbeat (sendHeartbeat + WiFi proxy).
-  Results stored in file-scope statics _stP[]/\_stN — persist across tab redraws until next run or action 502 (clear).
+  Results stored in file-scope statics _stP[]/_stN — persist across tab redraws until next run or action 502 (clear).
 
 - **R-154: SERVICE MODE ACTION CODES RESERVED (2026-06-19).**
   500=Quick Self Test · 501=Technical Self Test · 502=Clear Results
