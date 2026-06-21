@@ -1,7 +1,7 @@
 # CLAUDE.md — Satu Project Compass
-> Version 1.7 — 2026-06-20
-> Changes: Added hardware/HARDWARE_SPEC.md, SATU_ROADMAP.md to Key Files; updated UI_SPEC.md read trigger
-> Previous: v1.6 — 2026-06-20
+> Version 1.8 — 2026-06-21
+> Changes: "Flashing Without Arduino IDE" updated — esptool (not esptool.py), baud 460800, write-flash, confirmed port /dev/cu.usbserial-1420, ~/satu-firmware/ paths
+> Previous: v1.7 — 2026-06-20
 <!-- max 35 lines · never grows · CC reads this on every session start -->
 
 ## Stack
@@ -43,12 +43,15 @@
 - `firmware/ui_service.h`             — service mode 5-tab body implementations + _getTouchedServiceExtra()
 
 ## Flashing Without Arduino IDE
-1. Wait for CI green on PR (GitHub Actions compiles on every push to firmware/**)
-2. GitHub → Actions tab → click the run → Download artifact `satu-firmware-N`
-3. Unzip → find 3 files: `satu_vending.ino.bootloader.bin` · `satu_vending.ino.partitions.bin` · `satu_vending.ino.bin`
-4. Find port: `ls /dev/cu.*`
-5. Flash all 3 files — **all 3 required, missing any = black screen**:
-   `esptool.py --chip esp32s3 --port /dev/cu.XXXX --baud 921600 write_flash 0x0 satu_vending.ino.bootloader.bin 0x8000 satu_vending.ino.partitions.bin 0x10000 satu_vending.ino.bin`
+1. GitHub → Actions tab → latest green run on main → Download artifact `satu-firmware-N`
+2. Unzip → move all 3 .bin files to `~/satu-firmware/`
+3. Find port: `ls /dev/cu.*`
+4. Flash:
+```
+esptool --chip esp32s3 --port /dev/cu.usbserial-1420 --baud 460800 write-flash 0x0 ~/satu-firmware/satu_vending.ino.bootloader.bin 0x8000 ~/satu-firmware/satu_vending.ino.partitions.bin 0x10000 ~/satu-firmware/satu_vending.ino.bin
+```
+All 3 files required — missing any = black screen.
+Port `/dev/cu.usbserial-1420` is confirmed device. Baud 460800 matches Arduino IDE setting.
 
 ## Repos
 - Backend: `Csmittee/Satu-vending-backend`
