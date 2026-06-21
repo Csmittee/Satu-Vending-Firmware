@@ -17,9 +17,19 @@
 > Version 1.11 — 2026-06-21
 > Changes: Added HARDWARE_SPEC v1.2 session log. FLAP_PROXIMITY_MCP_PIN assigned (=2).
 > Previous: v1.10 — 2026-06-21
+> Changes: Added flash command correction session log. CLAUDE.md v1.8. RULES.md v2.3 (R-157 consolidated).
+> Previous: v1.11 — 2026-06-21
 > Status: Phase 1 active — ~68% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-21 — Docs-only: CLAUDE.md v1.8 flash cmd update + RULES.md v2.3 R-157 corrected
+- SCOPE: CLAUDE.md + RULES.md + CC_CHAT_LOG + PROJECT_STATE only. Zero firmware/* files. CI not triggered.
+- CLAUDE.md v1.7→v1.8 (firmware): "Flashing Without Arduino IDE" section updated — esptool.py→esptool, baud 921600→460800, write_flash→write-flash, port XXXX→usbserial-1420, paths prefixed ~/satu-firmware/. Steps condensed 5→4.
+- CLAUDE.md v1.4→v1.5 (backend): "Flashing Without Arduino IDE" section added with same corrected command.
+- RULES.md v2.2→v2.3 (firmware): Duplicate R-157 entries consolidated into one clean entry with corrected flash command.
+- RULES.md v1.5→v1.6 (backend): R-157 added with corrected flash command.
+- hardware.h: NOT touched (R2 LOCKED). config.h: NOT touched. satu_vending.ino: NOT touched. PAYMENT_MODE: stays fake.
 
 ### 2026-06-21 — HARDWARE_SPEC v1.2 + config.h R15 (CC_BUILD_PROMPT_hardware_spec_v1_2_FINAL)
 - SCOPE: hardware/HARDWARE_SPEC.md + firmware/config.h only. hardware.h R2 LOCKED — NOT touched.
@@ -302,8 +312,8 @@ hardware/
 
 ### Project Knowledge Docs (repo root)
 ```
-CLAUDE.md           — project compass, stack, 5 rules, key files, repos + flash instructions
-RULES.md            — lessons learned R-143 to R-165 (newest at top)
+CLAUDE.md           — project compass, stack, 5 rules, key files, repos + flash instructions (v1.8)
+RULES.md            — lessons learned R-143 to R-165 (newest at top) (v2.3)
 CC_SKILL.md         — CC session skills: Chat Override Guard, Structural Change Guard, etc.
 CC_CHAT_LOG.md      — CC session log (newest entry at top, max 10 lines per entry)
 PROJECT_STATE.md    — this file

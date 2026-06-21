@@ -3,6 +3,9 @@
 > Changes: R-166 added (one PR open at a time rule)
 > Changes: Added docs-only governance session entry — WORKFLOW_SKILL v2.3 + CHAT_RULE v1.1
 > Previous: v2.9 — 2026-06-21
+> Version 2.11 — 2026-06-21
+> Changes: Added docs-only flash command correction session — CLAUDE.md v1.8 + RULES.md v2.3
+> Previous: v2.10 — 2026-06-21
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
 
@@ -20,6 +23,14 @@
 **New files:** NONE
 **Pending Chat verify:** CI green → download artifact → flash with esptool → confirm Serial Monitor at /dev/cu.usbserial-1420 115200 shows [BOOT] output (not silent). Confirm no /dev/cu.usbmodem appears.
 **Flags:** Zero .ino or .h files touched. hardware.h LOCKED. PAYMENT_MODE stays fake.
+## 2026-06-21 — Docs-only: CLAUDE.md v1.8 + RULES.md v2.3 (flash command correction)
+**Did:** CLAUDE.md v1.7→v1.8 (firmware): "Flashing Without Arduino IDE" section replaced — esptool.py→esptool, baud 921600→460800, write_flash→write-flash, port /dev/cu.XXXX→/dev/cu.usbserial-1420, relative paths→~/satu-firmware/ absolute paths, steps condensed 5→4. RULES.md v2.2→v2.3: duplicate R-157 entries consolidated into one clean entry with corrected command. Same flash command added to backend repo simultaneously (CLAUDE.md v1.5, RULES.md v1.6).
+**Updated:** CLAUDE.md v1.8, RULES.md v2.3, CC_CHAT_LOG.md v2.11, PROJECT_STATE.md v1.12 (firmware)
+**New files:** NONE
+**Pending Chat verify:** NONE (docs-only session)
+**Flags:** Zero source files touched. hardware.h R2 LOCKED. PAYMENT_MODE stays fake. CI not triggered.
+
+---
 ## 2026-06-21 — Docs-only: WORKFLOW_SKILL v2.3 + CHAT_RULE v1.1 (governance)
 **Did:** Updated .claude/claude_project/WORKFLOW_SKILL.md v2.2→v2.3 (both repos): replaced CHAT SESSION OPENING with self-executing 3-line protocol; replaced CHAT HANDOFF TEMPLATE opening block with 5-step embedded loading sequence (Step 1–4). Updated .claude/claude_project/CHAT_RULE.md v1.0→v1.1 (both repos): added Session Flow section — rules 20-24 (prompt discipline / scope lock / context decay / complaint detection / component detail suppression). CC_CHAT_LOG.md updated both repos.
 **Updated:** .claude/claude_project/WORKFLOW_SKILL.md v2.3, .claude/claude_project/CHAT_RULE.md v1.1, CC_CHAT_LOG.md v2.10 (firmware) / v1.3 (backend)
