@@ -1,10 +1,13 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Version 1.11 — 2026-06-21
-> Changes: CI FQBN corrected to CDCOnBoot=default + UploadProtocol=uart0 (R-165)
-> Previous: v1.10 — 2026-06-21
+> Version 1.12 — 2026-06-21
+> Changes: R-166 added (one PR open at a time rule)
+> Previous: v1.11 — 2026-06-21
 > Status: Phase 1 active — ~67% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-21 — One PR open at a time rule (R-166)
+- DOCS: R-166 added to RULES.md v2.3. Docs only, zero source files.
 
 ### 2026-06-21 — CI FQBN corrected (R-165)
 - ROOT CAUSE: compile-check.yml FQBN used CDCOnBoot=cdc — routes Serial to USB CDC. Artifact flash produced /dev/cu.usbmodem, Serial Monitor silent. Owner board uses hardware UART only (/dev/cu.usbserial-1420).

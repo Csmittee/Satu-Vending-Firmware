@@ -1,11 +1,17 @@
 # RULES.md — Satu 1.0 Universal Rules
-> Version 2.2 — 2026-06-21
-> Changes: Added R-165 (CI FQBN must match owner Arduino IDE exactly — CDCOnBoot=default)
-> Previous: v2.1 — 2026-06-21
+> Version 2.3 — 2026-06-21
+> Changes: Added R-166 (one PR open at a time — CI green → merge → then next session)
+> Previous: v2.2 — 2026-06-21
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
 
 ---
+
+- **R-166: ONE PR OPEN AT A TIME (2026-06-21).**
+  Never open a new CC session while a previous PR is unmerged.
+  Sequence: CI green → owner merges → then next CC session starts.
+  CC_CHAT_LOG, PROJECT_STATE, RULES are written every session without exception.
+  Stacking PRs creates merge conflicts and splits doc history. One thread at a time.
 
 - **R-165: CI FQBN must match owner Arduino IDE Tools menu exactly — last verified 2026-06-21 (2026-06-21).**
   CDCOnBoot=default (not cdc) — board uses hardware UART, Serial Monitor at /dev/cu.usbserial-1420 at 115200 baud.

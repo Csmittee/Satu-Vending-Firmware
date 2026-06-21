@@ -1,9 +1,16 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 2.9 — 2026-06-21
-> Changes: CI FQBN corrected to CDCOnBoot=default + UploadProtocol=uart0 (R-165)
-> Previous: v2.8 — 2026-06-21
+> Version 2.10 — 2026-06-21
+> Changes: R-166 added (one PR open at a time rule)
+> Previous: v2.9 — 2026-06-21
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
+
+---
+## 2026-06-21 — One PR open at a time rule (R-166)
+**Did:** Docs only. Added R-166 to RULES.md v2.3: never open a new CC session while a previous PR is unmerged. Sequence: CI green → owner merges → then next session. CC_CHAT_LOG, PROJECT_STATE, RULES written every session without exception. Rule captures session discipline pattern to prevent stacked PRs and doc merge conflicts.
+**Updated:** RULES.md v2.3, CC_CHAT_LOG.md v2.10, PROJECT_STATE.md v1.12
+**New files:** NONE
+**Flags:** Zero source files touched. Docs only. hardware.h LOCKED. PAYMENT_MODE stays fake.
 
 ---
 ## 2026-06-21 — CI FQBN corrected to match owner Arduino IDE (R-165)
