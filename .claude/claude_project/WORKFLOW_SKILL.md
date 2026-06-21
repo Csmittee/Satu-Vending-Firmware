@@ -1,7 +1,7 @@
 # 🎯 WORKFLOW SKILL — Satu 1.0
-> Version 2.2 — 2026-06-20
-> Changes: Added SATU_ROADMAP.md step 3 to CHAT SESSION OPENING (renumbered 3→7); added 4 new TRIGGER rows for UI/hardware/roadmap/new-repo decisions.
-> Previous: v2.1 — 2026-06-20
+> Version 2.3 — 2026-06-21
+> Changes: CHAT SESSION OPENING replaced with self-executing 3-line protocol; CHAT HANDOFF TEMPLATE opening block updated with 5-step embedded loading sequence.
+> Previous: v2.2 — 2026-06-20
 
 ---
 
@@ -152,28 +152,9 @@ Always tell owner how many flash cycles to expect at start of firmware session.
 
 ## CHAT SESSION OPENING — MANDATORY SEQUENCE
 
-Every new Chat session opens in this order:
-
-```
-1. Owner pastes CHAT_HANDOFF from project folder
-2. Chat reads CC_CHAT_LOG from repo (last 3 entries via project knowledge)
-   → If unreadable: tell owner "sync missing — please sync before we continue"
-   → If readable: state what CC did last, what is pending verification
-3. Chat reads SATU_ROADMAP.md bullet summaries — section headers only, not full content
-   → Confirms understanding of current generation, phase, and commercial context
-   → Reads full section only if today's task touches that domain
-4. Chat reads PROJECT_STATE.md for current status
-5. Chat states: "Memory installed. Last CC session: [summary]. Pending: [items]."
-6. Owner describes today's goal
-7. Chat proceeds
-```
-
-**Owner session start message template:**
-```
-Here is my handoff: [paste CHAT_HANDOFF.md content]
-Today's goal: [describe what you want to do]
-```
-No GitHub sync checkbox mention needed — that is owner's own discipline.
+Owner pastes CHAT_HANDOFF → Chat executes the 4 steps embedded in handoff header above.
+Owner session start message: paste CHAT_HANDOFF.md — nothing else required.
+Chat must not respond to any task until all 4 steps confirmed aloud.
 
 ---
 
@@ -254,8 +235,13 @@ of these — they are Chat's own discipline.
 
 ```markdown
 # CHAT HANDOFF — [date] END OF SESSION
-> Overwrite at end of every session — never append
-> New chat: paste this first, then state today's goal
+> Single-use — paste entire file to open new chat
+> BEFORE SESSION BEGINS — Chat reads in order, confirms each before proceeding:
+> Step 1: Read WORKFLOW_SKILL.md + CHAT_RULE.md — state "Rules loaded"
+> Step 2: Read CC_CHAT_LOG last 3 entries — state summary + pending items. STOP if unreadable.
+> Step 3: Read PROJECT_STATE.md — state current build status one line
+> Step 4: Read open items below — state "Memory installed"
+> Only then ask owner: "Today's goal?" — do not assume it, even if already stated
 
 ## SYSTEM STATUS
 [Backend: pass/fail + test count]
