@@ -3,8 +3,21 @@
 > Changes: Closed all pending owner-verify items — CI green + flash verified 2026-06-21 for all prior firmware PRs
 > Previous: v1.14 — 2026-06-21
 > Status: Phase 1 active — ~67% complete
+> Version 1.15 — 2026-06-22
+> Changes: Service UX fix — touchReadOnce(), fresh-entry reset, MCP I2C guard. CI pending.
+> Previous: v1.14 — 2026-06-21
+> Status: Phase 1 active — ~70% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-22 — Service UX fix (CC_PROMPT_fix_service_ux_v1.md)
+- TASK 1: SKILL 1 override — live _drawSvcBody_SelfTest() confirmed does NOT call _runSelfTest(). No code change needed for Task 1. Fresh-entry reset (Task 3) mitigates stale result display on re-entry.
+- TASK 2: touchReadOnce() ported to all 3 service touch functions (getTouchedServiceTab, checkServiceExit, getTouchedServiceContent). Eliminates GT911 interrupt-clear issue causing random touch drop.
+- TASK 3: resetSelfTestResults() added to ui_service.h. _svcFreshEntry flag pattern added to ui.h — results clear on tab switch away from TAB_SELFTEST and on service mode re-entry.
+- TASK 4: MCP guard added in _getTouchedServiceExtra() for all relay codes 601-612 — logs warning, returns 0 when both MCPs disconnected. Prevents I2C timeout hang on Devices tab.
+- FILES: firmware/ui.h R5, firmware/ui_service.h R14. RULES.md v2.5 (R-168/R-169/R-170). Prompt archived.
+- CI: ⬜ pending — triggered by .h file changes
+- PENDING CHAT QA: Enter service → Self Test tab, no [SVC] FAIL lines. Tap Quick Test. Switch tab → clear. Exit+re-enter → clean. Rapid tab taps register. Devices relay tap with MCP unwired → "MCP not connected" in log, no hang.
 
 ### 2026-06-21 — Flash verified (PR #52 merged); slow response to investigate
 - FLASH: ✅ Serial Monitor at /dev/cu.usbserial-1420 115200 shows [BOOT] output — no /dev/cu.usbmodem. CDCOnBoot=default confirmed working.

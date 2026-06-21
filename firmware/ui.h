@@ -1,6 +1,11 @@
 #ifndef UI_H
 #define UI_H
 
+// ui.h — Touch display, QR rendering, all screen draw functions
+// Version: R5 — 2026-06-22
+// Changes: touchReadOnce() ported to service touch helpers (Task 2);
+//          _svcFreshEntry flag + drawServiceScreen() reset logic (Task 3).
+
 #include <Arduino_GFX_Library.h>
 #include <Wire.h>
 #include <TAMC_GT911.h>
@@ -1157,7 +1162,12 @@ static void _drawSvcTabBar(int activeTab) {
 // _drawSvcBody_* and _getTouchedServiceExtra defined in ui_service.h
 #include "ui_service.h"
 
+static bool _svcFreshEntry = false;
+
 void drawServiceScreen(int tab) {
+  if (_svcFreshEntry) { resetSelfTestResults(); _svcFreshEntry = false; }
+  if (tab != TAB_SELFTEST && _stm != 0) { _stm = 0; _stN = 0; }
+
   gfx->fillRect(0, 0, SCR_W, STATUS_H, C_DARKGREY);
   gfx->setFont(&FreeSansBold18pt7b);
   gfx->setTextColor(C_ORANGE); gfx->setTextSize(1);
@@ -1186,7 +1196,7 @@ void drawServiceScreen(int tab) {
 //  SERVICE TOUCH HELPERS
 // ============================================================
 int getTouchedServiceTab() {
-  _touch.read();
+  touchReadOnce();
   if (!_touch.isTouched) return -1;
   int tx = _touch.points[0].x;
   int ty = _touch.points[0].y;
@@ -1202,7 +1212,7 @@ int getTouchedServiceTab() {
 }
 
 bool checkServiceExit() {
-  _touch.read();
+  touchReadOnce();
   if (!_touch.isTouched) return false;
   int tx = _touch.points[0].x;
   int ty = _touch.points[0].y;
@@ -1211,6 +1221,7 @@ bool checkServiceExit() {
     static unsigned long _lastExitMs = 0;
     if (millis() - _lastExitMs < 200) return false;
     _lastExitMs = millis();
+    _svcFreshEntry = true;
     return true;
   }
   return false;
@@ -1222,7 +1233,7 @@ int _getTouchedServiceExtra(int tab, int tx, int ty);
 // Returns action code: 301-321 slot tap, 401 factory reset, 402 boot PIN,
 //   500-502 self-test, 600-612 devices, 700 volume, 800 print. 0=none.
 int getTouchedServiceContent(int tab) {
-  _touch.read();
+  touchReadOnce();
   if (!_touch.isTouched) return 0;
   int tx = _touch.points[0].x;
   int ty = _touch.points[0].y;

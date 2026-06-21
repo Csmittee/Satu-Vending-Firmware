@@ -2,10 +2,9 @@
 #define UI_SERVICE_H
 
 // ui_service.h — Service mode tab bodies (all 5 tabs)
-// Version: R13 — 2026-06-20
-// Changes: Devices cw=80 ch=36 + RELAYS heading + WARNING/IR gap +8px;
-//          Settings/Firmware headings → NULL size 1 C_GREEN underline;
-//          6px gap after every heading; all Y positions recalculated.
+// Version: R14 — 2026-06-22
+// Changes: resetSelfTestResults() added (Task 3B); MCP I2C guard on relay codes 601-612 (Task 4).
+// Previous: R13 — 2026-06-20
 // Included at bottom of ui.h — all ui.h symbols visible here.
 // network.h and hardware.h are included before ui.h in satu_vending.ino.
 
@@ -15,6 +14,8 @@ static int  _stN     = 0;   // number of test items ran
 static bool _stP[14];
 static bool _stS[14];
 static const char* _stL[14];
+
+void resetSelfTestResults() { _stm = 0; _stN = 0; }
 
 // ── Relay toggle state ────────────────────────────────────────────────────────
 static bool _relState[13] = {false};
@@ -551,15 +552,33 @@ int _getTouchedServiceExtra(int tab, int tx, int ty) {
           int r = r_row * _DEV_COLS + col + 1;
           if (r > MACHINE_LANES) break;
           int cx = _DEV_LX + col * stride;
-          if (tx >= cx && tx <= cx + _DEV_CW) return 600 + r;
+          if (tx >= cx && tx <= cx + _DEV_CW) {
+            if (!g_mcp1_ok && !g_mcp2_ok) {
+              _svcLogPanel("MCP not connected — relay toggle skipped");
+              return 0;
+            }
+            return 600 + r;
+          }
         }
       }
     }
     // Special relay row (R11=pump, R12=flap)
     if (ty >= _DEV_SP_Y && ty <= _DEV_SP_Y + _DEV_CH) {
-      if (tx >= _DEV_LX && tx <= _DEV_LX + _DEV_CW) return 611;
+      if (tx >= _DEV_LX && tx <= _DEV_LX + _DEV_CW) {
+        if (!g_mcp1_ok && !g_mcp2_ok) {
+          _svcLogPanel("MCP not connected — relay toggle skipped");
+          return 0;
+        }
+        return 611;
+      }
       int cx2 = _DEV_LX + _DEV_CW + _DEV_GAP;
-      if (tx >= cx2 && tx <= cx2 + _DEV_CW) return 612;
+      if (tx >= cx2 && tx <= cx2 + _DEV_CW) {
+        if (!g_mcp1_ok && !g_mcp2_ok) {
+          _svcLogPanel("MCP not connected — relay toggle skipped");
+          return 0;
+        }
+        return 612;
+      }
     }
     int tbX = SVC_BODY_X + (686 - 200) / 2;
     if (ty >= _DEV_TBES_Y && ty <= _DEV_TBES_Y + 36 && tx >= tbX && tx <= tbX + 200) {
