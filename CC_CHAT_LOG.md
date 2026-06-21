@@ -1,9 +1,17 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 2.12 — 2026-06-21
-> Changes: R-167 rename + doc dedup + CI paths fix (rebase cleanup)
-> Previous: v2.11 — 2026-06-21
+> Version 2.13 — 2026-06-21
+> Changes: Session close — flash verified, slow response open item logged
+> Previous: v2.12 — 2026-06-21
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
+
+---
+## 2026-06-21 — Session close: flash verified; slow response open item
+**Did:** Confirmed CI green (both runs on PR #52). PR #52 merged. Flash verified by owner: Serial Monitor active at /dev/cu.usbserial-1420 115200, [BOOT] output present, no /dev/cu.usbmodem. CDCOnBoot=default fix confirmed working on hardware.
+**Open item logged:** Slow response on hardware observed post-flash. Chat hypothesis: self-test auto-starts at boot, blocks loop(). Next CC session to read satu_vending.ino setup() and self-test trigger conditions before any code change.
+**Updated:** PROJECT_STATE.md v1.14, CC_CHAT_LOG.md v2.13
+**New files:** NONE
+**Flags:** Zero source files touched this session close. hardware.h LOCKED. PAYMENT_MODE stays fake.
 
 ---
 ## 2026-06-21 — Doc cleanup: R-167 rename + CI paths fix (rebase dedup)
