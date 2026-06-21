@@ -19,7 +19,7 @@
 - **R-165: CI FQBN must match owner Arduino IDE Tools menu exactly — last verified 2026-06-21 (2026-06-21).**
   CDCOnBoot=default (not cdc) — board uses hardware UART, Serial Monitor at /dev/cu.usbserial-1420 at 115200 baud.
   CDCOnBoot=cdc routes Serial to USB CDC virtual port → /dev/cu.usbmodem never appears → Serial Monitor silent.
-  UploadProtocol=uart0 added (UART0 / Hardware CDC as confirmed in IDE).
+  UploadProtocol is NOT a valid FQBN compile option — arduino-cli compile rejects it with "invalid option". Omit it.
   Any IDE board setting change → update compile-check.yml FQBN to match before next PR.
 - **R-165: HARDWARE_SPEC.md v1.2 is hardware wiring source of truth from 2026-06-21 (2026-06-21).**
   Relay 12 = magnetic pin-lock solenoid (NOT spring flap). Two physical locks parallel-wired on relay 12.
