@@ -1,13 +1,17 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 2.10 — 2026-06-21
-> Changes: R-166 added (one PR open at a time rule)
-> Changes: Added docs-only governance session entry — WORKFLOW_SKILL v2.3 + CHAT_RULE v1.1
-> Previous: v2.9 — 2026-06-21
-> Version 2.11 — 2026-06-21
-> Changes: Added docs-only flash command correction session — CLAUDE.md v1.8 + RULES.md v2.3
-> Previous: v2.10 — 2026-06-21
+> Version 2.12 — 2026-06-21
+> Changes: R-167 rename + doc dedup + CI paths fix (rebase cleanup)
+> Previous: v2.11 — 2026-06-21
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
+
+---
+## 2026-06-21 — Doc cleanup: R-167 rename + CI paths fix (rebase dedup)
+**Did:** (1) RULES.md v2.4: cleaned stacked v2.2/v2.3 header, renamed CI FQBN rule R-165→R-167 (R-165 was taken by HARDWARE_SPEC rule from parallel rebase session). (2) PROJECT_STATE.md v1.13: removed stacked v1.11 header block + duplicate SESSION LOG heading (rebase artifact). Fixed CI FQBN session entry — corrected "Added UploadProtocol=uart0" to reflect it was added then removed as invalid arduino-cli compile option. (3) compile-check.yml: added `.github/workflows/**` to paths filter so future workflow-file changes self-trigger CI (prevents recurrence of "FQBN fix didn't trigger CI" problem). Updated comment R-165→R-167.
+**Updated:** RULES.md v2.4, PROJECT_STATE.md v1.13, CC_CHAT_LOG.md v2.12, .github/workflows/compile-check.yml
+**New files:** NONE
+**Pending Chat verify:** CI green (workflow paths change self-triggers CI run with corrected FQBN). Flash: ⬜ pending — Serial Monitor at /dev/cu.usbserial-1420 115200 shows [BOOT]. No /dev/cu.usbmodem. Service mode: no black flash on tab switch.
+**Flags:** Zero .ino or .h files touched. hardware.h LOCKED. PAYMENT_MODE stays fake.
 
 ---
 ## 2026-06-21 — One PR open at a time rule (R-166)
