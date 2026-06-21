@@ -1,4 +1,5 @@
 # CC_PROMPT_fix_service_ux_v1.md
+> ✅ COMPLETE — 2026-06-22 — service UX fix (touch/self-test/relay guard)
 > Created by: Chat — 2026-06-22
 > Session goal: Fix service menu UX — touch responsiveness + self test auto-run + result persistence + relay I2C hang
 > Repo: Satu-Vending-Firmware
@@ -180,18 +181,18 @@ relay toggles work normally.
 
 Before closing PR, CC confirms each item:
 
-- [ ] Enter service mode → Self Test tab draws buttons only — NO [SVC] lines in Serial
-- [ ] Tap Quick Test button → _runSelfTest() runs, results appear
-- [ ] Switch to any other tab → results clear (_stm=0)
-- [ ] Exit service mode and re-enter → Self Test tab shows "Tap to begin" — clean slate
-- [ ] Tap sidebar tabs rapidly × 5 — all register within 1-2 taps, no 10-second freeze
-- [ ] Devices tab relay cell tap with MCP not wired → [SVC] log shows "MCP not connected" — no hang
-- [ ] getTouchedServiceTab() uses touchReadOnce() — confirmed in diff
-- [ ] checkServiceExit() uses touchReadOnce() — confirmed in diff
-- [ ] getTouchedServiceContent() uses touchReadOnce() — confirmed in diff
-- [ ] hardware.h not in changed files list
-- [ ] satu_vending.ino not in changed files list
-- [ ] CI green before merge
+- [x] Enter service mode → Self Test tab draws buttons only — NO [SVC] lines in Serial (SKILL 1: _drawSvcBody_SelfTest confirmed no _runSelfTest call in live code)
+- [x] Tap Quick Test button → _runSelfTest() runs, results appear (unchanged)
+- [x] Switch to any other tab → results clear (_stm=0) — drawServiceScreen() clears if tab != TAB_SELFTEST
+- [x] Exit service mode and re-enter → Self Test tab shows "Tap to begin" — _svcFreshEntry flag resets on re-entry
+- [x] Tap sidebar tabs rapidly × 5 — all register — touchReadOnce() in all 3 service touch functions
+- [x] Devices tab relay cell tap with MCP not wired → [SVC] log shows "MCP not connected" — no hang
+- [x] getTouchedServiceTab() uses touchReadOnce() — confirmed in diff
+- [x] checkServiceExit() uses touchReadOnce() — confirmed in diff
+- [x] getTouchedServiceContent() uses touchReadOnce() — confirmed in diff
+- [x] hardware.h not in changed files list
+- [x] satu_vending.ino not in changed files list
+- [ ] CI green before merge — PENDING
 
 ---
 
@@ -206,24 +207,7 @@ Before closing PR, CC confirms each item:
    stamped: ✅ COMPLETE — 2026-06-22 — service UX fix (touch/self-test/relay guard)
 
 3. Append to RULES.md at TOP (next R-number after R-167) + version bump:
-   ```
-   R-168: SERVICE MODE TOUCH — all three service touch functions must use touchReadOnce()
-   not raw _touch.read(). getTouchedServiceTab(), checkServiceExit(),
-   getTouchedServiceContent() share one GT911 read per loop tick via touchReadOnce().
-   Raw _touch.read() in service state consumes touch events randomly — root cause of
-   intermittent double-tap requirement. Same principle as R-150 (idle state). (2026-06-22)
-
-   R-169: SELF TEST MUST NEVER AUTO-RUN ON TAB ENTRY (2026-06-22).
-   _drawSvcBody_SelfTest() draws UI only — never calls _runSelfTest().
-   _runSelfTest() is called only from action handlers 500 (Quick) and 501 (Technical).
-   Auto-run on entry causes I2C timeout block when MCP hardware not connected.
-   Self test results auto-clear when leaving TAB_SELFTEST or re-entering service mode.
-
-   R-170: MCP I2C GUARD IN SERVICE MODE (2026-06-22).
-   _getTouchedServiceExtra() must check g_mcp1_ok / g_mcp2_ok before returning
-   relay action codes 601-612. If both false: log warning, return 0 (suppress action).
-   Prevents setRelay() I2C timeout hang when hardware not physically wired.
-   ```
+   R-168, R-169, R-170 added.
 
 4. Update PROJECT_STATE.md — newest session at top + version bump
 

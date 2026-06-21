@@ -1,9 +1,29 @@
 # RULES.md — Satu 1.0 Universal Rules
-> Version 2.4 — 2026-06-21
-> Changes: Renamed CI FQBN rule R-165→R-167 (rebase collision with HARDWARE_SPEC R-165)
-> Previous: v2.3 — 2026-06-21
+> Version 2.5 — 2026-06-22
+> Changes: R-168 (service touchReadOnce), R-169 (self test no auto-run), R-170 (MCP I2C guard)
+> Previous: v2.4 — 2026-06-21
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
+
+---
+
+- **R-170: MCP I2C GUARD IN SERVICE MODE (2026-06-22).**
+  _getTouchedServiceExtra() must check g_mcp1_ok / g_mcp2_ok before returning relay action codes 601-612.
+  If both false: log warning via _svcLogPanel(), return 0 (suppress action).
+  Prevents setRelay() I2C timeout hang (~1s per item) when hardware not physically wired.
+
+- **R-169: SELF TEST MUST NEVER AUTO-RUN ON TAB ENTRY (2026-06-22).**
+  _drawSvcBody_SelfTest() draws UI only — never calls _runSelfTest().
+  _runSelfTest() is called only from action handlers 500 (Quick) and 501 (Technical) in satu_vending.ino.
+  Auto-run on entry causes I2C timeout block when MCP hardware is not connected.
+  Self test results (_stm, _stN) auto-clear when leaving TAB_SELFTEST or re-entering service mode.
+  _svcFreshEntry flag pattern: set in checkServiceExit(), cleared in drawServiceScreen() which calls resetSelfTestResults().
+
+- **R-168: SERVICE MODE TOUCH — touchReadOnce() required (2026-06-22).**
+  getTouchedServiceTab(), checkServiceExit(), getTouchedServiceContent() must all use touchReadOnce(),
+  not raw _touch.read(). GT911 clears its interrupt flag after each I2C read — three independent reads
+  per loop tick silently consume touches landing on reads 2 and 3.
+  Same principle as R-150 (idle state). Debounce guards unchanged (150ms/200ms/200ms).
 
 ---
 
