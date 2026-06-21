@@ -1,9 +1,17 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 2.8 — 2026-06-21
-> Changes: FIX 3 — drawServiceScreen fillScreen removed (R-164, PSRAM contention)
-> Previous: v2.7 — 2026-06-20
+> Version 2.9 — 2026-06-21
+> Changes: CI FQBN corrected to CDCOnBoot=default + UploadProtocol=uart0 (R-165)
+> Previous: v2.8 — 2026-06-21
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
+
+---
+## 2026-06-21 — CI FQBN corrected to match owner Arduino IDE (R-165)
+**Did:** .github/workflows/compile-check.yml — updated FQBN from `CDCOnBoot=cdc` → `CDCOnBoot=default` and added `UploadProtocol=uart0` to match owner's confirmed Arduino IDE Tools menu (ESP32S3 Dev Module, USB CDC On Boot=Disabled, Upload Mode=UART0/Hardware CDC). Root cause: CDCOnBoot=cdc routes Serial to USB CDC virtual port → artifact flash produced /dev/cu.usbmodem instead of /dev/cu.usbserial-1420 → Serial Monitor silent. Added shell comments above FQBN line referencing R-165. Added R-165 to RULES.md v2.2. Zero firmware source files touched. CI only.
+**Updated:** .github/workflows/compile-check.yml, RULES.md v2.2, CC_CHAT_LOG.md v2.9, PROJECT_STATE.md v1.11
+**New files:** NONE
+**Pending Chat verify:** CI green → download artifact → flash with esptool → confirm Serial Monitor at /dev/cu.usbserial-1420 115200 shows [BOOT] output (not silent). Confirm no /dev/cu.usbmodem appears.
+**Flags:** Zero .ino or .h files touched. hardware.h LOCKED. PAYMENT_MODE stays fake.
 
 ---
 ## 2026-06-21 — Remove fillScreen from drawServiceScreen (FIX 3 / R-164)

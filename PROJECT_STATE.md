@@ -1,10 +1,16 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Version 1.10 — 2026-06-21
-> Changes: Added FIX 3 session log (drawServiceScreen fillScreen removed, R-164)
-> Previous: v1.9 — 2026-06-20
+> Version 1.11 — 2026-06-21
+> Changes: CI FQBN corrected to CDCOnBoot=default + UploadProtocol=uart0 (R-165)
+> Previous: v1.10 — 2026-06-21
 > Status: Phase 1 active — ~67% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-21 — CI FQBN corrected (R-165)
+- ROOT CAUSE: compile-check.yml FQBN used CDCOnBoot=cdc — routes Serial to USB CDC. Artifact flash produced /dev/cu.usbmodem, Serial Monitor silent. Owner board uses hardware UART only (/dev/cu.usbserial-1420).
+- FIX: CDCOnBoot=cdc → CDCOnBoot=default · Added UploadProtocol=uart0. FQBN now matches owner Arduino IDE Tools menu exactly (verified 2026-06-21).
+- DOCS: RULES.md v2.2 — R-165 prepended. CC_CHAT_LOG.md v2.9. PROJECT_STATE.md v1.11.
+- CI: ⬜ pending. Flash: ⬜ pending (owner: confirm Serial Monitor shows [BOOT] output at /dev/cu.usbserial-1420 115200).
 
 ### 2026-06-21 — Remove fillScreen from drawServiceScreen (FIX 3 / R-164)
 - ROOT CAUSE: `drawServiceScreen()` called `gfx->fillScreen(C_BG)` on every tab switch — 800×480 = 384K pixel PSRAM write competing with LCD DMA. Same contention class as R-117 (PNG decode black flash).

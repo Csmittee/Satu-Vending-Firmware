@@ -99,8 +99,10 @@ jobs:
       - name: Compile firmware
         run: |
           cp -r firmware satu_vending
+          # FQBN must match owner Arduino IDE Tools menu exactly — last verified 2026-06-21
+          # Any board setting change -> update this line to match (R-165)
           arduino-cli compile \
-            --fqbn esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,PSRAM=opi,UploadSpeed=460800 \
+            --fqbn esp32:esp32:esp32s3:CDCOnBoot=default,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,PSRAM=opi,UploadSpeed=460800,UploadProtocol=uart0 \
             --warnings default \
             --output-dir ./build \
             satu_vending/

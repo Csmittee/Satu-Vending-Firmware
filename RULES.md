@@ -1,11 +1,17 @@
 # RULES.md — Satu 1.0 Universal Rules
-> Version 2.1 — 2026-06-21
-> Changes: Added R-164 (drawServiceScreen fillScreen banned — PSRAM contention)
-> Previous: v2.0 — 2026-06-20
+> Version 2.2 — 2026-06-21
+> Changes: Added R-165 (CI FQBN must match owner Arduino IDE exactly — CDCOnBoot=default)
+> Previous: v2.1 — 2026-06-21
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
 
 ---
+
+- **R-165: CI FQBN must match owner Arduino IDE Tools menu exactly — last verified 2026-06-21 (2026-06-21).**
+  CDCOnBoot=default (not cdc) — board uses hardware UART, Serial Monitor at /dev/cu.usbserial-1420 at 115200 baud.
+  CDCOnBoot=cdc routes Serial to USB CDC virtual port → /dev/cu.usbmodem never appears → Serial Monitor silent.
+  UploadProtocol=uart0 added (UART0 / Hardware CDC as confirmed in IDE).
+  Any IDE board setting change → update compile-check.yml FQBN to match before next PR.
 
 - **R-164: drawServiceScreen() must NEVER call fillScreen() — PSRAM bus contention on ESP32-8048S070C (2026-06-21).**
   fillScreen() writes 800×480 = 384,000 pixels into PSRAM frame buffer while LCD DMA reads the same buffer simultaneously.
