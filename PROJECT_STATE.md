@@ -1,10 +1,15 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Version 1.13 — 2026-06-21
-> Changes: R-167 rename (CI FQBN rule, renumbered from R-165 post-rebase dedup); CI paths fix
-> Previous: v1.12 — 2026-06-21
+> Version 1.14 — 2026-06-21
+> Changes: Flash verified — CI FQBN fix confirmed working. Slow response open item added (self-test auto-start suspect).
+> Previous: v1.13 — 2026-06-21
 > Status: Phase 1 active — ~67% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-21 — Flash verified (PR #52 merged); slow response to investigate
+- FLASH: ✅ Serial Monitor at /dev/cu.usbserial-1420 115200 shows [BOOT] output — no /dev/cu.usbmodem. CDCOnBoot=default confirmed working.
+- OPEN ITEM: Slow response observed on hardware. Chat hypothesis: self-test auto-starts at boot and blocks loop(). Next session to investigate satu_vending.ino setup() / self-test trigger conditions.
+- DOCS: CC_CHAT_LOG.md v2.13. PROJECT_STATE.md v1.14.
 
 ### 2026-06-21 — One PR open at a time rule (R-166)
 - DOCS: R-166 added to RULES.md v2.3. Docs only, zero source files.
@@ -13,7 +18,7 @@
 - ROOT CAUSE: compile-check.yml FQBN used CDCOnBoot=cdc — routes Serial to USB CDC. Artifact flash produced /dev/cu.usbmodem, Serial Monitor silent. Owner board uses hardware UART only (/dev/cu.usbserial-1420).
 - FIX: CDCOnBoot=cdc → CDCOnBoot=default. UploadProtocol=uart0 added then removed — arduino-cli compile rejects it as invalid FQBN option (upload-only). Final FQBN verified 2026-06-21.
 - DOCS: RULES.md v2.4 — R-167 (CI FQBN). CC_CHAT_LOG.md v2.12. PROJECT_STATE.md v1.13.
-- CI: ⬜ pending. Flash: ⬜ pending (owner: confirm Serial Monitor shows [BOOT] output at /dev/cu.usbserial-1420 115200).
+- CI: ✅ green (both runs). Flash: ✅ verified — Serial Monitor active at /dev/cu.usbserial-1420 115200.
 
 ### 2026-06-21 — Docs-only: CLAUDE.md v1.8 flash cmd update + RULES.md v2.3 R-157 corrected
 - SCOPE: CLAUDE.md + RULES.md + CC_CHAT_LOG + PROJECT_STATE only. Zero firmware/* files. CI not triggered.
