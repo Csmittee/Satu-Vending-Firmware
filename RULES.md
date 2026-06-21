@@ -1,11 +1,19 @@
 # RULES.md — Satu 1.0 Universal Rules
-> Version 2.1 — 2026-06-21
-> Changes: Added R-164 (drawServiceScreen fillScreen banned — PSRAM contention)
-> Previous: v2.0 — 2026-06-20
+> Version 2.2 — 2026-06-21
+> Changes: Added R-165 (HARDWARE_SPEC.md v1.2 — relay 12 = magnetic pin-lock, proximity switch, speaker)
+> Previous: v2.1 — 2026-06-21
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
 
 ---
+
+- **R-165: HARDWARE_SPEC.md v1.2 is hardware wiring source of truth from 2026-06-21 (2026-06-21).**
+  Relay 12 = magnetic pin-lock solenoid (NOT spring flap). Two physical locks parallel-wired on relay 12.
+  FLAP_PROXIMITY_MCP_PIN = 2 (MCP2 GPA2 — roller microswitch, CLOSED=LOW, INPUT_PULLUP).
+  SPEAKER_PIN = 1 (GPIO1 — passive speaker PWM).
+  E18-D80NK drop sensor is placeholder — confirm type before bracket fabrication.
+  Model naming: 5×2=10 lanes, 5×3=15 lanes, 7×3=21 lanes (col×row format, never reversed).
+  MCP3 address for 5×3/7×3 = TBD — owner confirms A0/A1/A2 jumper when parts arrive.
 
 - **R-164: drawServiceScreen() must NEVER call fillScreen() — PSRAM bus contention on ESP32-8048S070C (2026-06-21).**
   fillScreen() writes 800×480 = 384,000 pixels into PSRAM frame buffer while LCD DMA reads the same buffer simultaneously.

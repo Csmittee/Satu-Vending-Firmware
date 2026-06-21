@@ -23,6 +23,8 @@
 //   R9   — PRODUCT_SELECTION_TIMEOUT added (R-152, 15s idle → idle screen)
 //          File now tracked in repo (R-86 update)
 //   R14  — MACHINE_LANES 10 added (R-163: Devices tab grid driven by config constant)
+//   R15  — FLAP_PROXIMITY_MCP_PIN 2 (MCP2 GPA2 roller microswitch, CLOSED=LOW) (R-165)
+//           SPEAKER_PIN 1 (GPIO1 passive speaker PWM) (R-165)
 // ============================================================
 // NVS KEYS ("satu" namespace, all ≤15 chars):
 //   device_id  — assigned device ID (string)
@@ -118,17 +120,16 @@ extern const int mcp2_relays[6];
 // ── Vend + Flap timing (R-128, R-129) ────────────────────────────────────
 #define VEND_MAX_SPIN_MS      30000  // R-128: motor safety cutoff (30s = ~10 turns)
 #define SENSOR_POLL_MS            10  // R-128: IR sensor read interval during spin
-#define PRODUCT_SELECTION_TIMEOUT 15
 #define FLAP_RELOCK_TIMEOUT     3000  // R-129: max wait for proximity before force-lock
 
-// ── Flap proximity switch (R-129) ─────────────────────────────────────────
-// Wired to MCP2 GPA2–GPA7. Assign pin number (0–5 = GPA2–GPA7) when wired.
-// -1 = not yet assigned. Firmware stubs safely: uses FLAP_RELOCK_TIMEOUT only.
-#define FLAP_PROXIMITY_MCP_PIN   -1   // TODO: assign MCP2 GPA pin when wired
+// ── Flap proximity switch (R-129, R-165) ──────────────────────────────────
+// MCP2 GPA2 (pin 2) — roller microswitch, INPUT_PULLUP, CLOSED=LOW (door shut).
+// Activates proximity polling in vendProduct() hardware.h.
+#define FLAP_PROXIMITY_MCP_PIN    2   // MCP2 GPA2 — roller microswitch, CLOSED=LOW (INPUT_PULLUP)
 
-// ── Speaker (R-134) ────────────────────────────────────────────────────────
-// TODO: assign GPIO when speaker is wired. -1 = not yet assigned.
-#define SPEAKER_PIN              -1
+// ── Speaker (R-165) ────────────────────────────────────────────────────────
+// GPIO1 — passive speaker, PWM driven.
+#define SPEAKER_PIN               1   // GPIO1 — passive speaker PWM
 
 // ============================================================
 // LED Configuration (WS2812B strip)

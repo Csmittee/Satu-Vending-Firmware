@@ -1,10 +1,19 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Version 1.10 — 2026-06-21
-> Changes: Added FIX 3 session log (drawServiceScreen fillScreen removed, R-164)
-> Previous: v1.9 — 2026-06-20
-> Status: Phase 1 active — ~67% complete
+> Version 1.11 — 2026-06-21
+> Changes: Added HARDWARE_SPEC v1.2 session log. FLAP_PROXIMITY_MCP_PIN assigned (=2).
+> Previous: v1.10 — 2026-06-21
+> Status: Phase 1 active — ~68% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-21 — HARDWARE_SPEC v1.2 + config.h R15 (CC_BUILD_PROMPT_hardware_spec_v1_2_FINAL)
+- SCOPE: hardware/HARDWARE_SPEC.md + firmware/config.h only. hardware.h R2 LOCKED — NOT touched.
+- HARDWARE_SPEC.md v1.1→v1.2: Spring Flap section → Magnetic Pin-Lock (R-129 UPDATED). 2 locks parallel on relay 12. Proximity switch added (MCP2 GPA2, roller microswitch). Speaker GPIO1. MCP RESET pin warning added to both MCP tables. IR mount note updated. W-07 corrected. Wire harness summary added. BOM updated (2× mag lock, roller switch, new JST/resistor rows). Multi-model expansion section (5×2 locked, 5×3/7×3 placeholder, MCP3 TBD). JST connector standard updated.
+- config.h R14→R15: FLAP_PROXIMITY_MCP_PIN -1→2, SPEAKER_PIN -1→1.
+- RULES.md v2.1→v2.2: R-165 prepended.
+- OPEN ITEM CLOSED: FLAP_PROXIMITY_MCP_PIN now assigned (=2). Activates automatically on next flash.
+- CI: ⬜ pending (config.h change triggers CI). Flash: ⬜ pending — verify `[HW] Proximity polling ACTIVE on MCP2 pin 2`.
+- LINKAGE NOTE (NOT fixed this session): satu-wiring.html (backend) still shows Spring Flap language throughout — D-9 open item, separate session.
 
 ### 2026-06-21 — Remove fillScreen from drawServiceScreen (FIX 3 / R-164)
 - ROOT CAUSE: `drawServiceScreen()` called `gfx->fillScreen(C_BG)` on every tab switch — 800×480 = 384K pixel PSRAM write competing with LCD DMA. Same contention class as R-117 (PNG decode black flash).
@@ -60,246 +69,17 @@
 - MODIFY: firmware/ui.h — _drawSvcTabBar now NULL size 2 with two-line labels (Self/Test, Free/Play). getTouchedServiceContent: y401=350 (was 370), y402=164 (was 168), h44→h34 for Factory Reset. TAB_SELFTEST removed from slot grid touch check.
 - CI: ⬜ pending. Flash: ⬜ pending (owner to QA all 5 tabs).
 
-### 2026-06-20 — Service menu 13 visual fixes (R-158)
-- REWRITE: firmware/ui_service.h — complete rewrite implementing all 13 visual fixes from owner photo QA.
-- NEW: _svcLogPanel() + _svcLogDraw() right-side log panel (x=670, w=126, 10-entry circular buffer); present on all 5 tabs.
-- TAB 0 Self Test: btnY _BDY+72 (was +60); subtitle at _BDY+52; lineH=18; results in left zone only; each result logged to panel.
-- TAB 1 Free Play: fixed 7×3 grid (cw=72, ch=50, gap=4); not g_grid_cols; instruction text added at _BDY+60.
-- TAB 2 Devices: _REL_CW=86 (was 107); _IR_CW=80 _IR_CH=36 (was 62/28); _IR_ROW1_Y gap +52 (was +38); stub row (Pump/LED/Speaker) at y=327; _TBEKY=371.
-- TAB 3 Settings: all Y now _BDY-relative; _S_Y402=_BDY+138=182, _S_VOLY=_BDY+318=362, _S_Y401=_BDY+348=392; L1-L7 row + L8-L10 row for prices.
-- TAB 4 Firmware: all Y _BDY-relative; SECURITY heading _BDY+192, OTA buttons _BDY+292, _FW_PRINT_Y=_BDY+348=392.
-- _getTouchedServiceExtra(): btnY corrected; stub row logged locally; 701 (factory reset) and 702 (boot PIN) hit-tests added.
-- R-158 added: UI PR checklist (5 items mandatory before any .h UI file PR).
-- satu_vending.ino NOT touched. All action codes 500-800 unchanged.
-- CI: ⬜ pending. Flash: ⬜ pending.
-
-### 2026-06-20 — CI artifact upload (R-157) — CC_BUILD_PROMPT_ci_artifact_v1
-- SCOPE: CI/workflow only. Zero firmware source files touched.
-- ADD: `--output-dir ./build` to arduino-cli compile step in compile-check.yml.
-  Without this flag arduino-cli writes .bin to an unpredictable /tmp/arduino-sketch-*/ path.
-- ADD: `actions/upload-artifact@v4` step — artifact name `satu-firmware-N`, path `./build/satu_vending.ino.bin`, retention 7 days.
-- ADD: "Flashing Without Arduino IDE" section to CLAUDE.md — 5-step esptool.py flash workflow.
-- R-157 added to RULES.md: CI artifact rule + esptool.py flash command documented.
-- Files changed: .github/workflows/compile-check.yml, CLAUDE.md v1.5
-- CI: does not trigger (CI trigger is firmware/** only — this was a docs-only push)
-- Flash: 0 cycles needed. Owner downloads .bin from CI artifact after next firmware PR.
-
-### 2026-06-19 — Service mode 5 tabs complete (R-154 / R-155 / R-156)
-- FIX 1: hardware.h — g_mcp1_ok / g_mcp2_ok bool globals added + set in initMCP23017() after each begin_I2C() call.
-- NEW: firmware/ui_service.h — all 5 _drawSvcBody_* functions + _getTouchedServiceExtra(). Self Test (Quick 10 / Technical 14 items), Free Play (gold/dimgrey/darkred slot grid), Devices (relay 2×6 grid + IR sensor readout + test backend), Settings (network / boot PIN / prices / audio / factory reset), Firmware (MAC / heap / security / print to serial).
-- MODIFY: firmware/ui.h — 5 stubs replaced with #include "ui_service.h"; getTouchedServiceContent() extended with action codes 500-502 (self test), 600-612 (relay toggle), 700 (volume), 800 (print serial). Slot grid 301-321 updated. Forward declaration for _getTouchedServiceExtra() added.
-- MODIFY: firmware/satu_vending.ino — Free Play handler updated (301-321). New handlers: 500 Quick Test, 501 Technical Test, 502 Clear, 600 Test Backend, 601-612 Toggle Relay, 700 Volume cycle, 800 Print to Serial.
-- Action code reservation: R-154 (500-800 reserved), R-155 (self test modes), R-156 (R12 LOCKED/UNLOCKED display).
-- Files: firmware/hardware.h, firmware/ui_service.h (new), firmware/ui.h, firmware/satu_vending.ino
-- CI: ⏹️ pending. Flash: ⏹️ pending.
-
-### 2026-06-19 — R-148 gift guard + R-149 vend loop command poll
-- Bug 1 fixed: carry-over touch from product selection no longer auto-selects gift option. Entry guard (250ms) added to STATE_GIFT_OPTION in satu_vending.ino.
-- Bug 2 fixed: sensor_triggered backend command now stops motor within ~1s. pollCommands() called every 500ms inside vendProduct() spin loop in hardware.h.
-- Include reorder in satu_vending.ino: network.h moved before hardware.h (compile dependency for CommandList — no logic change).
-- Files: satu_vending.ino, hardware.h
-- Rules: R-148, R-149
-- CI: ⏹️ pending. Flash: 1 cycle required.
-
-### 2026-06-18 — Governance docs wiring: CC_SKILL + CC_CHAT_LOG + R-138 to R-141 (R-84)
-- **SCOPE:** Docs only. Zero .ino, .h, or src/ file changes.
-- **New governance files registered:** CC_SKILL.md + CC_CHAT_LOG.md added to CLAUDE.md Key Files.
-- **New rules added:** R-138 (CC_CHAT_LOG protocol) · R-139 (CC_SKILL.md mandatory read) · R-140 (HTML file size limit >1000 lines = flag) · R-141 (document versioning headers) prepended to RULES.md (v1.3).
-- **Backend equivalents:** R-143 to R-146 added to backend RULES.md.
-- **CLAUDE.md corrections:** Satu-vending-hardware repo reference removed (repo deleted). Version header v1.1 added. CC_SKILL.md + CC_CHAT_LOG.md in Key Files.
-- **KNOWLEDGE_MAP.md corrections:** Hardware repo references removed. Two-repo system wording updated. .claude/claude_project/ section added. public/ inventory corrected.
-- **CC_CHAT_LOG.md created:** Seed entry. Zero firmware files touched this session.
-- **Prompt archived:** docs/prompts/CC_BUILD_PROMPT_governance_v1.md → ✅ COMPLETE 2026-06-18.
-- **Branch:** claude/hopeful-noether-6vkn0x · PR pending.
-
-### 2026-06-17 — Firmware R6: sensor motor + pin-lock flap + payment banner + font audit (CC_BUILD_PROMPT_firmware_ux_r128_REVISED)
-- **R-128 (Sensor-driven motor stop):** `vendProduct(int lane)` rewritten to return `bool`.
-  Motor stops on IR sensor trigger only — `VEND_MAX_SPIN_MS=30000` is safety cutoff, NOT primary stop.
-  `SENSOR_POLL_MS=10` — IR sensor read interval during spin. `VEND_PULSE_MS`, `DROP_TIMEOUT`,
-  `REMOVAL_TIMEOUT` deleted permanently from config.h and all usage points.
-- **R-129 (Pin-lock solenoid flap):** `RELAY_DOOR_LOCK` renamed `RELAY_FLAP=12` in config.h.
-  `HIGH=UNLOCKED` (pin retracted), `LOW=LOCKED` (fail-secure on power loss).
-  `unlockFlap()` + `lockFlap()` added to hardware.h. MCP2 relay 12 wired to solenoid pin lock.
-  `FLAP_PROXIMITY_MCP_PIN=-1` stubs safely — uses `FLAP_RELOCK_TIMEOUT=3000` when not wired.
-  Motor + flap unlocked simultaneously on vend start. Flap locked after motor stop.
-- **R-131 (Payment accepted banner):** `showPaymentAccepted()` added to ui.h.
-  1.5s green overlay on QR screen before vend. Called in `_onPaymentConfirmed()` in satu_vending.ino.
-- **R-137 (Font audit):** NEVER use NULL font with `setTextSize>1` on Latin text.
-  Rule: `FreeSansBold24pt7b`=hero numbers, `FreeSansBold18pt7b`=screen titles,
-  `FreeSansBold12pt7b`=section headings, NULL size 1=body text only.
-  All screens in ui.h audited and corrected.
-- **State machine cleanup:** `STATE_WAITING_DROP`, `STATE_DISPENSING`, `STATE_WAITING_REMOVAL`
-  removed from state_machine.h enum. Vend flow is now synchronous via `_onPaymentConfirmed()`.
-- **Session closing:** RULES.md updated (R-128 through R-137 prepended), KNOWN_GOOD.md snapshot
-  prepended, CC_BUILD_PROMPT archived to docs/prompts/ with ✅ COMPLETE stamp.
-- **Files changed:** firmware/config.h (R6), firmware/hardware.h (R6), firmware/state_machine.h,
-  firmware/satu_vending.ino (R6), firmware/ui.h (R6)
-- **CI:** ⏹️ PENDING — waiting for GitHub Actions compile check
-- **Flash:** ⏹️ PENDING — owner to flash and confirm vend + flap + banner on SATU-4R473R
-- **Branch:** claude/magical-feynman-rrkais · PR pending
-
-### 2026-06-16 — CI fixes + workflow docs (no CC_PROMPT — inline session)
-- **CI Fix 1: FreeFonts not found** — arduino-cli only adds a library's include path when it
-  detects a direct `#include <LibraryName.h>`. Installing "Adafruit GFX Library" did nothing
-  because `<Adafruit_GFX.h>` was never explicitly included. Fix: bundled 3 FreeSans font headers
-  directly in `firmware/` (stripped `#include <Adafruit_GFX.h>`), changed ui.h to local includes.
-  Files added: `firmware/FreeSansBold24pt7b.h`, `FreeSansBold18pt7b.h`, `FreeSansBold12pt7b.h`
-- **CI Fix 2: duplicate setup()/loop()** — `satu_observer.ino` was in `firmware/`. Arduino
-  compiles all .ino files in sketch folder together → duplicate symbol error. Fix: moved to
-  `tools/satu_observer/satu_observer.ino` (proper Arduino standalone sketch structure).
-- **R-127 added to RULES.md** — standalone tools must never live in firmware/
-- **WORKFLOW_SKILL.md + RULES-workflow.md (both repos)** — removed CHAT_HANDOFF.md from CC
-  session closing checklist. CHAT_HANDOFF.md = Chat's responsibility only (R-05/R-84 corrected).
-  Backend PR #27 created and merged.
-- **CI:** ✅ Runs 95 (push) + 96 (PR) GREEN — commit 9cbfd29
-- **Flash:** ✅ Owner flashed SATU-4R473R — 2026-06-16
-
-### 2026-06-16 — Firmware UX fixes post first hardware test (CC_PROMPT_firmware_ux_fixes)
-- **First full end-to-end hardware test PASSED on SATU-4R473R**
-  Payment → relay → door → completion → idle — confirmed working 2026-06-16
-- **Fix 1 (R-126): Touch delay on idle** — `idleAnimationUI()` blocking `delay()` replaced
-  with millis-based loops that poll `_touch.read()` every ~16ms and return on touch.
-  Max touch latency reduced from 400ms → 16ms. Double-tap requirement eliminated.
-- **Fix 2 (R-126): Font quality** — replaced `setTextSize(4-8)` scaled bitmap fonts with
-  Adafruit FreeFonts on large text screens:
-  - Lucky number hero: `FreeSansBold24pt7b` size 2
-  - Amount display (QR screen): `FreeSansBold24pt7b` size 1
-  - "Dispensing..." title: `FreeSansBold18pt7b` size 1
-  - "Your Merit Lucky Number": `FreeSansBold12pt7b` size 1
-  - Boot "SATU": `FreeSansBold24pt7b` size 1
-- Items #2 and #3 (completion HTTP 400 + long dispense time) fixed in backend session — not firmware
-- **R-126 added to RULES.md**
-- **CI:** ✅ GREEN — commit 9cbfd29 (CI fixed in subsequent inline session — see above)
-- **Flash:** ✅ Owner flashed SATU-4R473R — 2026-06-16
+---
 
 ## OPEN ITEMS
 - [ ] PAYMENT_TIMEOUT_MS — return to 120000 before temple deployment
       Currently set for HW testing. Direct edit in config.h by owner.
 - [ ] Service mode firmware — ui.h 5 tabs full build (stubs only currently)
       Next firmware CC session after this one.
-- [ ] FLAP_PROXIMITY_MCP_PIN — assign MCP2 GPA pin when solenoid wired (-1 = stub, safe)
-
-## SESSION LOG (continued)
-
-### 2026-06-15 — PNG victory cleanup (CC_PROMPT_png_victory_cleanup)
-- **PNG QR decode: ✅ FIXED AND CONFIRMED ON HARDWARE 2026-06-15 16:41:32**
-  Root cause: `_pngDrawRow()` returned `0` = PNGdec v1.1.4 stop-early signal
-  Fix: `return 1` in callback — one character — rc=0 rows=165 w=165 h=165
-- **ui.h:** spy diagnostic Serial.printf lines removed from `_pngDrawRow()`
-- **Skills added:** `.claude/rules/SKILL_library_onboarding.md` (new) · `.claude/rules/LIBRARY_pngdec.md` (new)
-- **Skills updated:** `SKILL_problem_solving_kt.md` v1.1 · `SKILL_esp32s3_rgb_panel_constraints.md` v1.1 (final resolution appended)
-- **RULES.md:** R-121/122/123 added · R-117 corrected (actual root cause) · R-89 corrected (return 0→1)
-- **WORKFLOW_SKILL.md:** intervention levels + library onboarding + KT framework sections added
-- **CI:** ✅ GitHub Actions Run #76 GREEN — commit 79090e3
-
-### 2026-06-15 — PNG decode fix R-117 (pause-decode-resume for PSRAM DMA contention)
-- **ROOT CAUSE CONFIRMED:** PSRAM bus bandwidth contention between RGB DMA and zlib inflate
-  Evidence: rc=8 rows=1 on all PNG variants. Fetch=200 OK 27458 bytes. openRAM succeeds.
-  DMA reads 800×480 frame buffer from PSRAM non-stop at ~16MHz — zlib loses every bus arbitration.
-  Full analysis: `.claude/rules/SKILL_esp32s3_rgb_panel_constraints.md`
-- **FIX APPLIED:** `ui.h drawQrFromBytes()` re-enabled with pause-decode-resume pattern (R-117)
-  `digitalWrite(TFT_BL, LOW)` → `delay(20)` → `_png.decode()` → `delay(5)` → `digitalWrite(TFT_BL, HIGH)`
-  Backlight gate stops DMA bus pressure — zlib inflate gets full PSRAM bandwidth
-- **FIX APPLIED:** `ui.h _pngDrawRow()` — `lineBuf` made `static` (R-119) — off stack permanently
-- **FIX APPLIED:** `ui.h drawQrScreen()` — switched back from bitmap URL to PNG URL — calls `drawQrFromBytes()`
-  Backend /bitmap was reverted — PNG path is the correct production path
-- **EMERGENCY FALLBACK:** `drawQrFromBitmap()` preserved in ui.h with guard comment — R-114
-- **RULES.md:** R-117, R-118, R-119, R-120 prepended at TOP · R-116 status updated to CLOSED
-- **CI:** Pending — waiting for GitHub Actions compile check
-- **Flash:** ⏹️ PENDING owner flash — expected: `[UI] PNG decode: rc=0 rows=165 w=165 h=165`
-
-### 2026-06-15 — Bitmap experiment revert + rules update
-- **DISCOVERY:** Firmware PR #17 WAS merged to main on 2026-06-14 (not closed without merge as previously stated)
-  Owner confirmed: bitmap ui.h on firmware main, QR bitmap flashed and working on hardware ✅
-- **BACKEND REVERTED (PR #21):** `/v1/qr/:charge_id/bitmap` endpoint removed from backend main
-  `src/handlers/qr.js` restored to _zlibStore() RFC 1950 state (PR #17 backend state)
-  `src/index.js` restored: no bitmap import, version=R4, no bitmap route
-- **REASON FOR REVERT:** Live Omise serves real PromptPay PNG with EMVCo payload — cannot re-serve as bitmap.
-  Bitmap is fake-mode-only. PNGdec must be fixed for live mode. Backend cleaned while investigation continues.
-- **RULES:** R-115 (Critical Fix Escalation Protocol) + R-116 (PNGdec Investigation Status) added to RULES.md in BOTH repos
-- **RULES:** R-114 annotation corrected to reflect actual state (PR #17 merged, backend reverted)
-- **INCONSISTENCY STATE:** Firmware main has bitmap code, backend has no /bitmap endpoint
-  Owner reflashing hardware with R5.3 (pre-bitmap) from Mac trash backup
-- **NEXT SESSION:** Add esp_ptr_in_psram(g_pngBuf) diagnostic to initUI() — measure PSRAM allocation
-
-### 2026-06-14 — QR bitmap draw firmware (CC_PROMPT_firmware_qr_bitmap)
-- **PNGdec STILL FAILING (R-114 context):** 4 PNG variants tested PRs #16-#19, all fail (rc=8 or rc=2)
-  NOTE (2026-06-15): PNGdec NOT confirmed permanently broken — root cause unknown — see R-116
-- **FIX:** `ui.h drawQrFromBitmap()` — direct gfx->fillRect() pixel draw from raw bitmap
-  No decode library. Backend /bitmap endpoint: 4-byte header + 1 byte/pixel 0x00=black 0xFF=white
-- **FIX:** `ui.h drawQrScreen()` — appends /bitmap to qrUrl, calls drawQrFromBitmap()
-  drawQrFromBytes() (PNGdec) commented out — kept for future investigation
-- **RULES.md:** R-114 prepended at top
-- **CI:** ✅ GitHub Actions Run #46 GREEN
-- **Flash status:** ✅ CONFIRMED — owner flashed, QR bitmap rendered on screen
-- **PR #17:** ✅ MERGED to firmware main 2026-06-14
-- **Backend bitmap:** ❌ REVERTED from backend main 2026-06-15 (PR #21)
-
-### 2026-06-13 — QR blocking read fix (CC_PROMPT_firmware_qr_blocking_read)
-- **PR #13 CONFIRMED FLASH:** HTTP 200 ✅, Content-Length=-1, idle timeout at 497 bytes — available() root cause confirmed
-- **ROOT CAUSE (R-105):** stream->available()=0 between TCP packets on ESP32 → 5s idle timer fires at 497 bytes
-  QR PNG from api.qrserver.com is ~3KB+. available()-based loop always exits too early.
-- **FIX:** `network.h fetchImageBytes()` — R5.3 — blocking readBytes() with 10s per-read timeout
-  available() poll + idle timer removed entirely. readBytes() blocks until data or stream close.
-- **RULES.md:** R-105 appended at TOP
-- **KNOWN_GOOD.md:** PR #13 confirmed flash snapshot appended at TOP
-- **Files:** firmware/network.h only
-
-### 2026-06-13 — QR Chunked Read Fix + Timeout (CC_PROMPT_firmware_qr_chunked_fix)
-- **PR #12 CONFIRMED FLASH:** HTTP 200 ✅ but 502 bytes truncated — chunked stream exits early
-- **ROOT CAUSE:** stream.available()=0 between TCP packets → 15s wall-clock timer triggers early
-  Content-Length=-1 (chunked encoding) — stream close detection was missing
-- **FIX:** `network.h fetchImageBytes()` — chunked-safe loop: !http.connected() detects EOF
-  Per-packet idle timeout 5000ms replaces broken global 15s wall-clock
-- **FIX:** `config.h PAYMENT_TIMEOUT`: 120000 → 30000 (30s, was 2 min — R-102)
-- **RULES.md:** R-102 (QR timeout 30s) + R-103 (chunked HTTP read) appended
-- **KNOWN_GOOD.md:** PR #12 confirmed flash snapshot + R5.2 snapshot both appended at TOP
-- **Flash status:** PENDING — owner to flash, look for "stream closed — transfer complete" + 2000+ bytes
-- **Branch:** claude/vibrant-cray-cqp2em · CI pending
-- **Next if still fails:** report byte count — PNG decode investigation
-
-### 2026-06-13 — QR PNG Fetch Fix (CC_PROMPT_firmware_qr_png_fetch)
-- **ROOT CAUSE:** Plain `HTTPClient.begin(url)` silently fails on ESP32 for external HTTPS — no cert chain
-- **FIX:** `network.h fetchImageBytes()` — replaced with `WiFiClientSecure + setInsecure()` + `HTTPC_STRICT_FOLLOW_REDIRECTS`
-- **FIX:** `ui.h drawQrScreen()` — added `[UI] QR PNG loaded` and `[UI] QR PNG failed` serial logs on both paths
-- **RULES.md:** R-97 appended — WiFiClientSecure for external HTTPS is now a permanent rule
-- **Flash status:** PENDING — owner to flash and verify serial shows HTTP 200 + PNG bytes
-- **Branch:** claude/vibrant-cray-cqp2em · CI pending
-- **Next if still fails:** PNG decode investigation (pngLen > 0 but no render = _pngDrawRow issue)
-
-### 2026-06-13 — GitHub Actions Compile Check (CC_BUILD_PROMPT_github_actions_compile)
-- **CREATED:** .github/workflows/compile-check.yml — auto-compile on every push + every PR to main
-- **Board FQBN:** esp32:esp32:esp32s3 with CDCOnBoot=cdc, FlashSize=16M, PartitionScheme=app3M_fat9M_16MB, PSRAM=opi, UploadSpeed=460800
-- **Core locked:** ESP32 2.0.17 · Libraries locked: Arduino_GFX_Library@1.4.9, PNGdec@1.1.6, TAMC_GT911, ArduinoJson, Adafruit MCP23X17, FastLED
-- **Est. CI time:** 3-5 min per run (vs 10+ min local Arduino IDE)
-- **RULES.md:** R-90 (GitHub Actions compile) + R-91 (CI config) + R-92 (KNOWN_GOOD.md scope) appended
-- **WORKFLOW_SKILL.md:** CC firmware loop updated with CI check step; KNOWN_GOOD.md update block rule added
-- **Cleaned up:** CC_BUILD_PROMPT_R4.md + CC_BUILD_PROMPT_github_actions_compile.md archived to docs/prompts/ · removed from repo root
-- **CI status:** ✅ GREEN — runs #15 and #16 passed (commit 8c21d78)
-- **Fix loops:** 6 iterations to resolve workflow config errors (all CI infra — no firmware bugs)
-- **Lessons → RULES.md:** R-93 (arduino-cli install), R-94 (library registry names), R-95 (lib update-index), R-96 (sketch folder convention)
-- **Branch:** claude/pensive-heisenberg-1sf4c1 · PR #10 ✅ ready to merge
-
-### 2026-06-12 — CC Compile Error Fix (CC_PROMPT_fix_compile_errors)
-- **FIXED:** 7 compile errors from first R5 build attempt — R5 now ready to flash
-- **ui.h:** g_grid_rows, g_grid_cols, g_cfg_idle, g_cfg_sel, g_cfg_water, g_cfg_lucky —
-  removed `static` keyword (now plain globals, resolved at link time)
-- **network.h:** removed 6 `extern` re-declarations — not needed in Arduino sketch compilation
-- **ui.h:** `_pngDrawRow` return type changed `void` → `int` (PNGdec v1.1.6 requires int callback)
-- **RULES.md:** R-88 (shared globals pattern) + R-89 (PNGdec callback type) appended
-- **Branch:** claude/loving-bohr-t3n3yf · pushed to PR #4
-
-### 2026-06-12 — CC R5 WiFi Provisioning (CC_PROMPT_fix_wifi_credentials)
-- **RESOLVED:** WiFi credential security risk — credentials no longer in source files or git
-- **network.h R5:** initWiFi() NVS-first (nvs_ssid/nvs_pass) → config.h fallback → setup screen
-- **network.h R5:** saveWifiAndReboot() — saves credentials to NVS, calls ESP.restart()
-- **ui.h R5:** drawWifiSetupScreen() — blocking QWERTY touchscreen keyboard, SSID + masked password, CONNECT button
-- **state_machine.h R5:** STATE_WIFI_SETUP added between STATE_STARTUP and STATE_IDLE
-- **satu_vending.ino R5:** WiFi.status() check after initWiFi() → STATE_WIFI_SETUP if not connected
-- **config.h.example:** Created — WIFI_SSID="" WIFI_PASSWORD="" intentionally empty, R5 NVS note
-- **RULES.md:** R-85 + R-86 appended (permanent: no hardcoded credentials, config.h workflow)
-- **Branch:** claude/loving-bohr-t3n3yf · PR created
-- **Self-check:** hardware.h untouched ✅ · NVS keys nvs_ssid/nvs_pass approved ✅ · FW_VERSION=v1.0.0-r5 ✅
+- [x] FLAP_PROXIMITY_MCP_PIN — assigned MCP2 GPA2 (=2) in config.h R15 — activates on next flash
+- [ ] satu-wiring.html Spring Flap → Magnetic Lock language (D-9) — separate session, backend repo
+- [ ] MCP3 address for 5×3 — owner confirms A0/A1/A2 jumper when parts arrive
+- [ ] Rail-type IR sensor selection — owner sourcing, update spec when confirmed
 
 ---
 
@@ -341,7 +121,7 @@ Thai temples.
 | Hardware | ESP32-S3 (ESP32-8048S070C) | 16MB flash, 8MB OPI PSRAM |
 | Display | Arduino_GFX RGB panel 800×480 | backlight pin=2 |
 | Touch | TAMC_GT911 | SDA=19, SCL=20 |
-| IO expander | MCP23017 ×2 | MCP1 0x20 (sensors 1-8, relays 1-6) · MCP2 0x21 (sensors 9-10, relays 7-12) |
+| IO expander | MCP23017 ×2 | MCP1 0x20 (sensors 1-8, relays 1-6) · MCP2 0x21 (sensors 9-10 + proximity, relays 7-12) |
 | Firmware IDE | Arduino 1.8.19 | ESP32 core 2.0.17 ONLY — 3.x breaks WiFi |
 | GFX library | moononournation v1.4.9 ONLY | 1.6.5 requires core 3.x |
 | QR display | PNGdec ✅ FIXED 2026-06-15 | return 1 in callback — rc=0 rows=165 confirmed on hardware |
@@ -350,7 +130,7 @@ Thai temples.
 
 ## PHASE STATUS
 
-### Phase 1 — Prototyping (~65% complete) ← CURRENT
+### Phase 1 — Prototyping (~68% complete) ← CURRENT
 
 #### Backend & API ✅ COMPLETE
 - [x] Cloudflare Workers + D1 backend (index.js, machine.js, order.js, webhook.js, admin.js)
@@ -365,8 +145,6 @@ Thai temples.
 - [x] /v1/machine/completion endpoint — added, tested
 - [x] /v1/machine/factory-reset endpoint — backend side implemented
 - [x] /v1/qr/:charge_id PNG endpoint — _zlibStore() RFC 1950, synchronous, confirmed working
-- [❌] /v1/qr/:charge_id/bitmap — REVERTED from backend main 2026-06-15 (PR #21)
-  Preserved on branch revert/qr-bitmap-experiment and claude/cool-hopper-6owumd
 
 #### Backend — Pending / Known Issues
 - [ ] Order expiry / QR timeout — pending orders never expire — needs Cron Trigger ⚠️
@@ -377,37 +155,28 @@ Thai temples.
 
 #### Firmware ⚠️ IN PROGRESS
 - [x] State machine architecture (state_machine.h) — R6: removed STATE_WAITING_DROP/STATE_DISPENSING/STATE_WAITING_REMOVAL
-- [x] config.h R6 — RELAY_FLAP=12, VEND_MAX_SPIN_MS=30000, SENSOR_POLL_MS=10, FLAP_RELOCK_TIMEOUT=3000
-      VEND_PULSE_MS / DROP_TIMEOUT / REMOVAL_TIMEOUT deleted permanently (R-128)
-- [x] config.h.example — tracked template, WIFI_SSID="" WIFI_PASSWORD="" intentional (R5)
-- [x] hardware.h R6 — 4 authorized R6 changes complete:
-      unlockFlap() + lockFlap() added (R-129) · vendProduct() returns bool + sensor-driven (R-128)
-      Boot message: "[HW] MCP2 OK — flap LOCKED on boot" · Relay 12 comment updated
-      ALL OTHER hardware.h content R2 LOCKED — never modify
+- [x] config.h R15 — RELAY_FLAP=12, VEND_MAX_SPIN_MS=30000, SENSOR_POLL_MS=10, FLAP_RELOCK_TIMEOUT=3000
+      FLAP_PROXIMITY_MCP_PIN=2 (MCP2 GPA2 — R15, was -1). SPEAKER_PIN=1 (GPIO1 — R15, was -1).
+      MACHINE_LANES=10 (R14). VEND_PULSE_MS/DROP_TIMEOUT/REMOVAL_TIMEOUT deleted (R-128).
+- [x] hardware.h R7 — vendProduct() proximity guard `#if FLAP_PROXIMITY_MCP_PIN >= 0` — activates automatically with config.h R15
 - [x] network.h R5 — NVS-first WiFi, saveWifiAndReboot(), /hello, /order, /completion, /factory-reset, fetchImageBytes()
 - [x] satu_vending.ino R6 — _onPaymentConfirmed(), _onItemDropped(), _onLaneEmpty() · sync vend flow
 - [x] ui.h R6 — showPaymentAccepted() 1.5s green banner (R-131) · font audit complete (R-137)
       _pngDrawRow returns 1 (R-89/R-117) · static lineBuf (R-119) · pause-decode-resume (R-117)
+      fillScreen removed from drawServiceScreen (R-164)
 - [x] ui.h PNG decode — ✅ CONFIRMED ON HARDWARE 2026-06-15 16:41:32 — rc=0 rows=165 w=165 h=165
+- [x] FLAP_PROXIMITY_MCP_PIN = 2 (MCP2 GPA2) — assigned config.h R15 — activates on next flash
 - [ ] ui.h — service mode 5 tabs NOT COMPLETE — stubs only, next firmware CC session
-- [ ] FLAP_PROXIMITY_MCP_PIN — assign MCP2 GPA pin when solenoid wired (-1 = stub, safe)
 - [ ] Full end-to-end test on real hardware (R6 vend + flap + banner) — PENDING owner flash ⏹️
 - [ ] OTA firmware update — explicitly deferred (not in Phase 1 scope)
 
-#### Infrastructure ✅ ACTIVE
-- [x] GitHub Actions compile check: ACTIVE — .github/workflows/compile-check.yml
-- [x] Artifact upload: ACTIVE (R-157) — satu-firmware-N downloadable from Actions tab after CI green
-- Binary: satu_vending.ino.bin — flash with esptool.py (command in CLAUDE.md)
-- Triggers on: push to firmware/** + PR to main with firmware/** changes
-- Est. compile time: 3-5 minutes (vs 10+ min local Arduino IDE)
-- Board: ESP32S3 | Core: 2.0.17 LOCKED | Libraries: 6 at locked versions
-- Artifact retention: 7 days per run — download before expiry
-
 #### Hardware ⚠️ IN PROGRESS
 - [x] ESP32-S3 display board — ARRIVED · first hardware test 2026-06-16 ✅
+- [x] HARDWARE_SPEC.md v1.2 — wiring locked 2026-06-21 (relay 12 = magnetic pin-lock, proximity switch assigned)
 - [ ] Relay modules — sourcing
-- [ ] IR sensors (E18-D80NK) — sourcing (R-128 requires sensors for sensor-driven motor stop)
-- [ ] Solenoid pin-lock flap — sourcing (R-129: RELAY_FLAP=12, HIGH=UNLOCKED)
+- [ ] IR sensors (E18-D80NK) — sourcing (placeholder — rail-type system under evaluation)
+- [ ] Magnetic pin-lock solenoids ×2 — sourcing (R-129 UPDATED: parallel on relay 12)
+- [ ] Roller microswitch (proximity) ×1 — sourcing
 - [ ] Physical build and wiring — blocked on components
 
 #### Business / Legal IN PROGRESS
@@ -438,7 +207,7 @@ Thai temples.
 - PAYMENT_MODE=fake — never change to live without physical ESP32 connected
 - Test device MACs: SATU-TEST001 (AA:BB:CC:DD:EE:00) + SATU-SIM01 (AA:BB:CC:DD:EE:01) ONLY
 - D1-backed rate limiting — rateLimit.js — fixed, do not revert to in-memory
-- hardware.h R2 — NEVER modify beyond 4 authorized R6 changes (vendProduct/unlockFlap/lockFlap/boot msg)
+- hardware.h R2 — NEVER modify beyond authorized R7 changes
 - NUM_SLOTS defined in config.h ONLY — ui.h reads it, never redefines
 - idleAnimation() = LED breathing in hardware.h · idleAnimationUI() = screen flash in ui.h — TWO different functions
 - RELAY_FLAP=12 HIGH=UNLOCKED LOW=LOCKED (fail-secure) — never invert
@@ -458,8 +227,8 @@ Thai temples.
 | /v1/admin-data/:table CORS/401 | 🟡 UX | satu-admin.html JWT admin route missing |
 | WiFi credentials in config.h | 🟢 RESOLVED | R5 2026-06-12: NVS provisioning screen eliminates this permanently |
 | PNGdec rc=8 root cause | 🟢 RESOLVED | Root cause: return 0 in callback = PNGdec stop-early (v1.1.4). Fix: return 1. Confirmed 2026-06-15. |
-| Firmware main has bitmap, backend has no /bitmap | 🟢 RESOLVED | PNG path restored in drawQrScreen(). drawQrFromBitmap() kept as emergency fallback. |
 | RELAY_FLAP fail-secure | 🟢 By design | LOW=LOCKED on power loss — pin extends, flap stays closed (R-129) |
+| satu-wiring.html Spring Flap language | 🟡 Doc gap | D-9 — backend public/satu-wiring.html still shows old Spring Flap language. Separate session needed. |
 
 ---
 
@@ -492,6 +261,8 @@ public/
 ├── satu-system-tester.html  — 14-test automated suite ← run after every backend change
 ├── simulator.html           — service mode UI reference spec
 ├── satu-machine-builder.html — machine builder: wiring, HW trigger, farm tester
+├── satu-hw-trigger.html     — HW Trigger standalone tool (Section C)
+├── satu-wiring.html         — Wiring + BOM reference (Section D) ⚠️ D-9: Spring Flap language not yet updated
 └── satu-admin.html          — admin dashboard (JWT version — CORS fix pending)
 ```
 
@@ -499,16 +270,17 @@ public/
 ```
 satu_vending.ino    — main: setup(), loop(), state machine, _onPaymentConfirmed/Dropped/LaneEmpty
 config.h            — ALL constants: pins, NUM_SLOTS, timeouts, NVS key names, RELAY_FLAP=12
-                      ← IN .gitignore — WiFi credentials NEVER in git
-config.h.example    — template for new dev environment setup
+                      FLAP_PROXIMITY_MCP_PIN=2 (R15), SPEAKER_PIN=1 (R15), MACHINE_LANES=10 (R14)
 hardware.h          — MCP23017, relays, IR, LEDs, idleAnimation(), unlockFlap(), lockFlap(),
-                      vendProduct() bool (sensor-driven) ← R6 changes complete, rest LOCKED R2
+                      vendProduct() bool (sensor+proximity driven) ← R2 LOCKED
 network.h           — WiFi, NVS, /hello, /order, /completion, /factory-reset, fetchImageBytes()
 ui.h                — all screen drawing, touch detection, showPaymentAccepted() (R-131),
                       FreeSansBold fonts (R-137), PNG pause-decode-resume (R-117)
                       5-tab service mode — STUBS ONLY — next CC session
 ui_service.h        — service mode 5-tab body implementations (_drawSvcBody_* + _getTouchedServiceExtra())
 state_machine.h     — enum MachineState (R6: DROP/DISPENSING/REMOVAL states removed)
+hardware/
+  HARDWARE_SPEC.md  — hardware single source of truth v1.2 (2026-06-21)
 .github/workflows/
   compile-check.yml — auto-compile CI — produces satu-firmware-N artifact (R-157)
 ```
@@ -516,7 +288,7 @@ state_machine.h     — enum MachineState (R6: DROP/DISPENSING/REMOVAL states re
 ### Project Knowledge Docs (repo root)
 ```
 CLAUDE.md           — project compass, stack, 5 rules, key files, repos + flash instructions
-RULES.md            — lessons learned R-85 to R-162 (newest at top)
+RULES.md            — lessons learned R-143 to R-165 (newest at top)
 CC_SKILL.md         — CC session skills: Chat Override Guard, Structural Change Guard, etc.
 CC_CHAT_LOG.md      — CC session log (newest entry at top, max 10 lines per entry)
 PROJECT_STATE.md    — this file
@@ -525,7 +297,7 @@ UI_SPEC.md          — screen inventory, grid system, 5-tab service mode, NVS k
 SATU_ROADMAP.md     — product direction guide (both repos)
 SECURITY.md         — auth layers, ownership model, payment modes, security gaps
 hardware/
-  HARDWARE_SPEC.md  — hardware single source of truth (renamed from HARDWARE_TRUTH.md)
+  HARDWARE_SPEC.md  — hardware single source of truth v1.2 (relay 12=mag lock, prox switch, speaker)
 ```
 
 ---
@@ -547,7 +319,6 @@ hardware/
 | POST | /v1/admin/device/* | ✅ Working | X-Admin-Token auth |
 | GET | /v1/dashboard/* | ✅ Working | JWT auth |
 | GET | /v1/qr/:charge_id | ✅ Working | PNG — _zlibStore() RFC 1950 |
-| GET | /v1/qr/:charge_id/bitmap | ❌ REVERTED | Removed from backend main 2026-06-15 (PR #21). Branch preserved. |
 | GET | /v1/admin-data/:table | ❌ Missing | CORS/401 in satu-admin.html |
 
 ---
@@ -587,19 +358,20 @@ TFT_eSPI:      REMOVE if installed — incompatible with RGB panel
 2. Complete Omise KYC / bank account registration
 3. Complete PDPA consent flow + legal review
 
-### P1 — Post R6 flash (next firmware session)
-4. Owner flashes R6 (claude/magical-feynman-rrkais → main after CI green + PR merged)
-   Expected: motor stops on IR trigger · flap unlocks/locks · 1.5s payment banner
-5. Wire IR sensors (E18-D80NK) + solenoid pin-lock flap to relay 12 (MCP2)
-   Assign FLAP_PROXIMITY_MCP_PIN in config.h when wired
-6. Complete ui.h service mode (5 tabs) — verify against simulator.html spec
-7. Fix /v1/admin-data/:table CORS/401 (add JWT admin route to index.js)
+### P1 — Post R15 flash (next firmware session)
+4. Owner flashes config.h R15 after CI green — verify `[HW] Proximity polling ACTIVE on MCP2 pin 2`
+5. Source components: 2× magnetic pin-lock solenoid 12V, 1× roller microswitch, relay modules, IR sensors
+6. Wire proximity switch (MCP2 GPA2) and 2× mag locks (relay 12, parallel)
+7. Complete ui.h service mode (5 tabs) — next firmware CC session
+8. Fix /v1/admin-data/:table CORS/401 (add JWT admin route to index.js)
 
 ### P2 — Polish
-8. Implement order expiry (Cron Trigger already configured in wrangler.toml)
-9. Build temple owner claim/onboarding flow (setup code UI)
-10. Temple owner dashboard — complete missing features
+9. satu-wiring.html Spring Flap → Magnetic Lock language (D-9) — backend repo, separate session
+10. MCP3 address for 5×3 — update HARDWARE_SPEC.md + config.h when owner confirms jumper setting
+11. Rail-type IR sensor decision — update HARDWARE_SPEC.md when type confirmed
+12. Implement order expiry (Cron Trigger already configured in wrangler.toml)
+13. Build temple owner claim/onboarding flow (setup code UI)
 
 ### P3 — Phase 2 prep
-11. Multi-machine architecture review
-12. Analytics and reconciliation reporting
+14. Multi-machine architecture review
+15. Analytics and reconciliation reporting
