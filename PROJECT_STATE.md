@@ -1,10 +1,16 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Version 1.9 — 2026-06-20
-> Changes: Added FIX 2 session log (Devices tab MACHINE_LANES grid, R-163)
-> Previous: v1.8 — 2026-06-20
+> Version 1.10 — 2026-06-21
+> Changes: Added FIX 3 session log (drawServiceScreen fillScreen removed, R-164)
+> Previous: v1.9 — 2026-06-20
 > Status: Phase 1 active — ~67% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-21 — Remove fillScreen from drawServiceScreen (FIX 3 / R-164)
+- ROOT CAUSE: `drawServiceScreen()` called `gfx->fillScreen(C_BG)` on every tab switch — 800×480 = 384K pixel PSRAM write competing with LCD DMA. Same contention class as R-117 (PNG decode black flash).
+- FIX: firmware/ui.h — removed `fillScreen(C_BG)`. Body area clear changed to `fillRect(SVC_BODY_X, STATUS_H, SCR_W - SVC_BODY_X, SCR_H - STATUS_H, C_BG)` (explicit constant). Header bar and tab bar retained.
+- DOCS: RULES.md v2.1 — R-164 prepended. CC_CHAT_LOG.md v2.8. PROJECT_STATE.md v1.10.
+- CI: ⬜ pending. Flash: ⬜ pending (owner to QA — tap all 5 service tabs, confirm no black flash, smooth switch).
 
 ### 2026-06-20 — Devices tab MACHINE_LANES grid (FIX 2 / R-163)
 - FIX 1: tab-change guard already at satu_vending.ino:489 — no code change needed.

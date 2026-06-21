@@ -1158,7 +1158,6 @@ static void _drawSvcTabBar(int activeTab) {
 #include "ui_service.h"
 
 void drawServiceScreen(int tab) {
-  gfx->fillScreen(C_BG);
   gfx->fillRect(0, 0, SCR_W, STATUS_H, C_DARKGREY);
   gfx->setFont(&FreeSansBold18pt7b);
   gfx->setTextColor(C_ORANGE); gfx->setTextSize(1);
@@ -1172,7 +1171,7 @@ void drawServiceScreen(int tab) {
   _drawSvcTabBar(tab);
 
   int bodyX = SVC_BODY_X;
-  gfx->fillRect(bodyX, STATUS_H, SCR_W - bodyX, SCR_H - STATUS_H, C_BG);
+  gfx->fillRect(SVC_BODY_X, STATUS_H, SCR_W - SVC_BODY_X, SCR_H - STATUS_H, C_BG);
 
   switch (tab) {
     case TAB_SELFTEST:  _drawSvcBody_SelfTest(bodyX);  break;
