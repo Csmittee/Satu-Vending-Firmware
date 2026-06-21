@@ -1,11 +1,16 @@
 # RULES.md — Satu 1.0 Universal Rules
-> Version 2.0 — 2026-06-20
-> Changes: Added R-163 (Devices tab MACHINE_LANES grid)
-> Previous: v1.10 — 2026-06-20
+> Version 2.1 — 2026-06-21
+> Changes: Added R-164 (drawServiceScreen fillScreen banned — PSRAM contention)
+> Previous: v2.0 — 2026-06-20
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
 
 ---
+
+- **R-164: drawServiceScreen() must NEVER call fillScreen() — PSRAM bus contention on ESP32-8048S070C (2026-06-21).**
+  fillScreen() writes 800×480 = 384,000 pixels into PSRAM frame buffer while LCD DMA reads the same buffer simultaneously.
+  Body area clear only: fillRect(SVC_BODY_X, STATUS_H, SCR_W - SVC_BODY_X, SCR_H - STATUS_H, C_BG).
+  Root cause: same class as R-117. See SKILL_esp32s3_rgb_panel_constraints.md.
 
 - **R-163: DEVICES TAB GRID — driven by MACHINE_LANES in config.h (2026-06-20).**
   MACHINE_LANES = lane count for current hardware build: 10 (5×2), 15 (5×3), or 21 (7×3).

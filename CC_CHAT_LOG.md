@@ -1,9 +1,17 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 2.7 — 2026-06-20
-> Changes: FIX 2 — Devices tab grid now driven by MACHINE_LANES in config.h (R-163)
-> Previous: v2.6 — 2026-06-20
+> Version 2.8 — 2026-06-21
+> Changes: FIX 3 — drawServiceScreen fillScreen removed (R-164, PSRAM contention)
+> Previous: v2.7 — 2026-06-20
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
+
+---
+## 2026-06-21 — Remove fillScreen from drawServiceScreen (FIX 3 / R-164)
+**Did:** firmware/ui.h `drawServiceScreen(int tab)` — removed `gfx->fillScreen(C_BG)` (PSRAM bus contention, R-164). Changed body clear from `fillRect(bodyX, ...)` to `fillRect(SVC_BODY_X, STATUS_H, SCR_W - SVC_BODY_X, SCR_H - STATUS_H, C_BG)` — body-only clear, explicit constant. Header bar fillRect(0,0,SCR_W,STATUS_H,C_DARKGREY) retained (small area, acceptable). Tab bar via _drawSvcTabBar() retained. This eliminates the black flash + ~80-120ms stall on every service tab tap. Root cause: same PSRAM bus contention class as R-117 (PNG decode). R-164 added to RULES.md v2.1.
+**Updated:** firmware/ui.h, RULES.md v2.1, CC_CHAT_LOG.md v2.8, PROJECT_STATE.md v1.10
+**New files:** NONE
+**Pending Chat verify:** CI green → flash → enter service mode → tap through all 5 tabs: confirm NO black flash, smooth tab switch, all tab content renders correctly.
+**Flags:** ui_service.h UNTOUCHED. hardware.h LOCKED. satu_vending.ino NOT touched. PAYMENT_MODE stays fake.
 
 ---
 ## 2026-06-20 — Devices tab MACHINE_LANES grid (FIX 2 / R-163)
