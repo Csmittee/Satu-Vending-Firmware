@@ -1,5 +1,10 @@
 # RULES.md — Satu 1.0 Universal Rules
 > Version 2.3 — 2026-06-21
+> Changes: Added R-166 (one PR open at a time — CI green → merge → then next session)
+> Previous: v2.2 — 2026-06-21
+> Version 2.2 — 2026-06-21
+> Changes: Added R-165 (HARDWARE_SPEC.md v1.2 — relay 12 = magnetic pin-lock, proximity switch, speaker)
+> Previous: v2.1 — 2026-06-21
 > Changes: R-157 consolidated (was duplicate) and corrected — esptool, baud 460800, write-flash, confirmed port /dev/cu.usbserial-1420, ~/satu-firmware/ paths
 > Previous: v2.2 — 2026-06-21
 > For domain rules: load `.claude/rules/RULES-[domain].md`
@@ -7,6 +12,17 @@
 
 ---
 
+- **R-166: ONE PR OPEN AT A TIME (2026-06-21).**
+  Never open a new CC session while a previous PR is unmerged.
+  Sequence: CI green → owner merges → then next CC session starts.
+  CC_CHAT_LOG, PROJECT_STATE, RULES are written every session without exception.
+  Stacking PRs creates merge conflicts and splits doc history. One thread at a time.
+
+- **R-165: CI FQBN must match owner Arduino IDE Tools menu exactly — last verified 2026-06-21 (2026-06-21).**
+  CDCOnBoot=default (not cdc) — board uses hardware UART, Serial Monitor at /dev/cu.usbserial-1420 at 115200 baud.
+  CDCOnBoot=cdc routes Serial to USB CDC virtual port → /dev/cu.usbmodem never appears → Serial Monitor silent.
+  UploadProtocol is NOT a valid FQBN compile option — arduino-cli compile rejects it with "invalid option". Omit it.
+  Any IDE board setting change → update compile-check.yml FQBN to match before next PR.
 - **R-165: HARDWARE_SPEC.md v1.2 is hardware wiring source of truth from 2026-06-21 (2026-06-21).**
   Relay 12 = magnetic pin-lock solenoid (NOT spring flap). Two physical locks parallel-wired on relay 12.
   FLAP_PROXIMITY_MCP_PIN = 2 (MCP2 GPA2 — roller microswitch, CLOSED=LOW, INPUT_PULLUP).

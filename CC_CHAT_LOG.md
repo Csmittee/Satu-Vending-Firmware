@@ -1,4 +1,8 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
+> Version 2.10 — 2026-06-21
+> Changes: R-166 added (one PR open at a time rule)
+> Changes: Added docs-only governance session entry — WORKFLOW_SKILL v2.3 + CHAT_RULE v1.1
+> Previous: v2.9 — 2026-06-21
 > Version 2.11 — 2026-06-21
 > Changes: Added docs-only flash command correction session — CLAUDE.md v1.8 + RULES.md v2.3
 > Previous: v2.10 — 2026-06-21
@@ -6,6 +10,19 @@
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
 
 ---
+## 2026-06-21 — One PR open at a time rule (R-166)
+**Did:** Docs only. Added R-166 to RULES.md v2.3: never open a new CC session while a previous PR is unmerged. Sequence: CI green → owner merges → then next session. CC_CHAT_LOG, PROJECT_STATE, RULES written every session without exception. Rule captures session discipline pattern to prevent stacked PRs and doc merge conflicts.
+**Updated:** RULES.md v2.3, CC_CHAT_LOG.md v2.10, PROJECT_STATE.md v1.12
+**New files:** NONE
+**Flags:** Zero source files touched. Docs only. hardware.h LOCKED. PAYMENT_MODE stays fake.
+
+---
+## 2026-06-21 — CI FQBN corrected to match owner Arduino IDE (R-165)
+**Did:** .github/workflows/compile-check.yml — updated FQBN from `CDCOnBoot=cdc` → `CDCOnBoot=default` and added `UploadProtocol=uart0` to match owner's confirmed Arduino IDE Tools menu (ESP32S3 Dev Module, USB CDC On Boot=Disabled, Upload Mode=UART0/Hardware CDC). Root cause: CDCOnBoot=cdc routes Serial to USB CDC virtual port → artifact flash produced /dev/cu.usbmodem instead of /dev/cu.usbserial-1420 → Serial Monitor silent. Added shell comments above FQBN line referencing R-165. Added R-165 to RULES.md v2.2. Zero firmware source files touched. CI only.
+**Updated:** .github/workflows/compile-check.yml, RULES.md v2.2, CC_CHAT_LOG.md v2.9, PROJECT_STATE.md v1.11
+**New files:** NONE
+**Pending Chat verify:** CI green → download artifact → flash with esptool → confirm Serial Monitor at /dev/cu.usbserial-1420 115200 shows [BOOT] output (not silent). Confirm no /dev/cu.usbmodem appears.
+**Flags:** Zero .ino or .h files touched. hardware.h LOCKED. PAYMENT_MODE stays fake.
 ## 2026-06-21 — Docs-only: CLAUDE.md v1.8 + RULES.md v2.3 (flash command correction)
 **Did:** CLAUDE.md v1.7→v1.8 (firmware): "Flashing Without Arduino IDE" section replaced — esptool.py→esptool, baud 921600→460800, write_flash→write-flash, port /dev/cu.XXXX→/dev/cu.usbserial-1420, relative paths→~/satu-firmware/ absolute paths, steps condensed 5→4. RULES.md v2.2→v2.3: duplicate R-157 entries consolidated into one clean entry with corrected command. Same flash command added to backend repo simultaneously (CLAUDE.md v1.5, RULES.md v1.6).
 **Updated:** CLAUDE.md v1.8, RULES.md v2.3, CC_CHAT_LOG.md v2.11, PROJECT_STATE.md v1.12 (firmware)
