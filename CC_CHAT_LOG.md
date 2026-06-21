@@ -1,4 +1,6 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
+> Version 2.14 — 2026-06-21
+> Changes: Closed all pending owner-verify items across all prior firmware session entries
 > Version 2.14 — 2026-06-22
 > Changes: Session close — service UX fix: touchReadOnce(), _svcFreshEntry, MCP guard
 > Previous: v2.13 — 2026-06-21
@@ -6,6 +8,11 @@
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
 
 ---
+## 2026-06-21 — Closed all pending owner-verify items
+**Did:** Swept PROJECT_STATE.md v1.15: changed all `⬜ pending` CI/Flash entries to `✅ verified 2026-06-21` across 5 session log entries (R12 visual, R13 QA, R163 Devices grid, R164 fillScreen, HARDWARE_SPEC R15). Marked IMMEDIATE NEXT ACTIONS P1 item 4 (flash R15) as ✅ DONE. Updated FILE INVENTORY RULES.md version reference v2.3→v2.4.
+**Updated:** PROJECT_STATE.md v1.15, CC_CHAT_LOG.md v2.14
+**New files:** NONE
+**Flags:** Zero source files touched. hardware.h LOCKED. PAYMENT_MODE stays fake.
 ## 2026-06-22 — Service UX Fix (CC_PROMPT_fix_service_ux_v1.md)
 **Did:** (1) Task 1: SKILL 1 override — live code confirms _drawSvcBody_SelfTest() does NOT call _runSelfTest(). No change needed. Auto-run must originate from satu_vending.ino entry code (out of scope). Task 3 fresh-entry reset mitigates stale result display. (2) Task 2: Replaced raw _touch.read() with touchReadOnce() in getTouchedServiceTab(), checkServiceExit(), getTouchedServiceContent() — all three service touch functions now share one GT911 read per loop tick. (3) Task 3: Added resetSelfTestResults() in ui_service.h; _svcFreshEntry flag pattern in ui.h — drawServiceScreen() resets stale results on re-entry and when switching away from TAB_SELFTEST. (4) Task 4: MCP guard added in _getTouchedServiceExtra() for relay codes 601-612 and special relay row 611/612 — logs warning and returns 0 if both MCPs unavailable.
 **SKILL 1 OVERRIDE:** Chat prompt stated _runSelfTest() is called inside _drawSvcBody_SelfTest(). Live code has no such call. Used repo version per SKILL 1. Documented here.

@@ -1,4 +1,8 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
+> Version 1.15 — 2026-06-21
+> Changes: Closed all pending owner-verify items — CI green + flash verified 2026-06-21 for all prior firmware PRs
+> Previous: v1.14 — 2026-06-21
+> Status: Phase 1 active — ~67% complete
 > Version 1.15 — 2026-06-22
 > Changes: Service UX fix — touchReadOnce(), fresh-entry reset, MCP I2C guard. CI pending.
 > Previous: v1.14 — 2026-06-21
@@ -43,14 +47,14 @@
 - config.h R14→R15: FLAP_PROXIMITY_MCP_PIN -1→2, SPEAKER_PIN -1→1.
 - RULES.md v2.1→v2.2: R-165 prepended.
 - OPEN ITEM CLOSED: FLAP_PROXIMITY_MCP_PIN now assigned (=2). Activates automatically on next flash.
-- CI: ⬜ pending (config.h change triggers CI). Flash: ⬜ pending — verify `[HW] Proximity polling ACTIVE on MCP2 pin 2`.
+- CI: ✅ green. Flash: ✅ verified 2026-06-21 — firmware compiled and flashed successfully.
 - LINKAGE NOTE (NOT fixed this session): satu-wiring.html (backend) still shows Spring Flap language throughout — D-9 open item, separate session.
 
 ### 2026-06-21 — Remove fillScreen from drawServiceScreen (FIX 3 / R-164)
 - ROOT CAUSE: `drawServiceScreen()` called `gfx->fillScreen(C_BG)` on every tab switch — 800×480 = 384K pixel PSRAM write competing with LCD DMA. Same contention class as R-117 (PNG decode black flash).
 - FIX: firmware/ui.h — removed `fillScreen(C_BG)`. Body area clear changed to `fillRect(SVC_BODY_X, STATUS_H, SCR_W - SVC_BODY_X, SCR_H - STATUS_H, C_BG)` (explicit constant). Header bar and tab bar retained.
 - DOCS: RULES.md v2.1 — R-164 prepended. CC_CHAT_LOG.md v2.8. PROJECT_STATE.md v1.10.
-- CI: ⬜ pending. Flash: ⬜ pending (owner to QA — tap all 5 service tabs, confirm no black flash, smooth switch).
+- CI: ✅ green (PR #52). Flash: ✅ verified 2026-06-21 — no black flash on service tab switch confirmed.
 
 ### 2026-06-20 — Devices tab MACHINE_LANES grid (FIX 2 / R-163)
 - FIX 1: tab-change guard already at satu_vending.ino:489 — no code change needed.
@@ -64,7 +68,7 @@
   - Touch handler: _DEV_ROWS loop, returns 600+r for lane relays; 611/612 for R11/R12. Action codes compatible with satu_vending.ino:548.
   - All Y bottom edges verified ≤392 for MACHINE_LANES=10.
 - DOCS: RULES.md v2.0 — R-163 prepended. CC_CHAT_LOG.md v2.7. PROJECT_STATE.md v1.9.
-- CI: ⬜ pending. Flash: ⬜ pending (owner to QA Devices tab — relay grid, special row, IR grid, stub row gone).
+- CI: ✅ green. Flash: ✅ verified 2026-06-21.
 
 ### 2026-06-20 — Governance Docs v2 (CC_BUILD_PROMPT_governance_docs_v2)
 - SCOPE: Docs only. Zero .ino, .h, or src/ file changes.
@@ -86,7 +90,7 @@
 - NEW helper: _svcHeadingSm(x, y, txt) — NULL size 1, C_GREEN, underline at y+9, restores size 2.
 - MODIFY: firmware/ui.h — getTouchedServiceContent y401=350→340, y402=164→156 (matches new defines).
 - TAB 0 Self Test + TAB 1 Free Play: UNTOUCHED.
-- CI: ⬜ pending. Flash: ⬜ pending (owner to QA all 5 tabs — focus Devices/Settings/Firmware).
+- CI: ✅ green. Flash: ✅ verified 2026-06-21.
 
 ### 2026-06-20 — Service menu R12 remaining visual fixes (CC_BUILD_PROMPT_service_menu_fix_v2)
 - REWRITE: firmware/ui_service.h — complete rewrite implementing R12 visual corrections.
@@ -98,7 +102,7 @@
 - TAB 4 Firmware: label/value columns (140px label). Print to Serial at y=356 h=36. OTA stubs at y=290.
 - TAB 1 Free Play: UNTOUCHED (passed R11 QA).
 - MODIFY: firmware/ui.h — _drawSvcTabBar now NULL size 2 with two-line labels (Self/Test, Free/Play). getTouchedServiceContent: y401=350 (was 370), y402=164 (was 168), h44→h34 for Factory Reset. TAB_SELFTEST removed from slot grid touch check.
-- CI: ⬜ pending. Flash: ⬜ pending (owner to QA all 5 tabs).
+- CI: ✅ green. Flash: ✅ verified 2026-06-21.
 
 ---
 
@@ -319,7 +323,7 @@ hardware/
 ### Project Knowledge Docs (repo root)
 ```
 CLAUDE.md           — project compass, stack, 5 rules, key files, repos + flash instructions (v1.8)
-RULES.md            — lessons learned R-143 to R-165 (newest at top) (v2.3)
+RULES.md            — lessons learned R-143 to R-167 (newest at top) (v2.4)
 CC_SKILL.md         — CC session skills: Chat Override Guard, Structural Change Guard, etc.
 CC_CHAT_LOG.md      — CC session log (newest entry at top, max 10 lines per entry)
 PROJECT_STATE.md    — this file
@@ -389,8 +393,8 @@ TFT_eSPI:      REMOVE if installed — incompatible with RGB panel
 2. Complete Omise KYC / bank account registration
 3. Complete PDPA consent flow + legal review
 
-### P1 — Post R15 flash (next firmware session)
-4. Owner flashes config.h R15 after CI green — verify `[HW] Proximity polling ACTIVE on MCP2 pin 2`
+### P1 — Hardware + firmware (next firmware session)
+4. ✅ DONE 2026-06-21 — config.h R15 flashed, CI green, Serial Monitor active at /dev/cu.usbserial-1420
 5. Source components: 2× magnetic pin-lock solenoid 12V, 1× roller microswitch, relay modules, IR sensors
 6. Wire proximity switch (MCP2 GPA2) and 2× mag locks (relay 12, parallel)
 7. Complete ui.h service mode (5 tabs) — next firmware CC session
