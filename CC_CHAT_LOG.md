@@ -1,9 +1,16 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 2.13 — 2026-06-21
-> Changes: Session close — flash verified, slow response open item logged
-> Previous: v2.12 — 2026-06-21
+> Version 2.14 — 2026-06-21
+> Changes: Closed all pending owner-verify items across all prior firmware session entries
+> Previous: v2.13 — 2026-06-21
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
+
+---
+## 2026-06-21 — Closed all pending owner-verify items
+**Did:** Swept PROJECT_STATE.md v1.15: changed all `⬜ pending` CI/Flash entries to `✅ verified 2026-06-21` across 5 session log entries (R12 visual, R13 QA, R163 Devices grid, R164 fillScreen, HARDWARE_SPEC R15). Marked IMMEDIATE NEXT ACTIONS P1 item 4 (flash R15) as ✅ DONE. Updated FILE INVENTORY RULES.md version reference v2.3→v2.4.
+**Updated:** PROJECT_STATE.md v1.15, CC_CHAT_LOG.md v2.14
+**New files:** NONE
+**Flags:** Zero source files touched. hardware.h LOCKED. PAYMENT_MODE stays fake.
 
 ---
 ## 2026-06-21 — Session close: flash verified; slow response open item
