@@ -1,7 +1,7 @@
 # SATU — Knowledge Architecture Guide (Firmware)
-> Version 1.4 — 2026-06-20
-> Changes: Added hardware/HARDWARE_SPEC.md, UI_SPEC.md, SATU_ROADMAP.md to Document Map + File Locations
-> Previous: v1.3 — 2026-06-20
+> Version 1.5 — 2026-06-22
+> Changes: Added ui_strings.h, ui_keyboard.h, ui_screens.h to Firmware file list (D-10 ui.h split)
+> Previous: v1.4 — 2026-06-20
 
 ## Document Map — What to Read for What Task
 
@@ -22,7 +22,7 @@
 | Business / legal | satu-business-model.html | work_instruction.txt |
 | Flashing firmware | CLAUDE.md "Flashing Without Arduino IDE" | .github/workflows/compile-check.yml |
 | Hardware change (pins/relays/sensors/BOM) | hardware/HARDWARE_SPEC.md | hardware.h, config.h |
-| UI change (screen/font/layout/service tab) | UI_SPEC.md | firmware/ui.h, ui_service.h |
+| UI change (screen/font/layout/service tab) | UI_SPEC.md | firmware/ui.h, ui_screens.h, ui_service.h |
 | Architecture or product direction question | SATU_ROADMAP.md | PROJECT_STATE.md |
 
 ---
@@ -35,8 +35,11 @@ satu_vending.ino   — main state machine, setup(), loop()
 config.h           — pin constants, timeouts, NUM_SLOTS
 hardware.h         — MCP23017, relays, IR, LEDs, idleAnimation()   ← NEVER REPLACE
 network.h          — WiFi, NVS, /hello, /order, /completion
-ui.h               — all screen drawing, touch detection, service mode shell + getTouchedServiceContent()
-ui_service.h       — service mode 5-tab body implementations (_drawSvcBody_* + _getTouchedServiceExtra())
+ui.h               — R6: HW primitives, PNG/QR, initUI(), include chain, service orchestration
+ui_strings.h       — R1: StatusBarState enum, _stateLabels[], _svcTabL1/L2[] — EN only (D-11 adds Thai)
+ui_keyboard.h      — R1: PIN numpad (_drawNumpad, getTouchedNumpad), WiFi keyboard (drawWifiSetupScreen)
+ui_screens.h       — R1: all customer-facing screen draw/touch functions (_drawStatusBar through idleAnimationUI)
+ui_service.h       — LOCKED: service mode 5-tab body (_drawSvcBody_* + _getTouchedServiceExtra())
 state_machine.h    — enum MachineState, extern declarations
 ```
 

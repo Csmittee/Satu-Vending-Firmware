@@ -1,11 +1,17 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 2.14 — 2026-06-21
-> Changes: Closed all pending owner-verify items across all prior firmware session entries
-> Version 2.14 — 2026-06-22
-> Changes: Session close — service UX fix: touchReadOnce(), _svcFreshEntry, MCP guard
-> Previous: v2.13 — 2026-06-21
+> Version 2.15 — 2026-06-22
+> Changes: D-10 ui.h split — 4 files, include chain, R-171
+> Previous: v2.14 — 2026-06-22
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
+
+---
+## 2026-06-22 — D-10: ui.h split into 4 files (CC_BUILD_PROMPT_ui_split_v1.md)
+**Did:** Pure refactor — zero functional change. Split ui.h R5 (1830 lines) into: ui_strings.h R1 (StatusBarState enum + string arrays), ui_keyboard.h R1 (PIN numpad + WiFi keyboard), ui_screens.h R1 (all customer-facing screen draw/touch functions). New ui.h R6 = HW primitives + include chain + service orchestration. Key decision: _fillRoundRect/_drawRoundRect moved to ui.h (before include chain) because ui_keyboard.h depends on them and is included before ui_screens.h. satu_vending.ino unchanged — still only #include "ui.h".
+**Updated:** firmware/ui.h R6, firmware/ui_strings.h R1 (new), firmware/ui_keyboard.h R1 (new), firmware/ui_screens.h R1 (new). RULES.md v2.6 (R-171). PROJECT_STATE.md v1.16. KNOWLEDGE_MAP.md v1.5. Prompt archived.
+**New files:** firmware/ui_strings.h, firmware/ui_keyboard.h, firmware/ui_screens.h
+**Pending Chat verify:** CI green (compile check on all 4 files). Flash + QA: all screens render correctly. Service mode still works. WiFi keyboard accessible. Touch on idle grid registers. No regression.
+**Flags:** hardware.h NOT touched (R2 LOCKED). satu_vending.ino NOT touched. PAYMENT_MODE stays fake. ui_service.h LOCKED — not touched.
 
 ---
 ## 2026-06-21 — Closed all pending owner-verify items

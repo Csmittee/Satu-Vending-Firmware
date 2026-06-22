@@ -1,9 +1,18 @@
 # RULES.md — Satu 1.0 Universal Rules
-> Version 2.5 — 2026-06-22
-> Changes: R-168 (service touchReadOnce), R-169 (self test no auto-run), R-170 (MCP I2C guard)
-> Previous: v2.4 — 2026-06-21
+> Version 2.6 — 2026-06-22
+> Changes: R-171 (ui.h split include chain)
+> Previous: v2.5 — 2026-06-22
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
+
+---
+
+- **R-171: UI.H INCLUDE CHAIN ORDER (2026-06-22 — D-10 ui.h split).**
+  ui.h R6 include order is NON-NEGOTIABLE: ui_strings.h → ui_keyboard.h → ui_screens.h → ui_service.h.
+  _fillRoundRect/_drawRoundRect defined in ui.h (before chain) — ui_keyboard.h depends on these.
+  No file in the chain may #include ui.h. satu_vending.ino still only includes ui.h.
+  Service orchestration (drawServiceScreen, getTouchedServiceTab, checkServiceExit, getTouchedServiceContent)
+  lives in ui.h AFTER #include "ui_service.h" — depends on _stm/_stN/resetSelfTestResults() from ui_service.h.
 
 ---
 

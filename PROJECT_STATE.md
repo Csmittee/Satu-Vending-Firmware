@@ -1,14 +1,21 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Version 1.15 — 2026-06-21
-> Changes: Closed all pending owner-verify items — CI green + flash verified 2026-06-21 for all prior firmware PRs
-> Previous: v1.14 — 2026-06-21
-> Status: Phase 1 active — ~67% complete
-> Version 1.15 — 2026-06-22
-> Changes: Service UX fix — touchReadOnce(), fresh-entry reset, MCP I2C guard. CI pending.
-> Previous: v1.14 — 2026-06-21
-> Status: Phase 1 active — ~70% complete
+> Version 1.16 — 2026-06-22
+> Changes: D-10 ui.h split — 4 files, include chain, R-171. CI pending.
+> Previous: v1.15 — 2026-06-22
+> Status: Phase 1 active — ~72% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-22 — D-10: ui.h split (CC_BUILD_PROMPT_ui_split_v1.md)
+- TASK: Pure refactor — split firmware/ui.h R5 (1830 lines) into 4 files. Zero functional change.
+- ui_strings.h R1 (NEW): StatusBarState enum, _stateLabels[], _svcTabL1[], _svcTabL2[]
+- ui_keyboard.h R1 (NEW): PIN numpad (_drawNumpad, getTouchedNumpad, NP_* defines, drawBootPinScreen, drawPinOverlay) + WiFi keyboard (drawWifiSetupScreen, _WKB_* defines, _wkbDrawKeys, _wkbGetKey, _wkbDrawFields)
+- ui_screens.h R1 (NEW): all customer-facing screen draw/touch functions (_drawStatusBar through idleAnimationUI, including _drawSvcTabBar which references ui_strings.h arrays)
+- ui.h R6: trimmed to HW primitives + PNG/QR + _fillRoundRect/_drawRoundRect + initUI() + SVC_TAB_W/SVC_BODY_X + include chain + service orchestration (drawServiceScreen, getTouchedServiceTab, checkServiceExit, getTouchedServiceContent)
+- KEY DECISION: _fillRoundRect/_drawRoundRect placed in ui.h before include chain — ui_keyboard.h depends on them, and ui_keyboard.h is included before ui_screens.h
+- FILES: firmware/ui.h R6, firmware/ui_strings.h R1, firmware/ui_keyboard.h R1, firmware/ui_screens.h R1. RULES.md v2.6 (R-171). KNOWLEDGE_MAP.md v1.5.
+- CI: ⬜ pending — triggered by firmware .h file changes
+- PENDING CHAT QA: CI green. Flash: all screens render correctly. Service mode + WiFi keyboard accessible. No regression vs R5.
 
 ### 2026-06-22 — Service UX fix (CC_PROMPT_fix_service_ux_v1.md)
 - TASK 1: SKILL 1 override — live _drawSvcBody_SelfTest() confirmed does NOT call _runSelfTest(). No code change needed for Task 1. Fresh-entry reset (Task 3) mitigates stale result display on re-entry.
