@@ -1,7 +1,7 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Version 1.16 — 2026-06-22
-> Changes: D-10 ui.h split — 4 files, include chain, R-171. CI pending.
-> Previous: v1.15 — 2026-06-22
+> Version 1.17 — 2026-06-22
+> Changes: D-10 verified — CI green, flash OK, all QA pass (owner confirmed 2026-06-22)
+> Previous: v1.16 — 2026-06-22
 > Status: Phase 1 active — ~72% complete
 
 ## SESSION LOG (newest first)
@@ -14,8 +14,8 @@
 - ui.h R6: trimmed to HW primitives + PNG/QR + _fillRoundRect/_drawRoundRect + initUI() + SVC_TAB_W/SVC_BODY_X + include chain + service orchestration (drawServiceScreen, getTouchedServiceTab, checkServiceExit, getTouchedServiceContent)
 - KEY DECISION: _fillRoundRect/_drawRoundRect placed in ui.h before include chain — ui_keyboard.h depends on them, and ui_keyboard.h is included before ui_screens.h
 - FILES: firmware/ui.h R6, firmware/ui_strings.h R1, firmware/ui_keyboard.h R1, firmware/ui_screens.h R1. RULES.md v2.6 (R-171). KNOWLEDGE_MAP.md v1.5.
-- CI: ⬜ pending — triggered by firmware .h file changes
-- PENDING CHAT QA: CI green. Flash: all screens render correctly. Service mode + WiFi keyboard accessible. No regression vs R5.
+- CI: ✅ green — triggered by .h file changes, passed
+- CHAT QA: ✅ verified 2026-06-22 — CI green, flash OK, all screens render correctly, service mode + WiFi keyboard accessible, no regression vs R5.
 
 ### 2026-06-22 — Service UX fix (CC_PROMPT_fix_service_ux_v1.md)
 - TASK 1: SKILL 1 override — live _drawSvcBody_SelfTest() confirmed does NOT call _runSelfTest(). No code change needed for Task 1. Fresh-entry reset (Task 3) mitigates stale result display on re-entry.
