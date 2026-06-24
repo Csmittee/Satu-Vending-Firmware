@@ -1,10 +1,15 @@
 #ifndef UI_SCREENS_H
 #define UI_SCREENS_H
 
-// ui_screens.h — Version R1 — 2026-06-22
-// Split from ui.h R5. All customer-facing screen draw and touch functions.
+// ui_screens.h — Version R2 — 2026-06-24
+// D-11: Welcome screen + bilingual sale screens. _drawStatusBar uses _sl() for TH/EN label.
+//       Welcome screen: drawWelcomeScreen(), getTouchedWelcome(), _drawWelcomeLanguageButtons().
+//       Bilingual: drawGiftOptionScreen, drawConfirmScreen, drawVendingScreen, drawCompletionScreen.
+//       drawErrorScreen: EN only (operator-facing — no Thai needed).
+// Previous: R1 — 2026-06-22 (EN only)
 // Depends on: gfx, _touch, colors, SCR_W/H, STATUS_H, grid vars, SlotConfig, touchReadOnce,
-//             StatusBarState/_stateLabels (ui_strings.h), _fillRoundRect/_drawRoundRect.
+//             StatusBarState/_sl()/_stateLabels (ui_strings.h), _fillRoundRect/_drawRoundRect,
+//             printThai() (ui_strings.h), SarabanSubset_12/18/24pt (SarabanSubset.h).
 
 // ============================================================
 //  DRAW HELPERS
@@ -30,14 +35,20 @@ static void _drawStatusBar(StatusBarState state) {
   gfx->print("SATU");
   gfx->setFont(NULL); gfx->setTextSize(1);
 
-  const char* label = _stateLabels[state];
-  gfx->setFont(&FreeSansBold12pt7b);
-  gfx->setTextSize(1);
-  int lw = strlen(label) * 9;
-  gfx->setCursor(SCR_W/2 - lw/2, 34);
-  gfx->setTextColor(C_WHITE);
-  gfx->print(label);
-  gfx->setFont(NULL); gfx->setTextSize(1);
+  // D-11: _sl() returns TH or EN label based on g_lang_th
+  const char* label = _stateLabels[state];  // EN fallback for pixel width estimate
+  if (g_lang_th) {
+    // Thai status bar: render at fixed position using printThai (bitmaps placeholder)
+    printThai(SCR_W/2 - 60, 34, _stateLabels_TH[state], C_WHITE, &SarabanSubset_12pt);
+  } else {
+    gfx->setFont(&FreeSansBold12pt7b);
+    gfx->setTextSize(1);
+    int lw = strlen(label) * 9;
+    gfx->setCursor(SCR_W/2 - lw/2, 34);
+    gfx->setTextColor(C_WHITE);
+    gfx->print(label);
+    gfx->setFont(NULL); gfx->setTextSize(1);
+  }
 
   String devLabel = g_deviceId.isEmpty() ? "No ID" : g_deviceId;
   gfx->setTextColor(C_GOLD_DIM);
@@ -384,10 +395,14 @@ void drawGiftOptionScreen(int slotIdx) {
 
   gfx->setFont(&FreeSansBold18pt7b);
   gfx->setTextColor(C_GOLD); gfx->setTextSize(1);
-  const char* title = "Choose your blessing";
+  const char* title = STR_GIFT_TITLE_EN;
   int tw = strlen(title) * 12;
-  gfx->setCursor(SCR_W/2 - tw/2, STATUS_H + 38);
-  gfx->print(title);
+  if (g_lang_th) {
+    printThai(SCR_W/2 - 90, STATUS_H + 38, STR_GIFT_TITLE_TH, C_GOLD, &SarabanSubset_18pt);
+  } else {
+    gfx->setCursor(SCR_W/2 - tw/2, STATUS_H + 38);
+    gfx->print(title);
+  }
   gfx->setFont(NULL); gfx->setTextSize(1);
 
   int cardW = 280, cardH = 200;
@@ -401,9 +416,13 @@ void drawGiftOptionScreen(int slotIdx) {
   gfx->drawRect(cardAX + cardW/2 - 20, cardY + 30, 40, 40, C_GOLD);
   gfx->setFont(&FreeSansBold12pt7b);
   gfx->setTextColor(C_GOLD); gfx->setTextSize(1);
-  const char* labelA = "Item Only";
-  gfx->setCursor(cardAX + cardW/2 - strlen(labelA)*9/2, cardY + 90);
-  gfx->print(labelA);
+  const char* labelA = STR_GIFT_ITEM_EN;
+  if (g_lang_th) {
+    printThai(cardAX + cardW/2 - 55, cardY + 90, STR_GIFT_ITEM_TH, C_GOLD, &SarabanSubset_12pt);
+  } else {
+    gfx->setCursor(cardAX + cardW/2 - strlen(labelA)*9/2, cardY + 90);
+    gfx->print(labelA);
+  }
   gfx->setFont(NULL); gfx->setTextSize(1);
   gfx->setTextColor(C_GREY); gfx->setTextSize(1);
   const char* subA = "Receive your donation item";
@@ -426,9 +445,13 @@ void drawGiftOptionScreen(int slotIdx) {
     gfx->fillCircle(wx + 8, cardY + 52, 12, gfx->color565(33, 150, 243));
     gfx->setFont(&FreeSansBold12pt7b);
     gfx->setTextColor(C_GOLD); gfx->setTextSize(1);
-    const char* labelB = "+Sacred Water";
-    gfx->setCursor(cardBX + cardW/2 - strlen(labelB)*9/2, cardY + 90);
-    gfx->print(labelB);
+    const char* labelB = STR_GIFT_WATER_EN;
+    if (g_lang_th) {
+      printThai(cardBX + cardW/2 - 40, cardY + 90, STR_GIFT_WATER_TH, C_GOLD, &SarabanSubset_12pt);
+    } else {
+      gfx->setCursor(cardBX + cardW/2 - strlen(labelB)*9/2, cardY + 90);
+      gfx->print(labelB);
+    }
     gfx->setFont(NULL); gfx->setTextSize(1);
     gfx->setTextColor(C_GREY); gfx->setTextSize(1);
     const char* subB = "Add sacred water blessing";
@@ -448,8 +471,12 @@ void drawGiftOptionScreen(int slotIdx) {
   _drawRoundRect(backBtnX, backBtnY, backBtnW, backBtnH, 8, C_MIDGREY);
   gfx->setFont(&FreeSansBold12pt7b);
   gfx->setTextColor(C_MIDGREY); gfx->setTextSize(1);
-  gfx->setCursor(backBtnX + backBtnW/2 - 28, backBtnY + 30);
-  gfx->print("< Back");
+  if (g_lang_th) {
+    printThai(backBtnX + backBtnW/2 - 40, backBtnY + 30, STR_BACK_TH, C_MIDGREY, &SarabanSubset_12pt);
+  } else {
+    gfx->setCursor(backBtnX + backBtnW/2 - 28, backBtnY + 30);
+    gfx->print(STR_BACK_EN);
+  }
   gfx->setFont(NULL); gfx->setTextSize(1);
 
   Serial.printf("[UI] Gift option screen: slot %d\n", slotIdx);
@@ -599,22 +626,32 @@ void drawVendingScreen(int slotIdx) {
 
   gfx->setFont(&FreeSansBold18pt7b);
   gfx->setTextColor(C_GOLD); gfx->setTextSize(1);
-  const char* vendTitle = "Dispensing...";
-  gfx->setCursor(SCR_W/2 - 85, 150);
-  gfx->print(vendTitle);
+  if (g_lang_th) {
+    printThai(SCR_W/2 - 110, 150, STR_VEND_TITLE_TH, C_GOLD, &SarabanSubset_18pt);
+  } else {
+    const char* vendTitle = STR_VEND_TITLE_EN;
+    gfx->setCursor(SCR_W/2 - 85, 150);
+    gfx->print(vendTitle);
+  }
   gfx->setFont(NULL); gfx->setTextSize(1);
 
   gfx->setFont(&FreeSansBold18pt7b);
   gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
-  gfx->setCursor(SCR_W/2 - strlen(s.name_en)*12/2, 230);
-  gfx->print(s.name_en);
+  // Slot name: use TH name if available and TH mode
+  const char* slotName = (g_lang_th && s.name_th[0] != '\0') ? s.name_th : s.name_en;
+  gfx->setCursor(SCR_W/2 - strlen(slotName)*12/2, 230);
+  gfx->print(slotName);
   gfx->setFont(NULL); gfx->setTextSize(1);
 
   gfx->setFont(&FreeSansBold12pt7b);
   gfx->setTextColor(C_GREY); gfx->setTextSize(1);
-  const char* sub = "Please wait...";
-  gfx->setCursor(SCR_W/2 - strlen(sub)*9/2, 283);
-  gfx->print(sub);
+  if (g_lang_th) {
+    printThai(SCR_W/2 - 80, 283, STR_VEND_WAIT_TH, C_GREY, &SarabanSubset_12pt);
+  } else {
+    const char* sub = STR_VEND_WAIT_EN;
+    gfx->setCursor(SCR_W/2 - strlen(sub)*9/2, 283);
+    gfx->print(sub);
+  }
   gfx->setFont(NULL); gfx->setTextSize(1);
 
   int bx = SCR_W/2 - 200, by = 360;
@@ -645,9 +682,13 @@ void drawCompletionScreen(int slotIdx, int luckyNumber, bool sacredWater) {
 
   gfx->setFont(&FreeSansBold12pt7b);
   gfx->setTextColor(C_GOLD); gfx->setTextSize(1);
-  const char* th1 = "Your Merit Lucky Number";
-  gfx->setCursor(SCR_W/2 - (int)strlen(th1)*10/2, STATUS_H + 41);
-  gfx->print(th1);
+  if (g_lang_th) {
+    printThai(SCR_W/2 - 80, STATUS_H + 41, STR_DONE_LUCKY_TH, C_GOLD, &SarabanSubset_12pt);
+  } else {
+    const char* th1 = STR_DONE_LUCKY_EN;
+    gfx->setCursor(SCR_W/2 - (int)strlen(th1)*10/2, STATUS_H + 41);
+    gfx->print(th1);
+  }
   gfx->setFont(NULL); gfx->setTextSize(1);
 
   char lnBuf[8]; snprintf(lnBuf, 8, "%d", luckyNumber);
@@ -658,9 +699,13 @@ void drawCompletionScreen(int slotIdx, int luckyNumber, bool sacredWater) {
   gfx->setFont(NULL); gfx->setTextSize(1);
 
   gfx->setTextColor(C_GOLD_DIM); gfx->setTextSize(1);
-  const char* bless = "May blessings be upon you";
-  gfx->setCursor(SCR_W/2 - strlen(bless)*6/2, SCR_H/2 + 44);
-  gfx->print(bless);
+  if (g_lang_th) {
+    printThai(SCR_W/2 - 80, SCR_H/2 + 44, STR_DONE_BLESS_TH, C_GOLD_DIM, &SarabanSubset_12pt);
+  } else {
+    const char* bless = STR_DONE_BLESS_EN;
+    gfx->setCursor(SCR_W/2 - strlen(bless)*6/2, SCR_H/2 + 44);
+    gfx->print(bless);
+  }
 
   if (sacredWater) {
     int bY = SCR_H - 100;
@@ -677,14 +722,19 @@ void drawCompletionScreen(int slotIdx, int luckyNumber, bool sacredWater) {
   gfx->drawRect(0, footY, SCR_W, 54, C_GOLD);
   gfx->setFont(&FreeSansBold12pt7b);
   gfx->setTextColor(C_BLACK); gfx->setTextSize(1);
-  const char* thanks = "Thank you for your donation";
-  gfx->setCursor(SCR_W/2 - strlen(thanks)*9/2, footY + 21);
-  gfx->print(thanks);
+  if (g_lang_th) {
+    printThai(SCR_W/2 - 100, footY + 30, STR_DONE_THANKS_TH, C_BLACK, &SarabanSubset_12pt);
+  } else {
+    const char* thanks = STR_DONE_THANKS_EN;
+    gfx->setCursor(SCR_W/2 - strlen(thanks)*9/2, footY + 21);
+    gfx->print(thanks);
+    gfx->setFont(NULL); gfx->setTextSize(1);
+    gfx->setTextSize(1);
+    const char* subThanks = "Good deeds bring good returns";
+    gfx->setCursor(SCR_W/2 - strlen(subThanks)*6/2, footY + 32);
+    gfx->print(subThanks);
+  }
   gfx->setFont(NULL); gfx->setTextSize(1);
-  gfx->setTextSize(1);
-  const char* subThanks = "Good deeds bring good returns";
-  gfx->setCursor(SCR_W/2 - strlen(subThanks)*6/2, footY + 32);
-  gfx->print(subThanks);
 
   Serial.printf("[UI] Completion: slot=%d lucky=%d water=%d\n",
                 slotIdx, luckyNumber, sacredWater);
@@ -810,10 +860,14 @@ void drawConfirmScreen(int slotIdx, bool wantWater) {
 
   gfx->setFont(&FreeSansBold18pt7b);
   gfx->setTextColor(C_GOLD); gfx->setTextSize(1);
-  const char* title = "Confirm your order";
-  int tw = strlen(title) * 12;
-  gfx->setCursor(SCR_W/2 - tw/2, STATUS_H + 42);
-  gfx->print(title);
+  const char* title = STR_CONF_TITLE_EN;
+  if (g_lang_th) {
+    printThai(SCR_W/2 - 100, STATUS_H + 42, STR_CONF_TITLE_TH, C_GOLD, &SarabanSubset_18pt);
+  } else {
+    int tw = strlen(title) * 12;
+    gfx->setCursor(SCR_W/2 - tw/2, STATUS_H + 42);
+    gfx->print(title);
+  }
   gfx->setFont(NULL); gfx->setTextSize(1);
 
   int boxW = 500, boxH = 200;
@@ -851,8 +905,12 @@ void drawConfirmScreen(int slotIdx, bool wantWater) {
   _drawRoundRect(backX, btnY, btnW, btnH, 10, C_MIDGREY);
   gfx->setFont(&FreeSansBold12pt7b);
   gfx->setTextColor(C_MIDGREY); gfx->setTextSize(1);
-  gfx->setCursor(backX + btnW/2 - 28, btnY + 30);
-  gfx->print("< Back");
+  if (g_lang_th) {
+    printThai(backX + btnW/2 - 40, btnY + 30, STR_BACK_TH, C_MIDGREY, &SarabanSubset_12pt);
+  } else {
+    gfx->setCursor(backX + btnW/2 - 28, btnY + 30);
+    gfx->print(STR_BACK_EN);
+  }
   gfx->setFont(NULL); gfx->setTextSize(1);
 
   _fillRoundRect(confX, btnY, btnW, btnH, 10, gfx->color565(20, 60, 20));
@@ -860,8 +918,12 @@ void drawConfirmScreen(int slotIdx, bool wantWater) {
     _drawRoundRect(confX+t, btnY+t, btnW-t*2, btnH-t*2, 10-t, C_GREEN);
   gfx->setFont(&FreeSansBold12pt7b);
   gfx->setTextColor(C_GREEN); gfx->setTextSize(1);
-  gfx->setCursor(confX + btnW/2 - 42, btnY + 30);
-  gfx->print("Confirm >");
+  if (g_lang_th) {
+    printThai(confX + btnW/2 - 42, btnY + 30, STR_CONF_BTN_TH, C_GREEN, &SarabanSubset_12pt);
+  } else {
+    gfx->setCursor(confX + btnW/2 - 42, btnY + 30);
+    gfx->print(STR_CONF_BTN_EN);
+  }
   gfx->setFont(NULL); gfx->setTextSize(1);
 
   Serial.printf("[UI] Confirm screen: slot %d water=%d total=%d\n", slotIdx, wantWater, total);
@@ -923,6 +985,132 @@ bool checkServiceGesture() {
   if (millis() - firstTapMs > 2000) { tapCount = 1; firstTapMs = millis(); }
   if (tapCount >= 3) { tapCount = 0; Serial.println("[UI] Service gesture!"); return true; }
   return false;
+}
+
+// ============================================================
+//  WELCOME SCREEN  (D-11: shown on every boot before STATE_IDLE)
+// ============================================================
+
+// Welcome screen layout constants
+#define _WEL_BTN_W  120
+#define _WEL_BTN_H   60
+#define _WEL_BTN_Y  280
+#define _WEL_EN_X   (SCR_W/2 - _WEL_BTN_W - 20)  // = 260
+#define _WEL_TH_X   (SCR_W/2 + 20)                // = 420
+
+static void _drawWelcomeLanguageButtons(bool highlightTH) {
+  uint16_t enBg = highlightTH ? gfx->color565(25, 20, 40) : gfx->color565(60, 40, 10);
+  uint16_t thBg = highlightTH ? gfx->color565(60, 40, 10) : gfx->color565(25, 20, 40);
+  uint16_t enBd = highlightTH ? C_MIDGREY : C_GOLD;
+  uint16_t thBd = highlightTH ? C_GOLD    : C_MIDGREY;
+
+  _fillRoundRect(_WEL_EN_X, _WEL_BTN_Y, _WEL_BTN_W, _WEL_BTN_H, 10, enBg);
+  for (int t = 0; t < 2; t++)
+    _drawRoundRect(_WEL_EN_X + t, _WEL_BTN_Y + t, _WEL_BTN_W - t*2, _WEL_BTN_H - t*2, 10 - t, enBd);
+  gfx->setFont(&FreeSansBold18pt7b);
+  gfx->setTextColor(highlightTH ? C_MIDGREY : C_GOLD);
+  gfx->setTextSize(1);
+  gfx->setCursor(_WEL_EN_X + _WEL_BTN_W/2 - 22, _WEL_BTN_Y + 38);
+  gfx->print("EN");
+  gfx->setFont(NULL); gfx->setTextSize(1);
+
+  _fillRoundRect(_WEL_TH_X, _WEL_BTN_Y, _WEL_BTN_W, _WEL_BTN_H, 10, thBg);
+  for (int t = 0; t < 2; t++)
+    _drawRoundRect(_WEL_TH_X + t, _WEL_BTN_Y + t, _WEL_BTN_W - t*2, _WEL_BTN_H - t*2, 10 - t, thBd);
+  gfx->setFont(&FreeSansBold18pt7b);
+  gfx->setTextColor(highlightTH ? C_GOLD : C_MIDGREY);
+  gfx->setTextSize(1);
+  gfx->setCursor(_WEL_TH_X + _WEL_BTN_W/2 - 22, _WEL_BTN_Y + 38);
+  gfx->print("TH");
+  gfx->setFont(NULL); gfx->setTextSize(1);
+}
+
+void drawWelcomeScreen() {
+  g_idleDrawn = false;
+  gfx->fillScreen(C_BG);
+
+  // Gold border
+  for (int t = 0; t < 3; t++)
+    gfx->drawRect(t, t, SCR_W - t*2, SCR_H - t*2, C_DARKGOLD);
+
+  // Brand title
+  gfx->setFont(&FreeSansBold24pt7b);
+  gfx->setTextColor(C_GOLD); gfx->setTextSize(1);
+  gfx->setCursor(SCR_W/2 - 68, 120);
+  gfx->print(STR_WEL_TITLE_EN);
+  gfx->setFont(NULL); gfx->setTextSize(1);
+
+  // EN subtitle
+  gfx->setFont(&FreeSansBold12pt7b);
+  gfx->setTextColor(C_GOLD_DIM); gfx->setTextSize(1);
+  const char* subEN = STR_WEL_SUB_EN;
+  gfx->setCursor(SCR_W/2 - (int)(strlen(subEN)*9)/2, 165);
+  gfx->print(subEN);
+  gfx->setFont(NULL); gfx->setTextSize(1);
+
+  // TH subtitle (placeholder — bitmaps zero until fontconvert)
+  printThai(SCR_W/2 - 80, 205, STR_WEL_SUB_TH, C_GOLD_DIM, &SarabanSubset_12pt);
+
+  // Prompt line EN
+  gfx->setTextColor(C_WHITE); gfx->setTextSize(1);
+  const char* promptEN = STR_WEL_PROMPT_EN;
+  gfx->setCursor(SCR_W/2 - (int)(strlen(promptEN)*6)/2, 246);
+  gfx->print(promptEN);
+
+  // Prompt line TH (placeholder)
+  printThai(SCR_W/2 - 70, 266, STR_WEL_PROMPT_TH, C_WHITE, &SarabanSubset_12pt);
+
+  // Language buttons — no highlight on initial draw
+  _drawWelcomeLanguageButtons(false);
+
+  // Divider
+  gfx->drawFastHLine(SCR_W/4, _WEL_BTN_Y - 12, SCR_W/2, C_DARKGOLD);
+
+  // Bottom hint
+  gfx->setTextColor(C_GREY); gfx->setTextSize(1);
+  const char* hint = "Tap anywhere to continue with EN";
+  gfx->setCursor(SCR_W/2 - (int)(strlen(hint)*6)/2, SCR_H - 20);
+  gfx->print(hint);
+
+  Serial.println("[UI] Welcome screen drawn");
+}
+
+// getTouchedWelcome() — returns:
+//   1 = EN button tapped   (sets g_lang_th = false, redraws buttons)
+//   2 = TH button tapped   (sets g_lang_th = true,  redraws buttons)
+//   0 = anywhere else tapped (caller proceeds to STATE_IDLE with current g_lang_th)
+//  -1 = no touch
+int getTouchedWelcome() {
+  touchReadOnce();
+  if (!_touch.isTouched) return -1;
+  int tx = _touch.points[0].x;
+  int ty = _touch.points[0].y;
+
+  static unsigned long _lastWelMs = 0;
+  if (millis() - _lastWelMs < 200) return -1;
+  _lastWelMs = millis();
+
+  // EN button
+  if (tx >= _WEL_EN_X && tx <= _WEL_EN_X + _WEL_BTN_W &&
+      ty >= _WEL_BTN_Y && ty <= _WEL_BTN_Y + _WEL_BTN_H) {
+    g_lang_th = false;
+    _drawWelcomeLanguageButtons(false);
+    Serial.println("[UI] Welcome: EN selected");
+    return 1;
+  }
+
+  // TH button
+  if (tx >= _WEL_TH_X && tx <= _WEL_TH_X + _WEL_BTN_W &&
+      ty >= _WEL_BTN_Y && ty <= _WEL_BTN_Y + _WEL_BTN_H) {
+    g_lang_th = true;
+    _drawWelcomeLanguageButtons(true);
+    Serial.println("[UI] Welcome: TH selected");
+    return 2;
+  }
+
+  // Anywhere else — proceed with current language
+  Serial.printf("[UI] Welcome: proceed (lang=%s)\n", g_lang_th ? "TH" : "EN");
+  return 0;
 }
 
 // ============================================================

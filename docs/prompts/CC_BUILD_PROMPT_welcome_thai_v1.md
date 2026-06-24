@@ -1,4 +1,5 @@
 # CC_BUILD_PROMPT_welcome_thai_v1.md
+> ✅ COMPLETE — 2026-06-24
 > Version 1.0 — 2026-06-24
 > Task: D-11 — Welcome screen + Thai language (sale sequence only)
 > Repo: Satu-Vending-Firmware

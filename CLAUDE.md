@@ -1,7 +1,7 @@
 # CLAUDE.md — Satu Project Compass
-> Version 1.8 — 2026-06-21
-> Changes: "Flashing Without Arduino IDE" updated — esptool (not esptool.py), baud 460800, write-flash, confirmed port /dev/cu.usbserial-1420, ~/satu-firmware/ paths
-> Previous: v1.7 — 2026-06-20
+> Version 1.9 — 2026-06-24
+> Changes: Added SarabanSubset.h, ui_strings.h, ui_screens.h to Key Files (D-11 Thai language)
+> Previous: v1.8 — 2026-06-21
 <!-- max 35 lines · never grows · CC reads this on every session start -->
 
 ## Stack
@@ -39,7 +39,10 @@
 - `firmware/satu_vending.ino`         — main state machine loop · read before any logic change
 - `firmware/hardware.h`               — R2 LOCKED · relay + sensor + flap control · read-only always
 - `firmware/network.h`                — WiFi + API calls
-- `firmware/ui.h`                     — touch display + QR rendering
+- `firmware/ui.h`                     — R7: touch display + QR rendering + include chain (SarabanSubset.h → ui_strings.h → ...)
+- `firmware/SarabanSubset.h`          — D-11: Thai GFXfont placeholder (12/18/24pt) · owner runs fontconvert with Sarabun.ttf
+- `firmware/ui_strings.h`             — R2: EN/TH labels, g_lang_th, printThai(), all Thai string constants
+- `firmware/ui_screens.h`             — R2: customer screens + welcome screen + getTouchedWelcome()
 - `firmware/ui_service.h`             — service mode 5-tab body implementations + _getTouchedServiceExtra()
 
 ## Flashing Without Arduino IDE

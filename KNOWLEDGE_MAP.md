@@ -1,7 +1,7 @@
 # SATU — Knowledge Architecture Guide (Firmware)
-> Version 1.5 — 2026-06-22
-> Changes: Added ui_strings.h, ui_keyboard.h, ui_screens.h to Firmware file list (D-10 ui.h split)
-> Previous: v1.4 — 2026-06-20
+> Version 1.6 — 2026-06-24
+> Changes: Added SarabanSubset.h (D-11 Thai font placeholder) to Firmware file list
+> Previous: v1.5 — 2026-06-22
 
 ## Document Map — What to Read for What Task
 
@@ -35,12 +35,13 @@ satu_vending.ino   — main state machine, setup(), loop()
 config.h           — pin constants, timeouts, NUM_SLOTS
 hardware.h         — MCP23017, relays, IR, LEDs, idleAnimation()   ← NEVER REPLACE
 network.h          — WiFi, NVS, /hello, /order, /completion
-ui.h               — R6: HW primitives, PNG/QR, initUI(), include chain, service orchestration
-ui_strings.h       — R1: StatusBarState enum, _stateLabels[], _svcTabL1/L2[] — EN only (D-11 adds Thai)
+ui.h               — R7: HW primitives, PNG/QR, initUI(), include chain, service orchestration
+SarabanSubset.h    — D-11: Thai GFXfont placeholder (12/18/24pt). first=0/last=75 (glyph indices). Owner must fontconvert Sarabun.ttf to populate real bitmaps.
+ui_strings.h       — R2: StatusBarState, EN/TH labels, g_lang_th/g_lang_th_default, printThai(), Thai string constants
 ui_keyboard.h      — R1: PIN numpad (_drawNumpad, getTouchedNumpad), WiFi keyboard (drawWifiSetupScreen)
-ui_screens.h       — R1: all customer-facing screen draw/touch functions (_drawStatusBar through idleAnimationUI)
+ui_screens.h       — R2: all customer-facing screen draw/touch + welcome screen (drawWelcomeScreen, getTouchedWelcome)
 ui_service.h       — LOCKED: service mode 5-tab body (_drawSvcBody_* + _getTouchedServiceExtra())
-state_machine.h    — enum MachineState, extern declarations
+state_machine.h    — enum MachineState + STATE_WELCOME, extern declarations
 ```
 
 ### Backend (GitHub repo → Cloudflare auto-deploy)

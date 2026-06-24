@@ -1,11 +1,13 @@
 #ifndef UI_H
 #define UI_H
 
-// ui.h — Version R6 — 2026-06-22
+// ui.h — Version R7 — 2026-06-24
 // D-10: ui.h split — HW primitives + include chain + service orchestration only.
+// D-11: R7 — SarabanSubset.h added to include chain (Thai GFXfont placeholder).
+//            g_lang_th moved to ui_strings.h (authoritative definition — removed from here).
 // Screens → ui_screens.h  Keyboard → ui_keyboard.h  Strings → ui_strings.h
 // satu_vending.ino still only includes ui.h — include chain makes all symbols visible.
-// Previous: R5 — 2026-06-22 (touchReadOnce ported to service helpers; _svcFreshEntry flag)
+// Previous: R6 — 2026-06-22 (D-10 split)
 
 #include <Arduino_GFX_Library.h>
 #include <Wire.h>
@@ -86,7 +88,7 @@ int  g_cfg_idle    = 60;
 int  g_cfg_sel     = PRODUCT_SELECTION_TIMEOUT;
 bool g_cfg_water   = true;
 bool g_cfg_lucky   = true;
-static bool g_lang_th = false;  // ui.h-private
+// g_lang_th moved to ui_strings.h (D-11 R7) — authoritative definition is there
 
 void recalcGrid() {
   int gridAreaW = SCR_W - GRID_X * 2;
@@ -318,12 +320,14 @@ void initUI() {
 #define SVC_BODY_X (SVC_TAB_W + 4)
 
 // ============================================================
-//  INCLUDE CHAIN  (order is non-negotiable)
-//  ui_strings.h — StatusBarState enum + string literals
-//  ui_keyboard.h — PIN numpad + WiFi setup keyboard
-//  ui_screens.h  — all customer-facing screen draw/touch functions
-//  ui_service.h  — LOCKED: 5-tab service body + _getTouchedServiceExtra()
+//  INCLUDE CHAIN  (order is non-negotiable — R-171)
+//  SarabanSubset.h — Thai GFXfont placeholder (3 sizes: 12/18/24pt)
+//  ui_strings.h   — StatusBarState enum + string literals + printThai()
+//  ui_keyboard.h  — PIN numpad + WiFi setup keyboard
+//  ui_screens.h   — all customer-facing screen draw/touch functions
+//  ui_service.h   — LOCKED: 5-tab service body + _getTouchedServiceExtra()
 // ============================================================
+#include "SarabanSubset.h"
 #include "ui_strings.h"
 #include "ui_keyboard.h"
 #include "ui_screens.h"

@@ -1,5 +1,5 @@
 // ============================================================
-// network.h — Satu Vending Machine Network Layer  R5
+// network.h — Satu Vending Machine Network Layer  R6
 // Board: ESP32-S3 (ESP32-8048S070C)
 // ============================================================
 // CHANGE LOG:
@@ -14,6 +14,8 @@
 //          Updated: initWiFi() calls loadConfigFromNVS() before hello
 //          Updated: reportCompletion() adds slotIdx param
 //   R5  — FW_VERSION → v1.0.0-r5
+//   R6  — loadConfigFromNVS() reads "lang" key → g_lang_th_default (D-11)
+//          extern bool g_lang_th_default declared (defined in ui_strings.h)
 //          initWiFi() NVS-first: reads nvs_ssid/nvs_pass before config.h
 //          Falls back to config.h WIFI_SSID/WIFI_PASSWORD if NVS empty
 //          Empty credentials → returns without connecting (caller checks
@@ -70,6 +72,8 @@ extern int  g_cfg_idle;
 extern int  g_cfg_sel;
 extern bool g_cfg_water;
 extern bool g_cfg_lucky;
+// ── Language default (defined in ui_strings.h — R6) ──────────────────────
+extern bool g_lang_th_default;
 
 // ── Command list ──────────────────────────────────────────────────────────────
 #define MAX_COMMANDS 8
@@ -154,8 +158,13 @@ void loadConfigFromNVS() {
   g_cfg_water = water;
   g_cfg_lucky = lucky;
 
-  Serial.printf("[NET] Config from NVS: grid=%dx%d idle=%d sel=%d\n",
-                g_grid_cols, g_grid_rows, g_cfg_idle, g_cfg_sel);
+  // R6: load operator language default
+  String langStr = prefs.getString("lang", "EN");
+  g_lang_th_default = (langStr == "TH");
+
+  Serial.printf("[NET] Config from NVS: grid=%dx%d idle=%d sel=%d lang=%s\n",
+                g_grid_cols, g_grid_rows, g_cfg_idle, g_cfg_sel,
+                g_lang_th_default ? "TH" : "EN");
 }
 
 // ════════════════════════════════════════════════════════════════════════════
