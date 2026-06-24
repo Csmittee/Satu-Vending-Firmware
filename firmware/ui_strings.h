@@ -140,8 +140,8 @@ static void printThai(int16_t x, int16_t y, const char* utf8, uint16_t fg, const
       const uint8_t* bmp = font->bitmap + g->bitmapOffset;
       int16_t bx = cx + g->xOffset;
       int16_t by = y  + g->yOffset;
-      uint8_t bits = 0, bit = 0;
       for (uint8_t row = 0; row < g->height; row++) {
+        uint8_t bits = 0, bit = 0;
         for (uint8_t col = 0; col < g->width; col++) {
           if (!bit) { bits = pgm_read_byte(bmp++); }
           if (bits & 0x80) gfx->drawPixel(bx + col, by + row, fg);
