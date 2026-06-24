@@ -316,8 +316,7 @@ void runStateMachine() {
     // Idle timeout → reset to default language and redraw.
     case STATE_WELCOME: {
       int action = getTouchedWelcome();
-      if (action == 1 || action == 2) break;  // language selected — g_lang_th updated by getTouchedWelcome
-      if (action == 0) {
+      if (action >= 0) {  // 0=proceed, 1=EN selected, 2=TH selected — all transition to idle
         setState(STATE_IDLE);
         g_idleDrawn = false;
         idleAnimationUI();
