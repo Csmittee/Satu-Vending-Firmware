@@ -1,9 +1,37 @@
 # RULES.md — Satu 1.0 Universal Rules
-> Version 2.6 — 2026-06-22
-> Changes: R-171 (ui.h split include chain)
-> Previous: v2.5 — 2026-06-22
+> Version 2.7 — 2026-06-24
+> Changes: R-172 to R-175 (D-11 Thai language support)
+> Previous: v2.6 — 2026-06-22
 > For domain rules: load `.claude/rules/RULES-[domain].md`
 > Domain files: workflow · backend · firmware · hardware · security
+
+---
+
+- **R-175: STATE_WELCOME BOOT FLOW (2026-06-24 — D-11).**
+  STATE_WELCOME is the boot entry state (after STATE_STARTUP and optional STATE_WIFI_SETUP).
+  On boot: g_lang_th = g_lang_th_default → setState(STATE_WELCOME) → drawWelcomeScreen().
+  In STATE_WELCOME: tap EN button → g_lang_th=false + redraw buttons (stay in STATE_WELCOME).
+  Tap TH button → g_lang_th=true + redraw buttons (stay in STATE_WELCOME).
+  Tap anywhere else → enter STATE_IDLE with current language.
+  Idle timeout → reset g_lang_th=g_lang_th_default + redraw welcome screen.
+
+- **R-174: printThai() HARDCODED RANGE — GFXfont.first/last ARE uint8_t (2026-06-24 — D-11).**
+  Thai Unicode U+0E01–U+0E4C (values 3585–3660) overflow uint8_t (max 255).
+  SarabanSubset.h GFXfont structs use first=0/last=75 (glyph array indices, not codepoints).
+  printThai() hardcodes Thai Unicode range 0x0E01–0x0E4C — NEVER read from font->first/last.
+  Glyph index = cp - 0x0E01. Combining marks (ั ิ ี etc.) have xAdvance=0 → overlay preceding consonant.
+
+- **R-173: SarabanSubset.h INCLUDE POSITION (2026-06-24 — D-11).**
+  SarabanSubset.h must be the FIRST include in ui.h include chain — before ui_strings.h.
+  ui_strings.h has printThai() which references SarabanSubset_12/18/24pt font objects.
+  Full chain (NON-NEGOTIABLE, R-171 updated): SarabanSubset.h → ui_strings.h → ui_keyboard.h → ui_screens.h → ui_service.h.
+  All included at bottom of ui.h, after gfx and hardware objects are defined.
+
+- **R-172: g_lang_th / g_lang_th_default OWNERSHIP (2026-06-24 — D-11).**
+  Authoritative definitions live in ui_strings.h (bool g_lang_th = false; bool g_lang_th_default = false;).
+  g_lang_th_default is extern'd in network.h and loaded by loadConfigFromNVS() from NVS key "lang".
+  DO NOT redeclare either variable in ui.h — duplicate definition compile error.
+  g_lang_th = session language flag (reset on each welcome screen). g_lang_th_default = NVS-persisted operator default.
 
 ---
 

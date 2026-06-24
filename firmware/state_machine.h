@@ -2,14 +2,15 @@
 // state_machine.h — Satu Vending Machine State Definitions
 // ============================================================
 // CHANGE LOG:
-//   R3 — Added: STATE_GIFT_OPTION, STATE_SERVICE
-//        Changed: laneErrorCount/laneDisabled arrays → NUM_SLOTS
-//        Changed: selectedProduct extern → selectedSlot
-//        Added: wantSacredWater extern
-//   R5 — Added: STATE_WIFI_SETUP (first-boot NVS provisioning)
-//   R6 — Removed: STATE_WAITING_DROP, STATE_DISPENSING, STATE_WAITING_REMOVAL
-//        vendProduct() is synchronous (R-128/R-129) — no async drop/removal states
-//   R9 — Added: STATE_CONFIRMING (R-153: confirm screen before order creation)
+//   R3  — Added: STATE_GIFT_OPTION, STATE_SERVICE
+//         Changed: laneErrorCount/laneDisabled arrays → NUM_SLOTS
+//         Changed: selectedProduct extern → selectedSlot
+//         Added: wantSacredWater extern
+//   R5  — Added: STATE_WIFI_SETUP (first-boot NVS provisioning)
+//   R6  — Removed: STATE_WAITING_DROP, STATE_DISPENSING, STATE_WAITING_REMOVAL
+//         vendProduct() is synchronous (R-128/R-129) — no async drop/removal states
+//   R9  — Added: STATE_CONFIRMING (R-153: confirm screen before order creation)
+//   R10 — Added: STATE_WELCOME (D-11: bilingual welcome + language selector on boot)
 // ============================================================
 
 #ifndef STATE_MACHINE_H
@@ -20,6 +21,7 @@
 enum MachineState {
   STATE_STARTUP,
   STATE_WIFI_SETUP,  // R5: first boot — no credentials in NVS
+  STATE_WELCOME,     // R10: bilingual language selector shown on every boot
   STATE_IDLE,
   STATE_ID_SCANNING,        // waiting for ID card insert
   STATE_AUTHENTICATING,     // reading ID card

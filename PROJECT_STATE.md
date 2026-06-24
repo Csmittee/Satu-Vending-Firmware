@@ -1,10 +1,20 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Version 1.17 — 2026-06-22
-> Changes: D-10 verified — CI green, flash OK, all QA pass (owner confirmed 2026-06-22)
-> Previous: v1.16 — 2026-06-22
-> Status: Phase 1 active — ~72% complete
+> Version 1.18 — 2026-06-24
+> Changes: D-11 delivered — STATE_WELCOME + Thai language UI
+> Previous: v1.17 — 2026-06-22
+> Status: Phase 1 active — ~75% complete
 
 ## SESSION LOG (newest first)
+
+### 2026-06-24 — D-11: Thai language support (CC_BUILD_PROMPT_welcome_thai_v1.md)
+- TASK: Welcome screen (STATE_WELCOME) on every boot + Thai language in sale sequence
+- NEW FILE: firmware/SarabanSubset.h — Thai GFXfont placeholder (3 sizes). Architecture complete; bitmaps zero until owner runs fontconvert with Sarabun.ttf. CRITICAL FIX: first=0/last=75 (glyph indices, not Thai codepoints) — GFXfont.first/last are uint8_t (max 255).
+- UPDATED: firmware/state_machine.h R10 (STATE_WELCOME added), firmware/ui_strings.h R2 (g_lang_th/g_lang_th_default authoritative defs + _stateLabels_TH[] + printThai() + all Thai string constants), firmware/ui.h R7 (g_lang_th removed from ui.h, SarabanSubset.h added as first include in chain), firmware/network.h R6 (loadConfigFromNVS loads NVS "lang" key → g_lang_th_default), firmware/ui_screens.h R2 (bilingual: drawGiftOptionScreen, drawConfirmScreen, drawVendingScreen, drawCompletionScreen, drawWelcomeScreen, getTouchedWelcome), firmware/satu_vending.ino R10 (STATE_WELCOME case, setup() changed to drawWelcomeScreen, R10 boot print)
+- DEFERRED: Settings tab language default toggle (Task 5) — only 18px space after Factory Reset button (need 34px for new row). Reserved action code 901.
+- DOCS: RULES.md v2.7 (R-172 to R-175). KNOWLEDGE_MAP.md v1.6. CLAUDE.md v1.9. UI_SPEC.md v2.1. CC_CHAT_LOG.md v2.17.
+- CI: ⬜ pending — push triggers compile-check.yml
+- PENDING: Owner must run fontconvert to generate real SarabanSubset bitmaps before Thai renders on hardware. All architecture + placeholder present. See SarabanSubset.h header comment for instructions.
+- OWNER ACTION: flash → boot → welcome screen shows "SATU" + EN/TH buttons. EN tap → idle grid in EN. TH tap → idle grid with Thai status bar. Payment flow uses Thai labels when TH selected.
 
 ### 2026-06-22 — D-10: ui.h split (CC_BUILD_PROMPT_ui_split_v1.md)
 - TASK: Pure refactor — split firmware/ui.h R5 (1830 lines) into 4 files. Zero functional change.

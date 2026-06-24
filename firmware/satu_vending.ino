@@ -32,6 +32,10 @@
 //   R9   — R-153: STATE_CONFIRMING — confirm screen between gift option and QR
 //          Back added to gift option screen → returns to STATE_PRODUCT_SELECTION
 //          createOrder() now only called on Confirm touch (no D1 rows from abandoned flows)
+//   R10  — D-11: STATE_WELCOME on every boot — bilingual EN/TH language selector
+//          g_lang_th set from g_lang_th_default (NVS "lang" key) at boot
+//          getTouchedWelcome() handles EN/TH selection; tap elsewhere → STATE_IDLE
+//          Welcome screen idle timeout resets language to default and redraws
 // ============================================================
 
 #include "config.h"
@@ -212,7 +216,7 @@ static void _clearNVS() {
 void setup() {
   Serial.begin(115200);
   delay(500);
-  Serial.println("\n[SATU] Booting R8...");
+  Serial.println("\n[SATU] Booting R10...");
 
   initHardware();
   Serial.println("[SATU] Hardware OK");
@@ -280,11 +284,10 @@ void setup() {
   // Boot PIN gate
   _runBootPinLoop();
 
-  // Ready
-  setState(STATE_IDLE);
-  idleAnimationUI();   // screen gold flash
-  idleAnimation();     // LED breathing (hardware.h)
-  drawIdleScreen();
+  // D-11 R10: start with welcome screen — language selector before idle
+  g_lang_th = g_lang_th_default;
+  setState(STATE_WELCOME);
+  drawWelcomeScreen();
 
   Serial.println("[SATU] Ready");
 }
@@ -306,6 +309,30 @@ void runStateMachine() {
   unsigned long elapsed = now - stateStartTime;
 
   switch (currentState) {
+
+    // ── WELCOME ────────────────────────────────────────────────────────────────────
+    // D-11 R10: shown on every boot. EN/TH selection → sets g_lang_th.
+    // Tap anywhere else → proceed to STATE_IDLE with current language.
+    // Idle timeout → reset to default language and redraw.
+    case STATE_WELCOME: {
+      int action = getTouchedWelcome();
+      if (action == 1 || action == 2) break;  // language selected — g_lang_th updated by getTouchedWelcome
+      if (action == 0) {
+        setState(STATE_IDLE);
+        g_idleDrawn = false;
+        idleAnimationUI();
+        idleAnimation();
+        drawIdleScreen();
+        break;
+      }
+      // No touch — check welcome screen idle timeout
+      if (elapsed > (unsigned long)(g_cfg_idle * 1000UL)) {
+        g_lang_th      = g_lang_th_default;
+        stateStartTime = millis();
+        drawWelcomeScreen();
+      }
+      break;
+    }
 
     // ── IDLE ───────────────────────────────────────────────────────────────────────
     case STATE_IDLE: {

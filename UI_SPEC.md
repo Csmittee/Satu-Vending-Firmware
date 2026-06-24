@@ -1,7 +1,7 @@
 # SATU — UI Specification R4
-> Version 2.0 — 2026-06-20
-> Changes: Added CHANGE LOG section. Added Type Scale (Service Mode) section. Added Log Panel section.
-> Previous: v1.0 — 2026-05-31
+> Version 2.1 — 2026-06-24
+> Changes: D-11 language system updated (STATE_WELCOME, printThai, SarabanSubset, NVS "lang" key). Screen Inventory updated.
+> Previous: v2.0 — 2026-06-20
 <!-- Read this before touching ui.h or any drawXxx() function -->
 <!-- Screen: 800×480 px, RGB565, Arduino_GFX, EK9716 driver -->
 
@@ -31,14 +31,19 @@ Font is ASCII only — no Thai until bitmap font loaded
 
 ---
 
-## Language System
+## Language System (D-11 — 2026-06-24)
 
-- NVS key: `lang` (2 chars, default `EN`)
-- Global: `static bool g_lang_th = false;`
-- All label strings use: `g_lang_th ? "ข้อความไทย" : "English text"`
-- Thai font: NOT in R4 scope — TH label falls back to EN if font not loaded
-- Selector: small [EN|TH] toggle in status bar, top-right area
-- R4 delivers: language toggle in Settings + EN labels only. TH activates in R5 when font added.
+- NVS key: `lang` ("EN" or "TH", default "EN") — operator-set default, persists across reboots
+- Session flag: `bool g_lang_th` — defined in `ui_strings.h` (authoritative). DO NOT redeclare in ui.h.
+- Operator default: `bool g_lang_th_default` — defined in `ui_strings.h`, extern'd in `network.h`, loaded by `loadConfigFromNVS()`.
+- Welcome screen: shown on every boot before STATE_IDLE. Donor taps EN or TH button to select language.
+- Language selection persists for the session. On welcome screen idle timeout, resets to operator default.
+- Thai rendering: `printThai(x, y, utf8, fg, font)` in `ui_strings.h` — custom UTF-8→glyph renderer.
+  `gfx->print()` cannot handle Thai (3-byte UTF-8 processed byte by byte = garbage). Use `printThai()` for all Thai text.
+- Thai font: `SarabanSubset.h` — placeholder GFXfont objects (12/18/24pt). Bitmaps are zero until owner runs fontconvert with Sarabun.ttf. Architecture complete — all screens bilingual now.
+- GFXfont constraint: `font->first`/`last` are `uint8_t` (max 255). Thai Unicode U+0E01+ overflows. SarabanSubset.h stores glyph indices (0–75) not codepoints. `printThai()` hardcodes range 0x0E01–0x0E4C — never reads font->first/last.
+- Sale sequence: all customer-facing screens (gift option, confirm, vend, completion) render Thai when g_lang_th=true.
+- Status bar: uses `_sl(state)` from `ui_strings.h` — returns TH or EN state label.
 
 ---
 
@@ -125,6 +130,7 @@ Below the grid, in the remaining space (varies by config):
 | Boot | drawBootScreen(status) | STATE_STARTUP |
 | Setup code | drawSetupCodeScreen(code) | STATE_STARTUP (pending) |
 | Boot PIN | drawBootPinScreen() | STATE_STARTUP (boot_pin=true) |
+| Welcome / language selector | drawWelcomeScreen() | STATE_WELCOME (D-11) |
 | Idle grid | drawIdleScreen() | STATE_IDLE |
 | Product selected | drawProductSelection(slot) | STATE_PRODUCT_SELECTION |
 | Gift option | drawGiftOptionScreen(slot) | STATE_GIFT_OPTION |

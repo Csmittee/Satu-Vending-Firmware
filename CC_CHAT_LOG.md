@@ -1,9 +1,17 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 2.16 — 2026-06-22
-> Changes: D-10 verified — CI green, flash OK, all QA pass confirmed by owner
-> Previous: v2.15 — 2026-06-22
+> Version 2.17 — 2026-06-24
+> Changes: D-11 session entry — Thai language support + STATE_WELCOME
+> Previous: v2.16 — 2026-06-22
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
+
+---
+## 2026-06-24 — D-11: Thai language support + welcome screen (CC_BUILD_PROMPT_welcome_thai_v1.md)
+**Did:** (1) Created firmware/SarabanSubset.h — Thai GFXfont placeholder, 3 sizes (12/18/24pt), 76 glyphs U+0E01–U+0E4C. CRITICAL: first=0/last=75 (glyph indices, not Thai codepoints — GFXfont.first/last are uint8_t, max 255). All bitmaps zero until owner runs fontconvert with Sarabun.ttf. (2) firmware/ui_strings.h R2: g_lang_th/g_lang_th_default authoritative defs, _stateLabels_TH[], _sl() accessor, printThai() custom UTF-8→glyph renderer (gfx->print() cannot handle Thai 3-byte sequences), all Thai string constants for every sale screen. (3) firmware/ui.h R7: removed g_lang_th from ui.h (was line 89), added SarabanSubset.h as first include in chain. (4) firmware/network.h R6: loadConfigFromNVS() loads NVS "lang" key → g_lang_th_default. (5) firmware/ui_screens.h R2: bilingual drawGiftOptionScreen/drawConfirmScreen/drawVendingScreen/drawCompletionScreen + new drawWelcomeScreen/getTouchedWelcome. (6) firmware/satu_vending.ino R10: STATE_WELCOME case in runStateMachine(), setup() ends with drawWelcomeScreen() instead of drawIdleScreen(), boot print "R10". (7) firmware/state_machine.h R10: STATE_WELCOME added before STATE_IDLE.
+**DEFERRED:** Task 5 — Settings tab language default toggle. Only 18px remains after Factory Reset button (need 34px). Reserved action code 901. Separate session.
+**OWNER ACTION REQUIRED:** fontconvert with Sarabun.ttf to populate SarabanSubset bitmaps. Instructions in SarabanSubset.h header. Thai glyphs render as blank until done — all EN fallbacks work normally.
+**Updated:** firmware/SarabanSubset.h (NEW), firmware/state_machine.h R10, firmware/ui_strings.h R2, firmware/ui.h R7, firmware/network.h R6, firmware/ui_screens.h R2, firmware/satu_vending.ino R10. RULES.md v2.7 (R-172–R-175). PROJECT_STATE.md v1.18. KNOWLEDGE_MAP.md v1.6. CLAUDE.md v1.9. UI_SPEC.md v2.1. Prompt archived.
+**Flags:** hardware.h NOT touched (R2 LOCKED). PAYMENT_MODE stays fake. ui_service.h NOT touched. WiFi creds NVS only.
 
 ---
 ## 2026-06-22 — D-10: ui.h split into 4 files (CC_BUILD_PROMPT_ui_split_v1.md)
