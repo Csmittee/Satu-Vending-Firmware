@@ -383,6 +383,13 @@ void runStateMachine() {
         selectedSlot = touched;
         setState(STATE_PRODUCT_SELECTION);
         drawProductSelection(selectedSlot);
+        break;
+      }
+      // Idle timeout → welcome screen so next donor can pick language
+      if (elapsed > (unsigned long)(g_cfg_idle * 1000UL)) {
+        g_lang_th = g_lang_th_default;
+        setState(STATE_WELCOME);
+        drawWelcomeScreen();
       }
       break;
     }
@@ -494,10 +501,9 @@ void runStateMachine() {
         currentAmount     = 0;
         selectedSlot      = -1;
         wantSacredWater   = false;
-        setState(STATE_IDLE);
-        idleAnimationUI();
-        idleAnimation();
-        drawIdleScreen();
+        g_lang_th = g_lang_th_default;
+        setState(STATE_WELCOME);
+        drawWelcomeScreen();
       }
       break;
     }
