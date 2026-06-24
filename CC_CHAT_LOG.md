@@ -1,9 +1,17 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 2.17 — 2026-06-24
-> Changes: D-11 session entry — Thai language support + STATE_WELCOME
-> Previous: v2.16 — 2026-06-22
+> Version 2.18 — 2026-06-24
+> Changes: D-11b — SarabanSubset.h populated with real Sarabun bitmaps; tools/generate_sarabun.py added
+> Previous: v2.17 — 2026-06-24
 > CC writes one entry per session at TOP · Chat reads last 3 entries at session open
 > Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
+
+---
+## 2026-06-24 — D-11b: Real Sarabun Thai bitmaps (tools/generate_sarabun.py)
+**Did:** (1) Wrote tools/generate_sarabun.py — Python script using freetype-py that downloads Sarabun-Regular.ttf (Apache 2.0, Google Fonts), renders all 76 Thai glyphs (U+0E01–U+0E4C) at 12pt/18pt/24pt at 96 DPI, 1-bit mono, and overwrites firmware/SarabanSubset.h. (2) Ran script in this session — confirmed real non-zero bitmap data generated: 905+2025+3227=6157 bytes across 3 sizes. (3) Verified glyph indexing: first=0/last=75, gi=cp-0x0E01, combining marks (ั ิ ี ึ ื ุ ู ฺ ็ ่ ้ ๊ ๋ ์) have xAdvance=0 — all match printThai() in ui_strings.h exactly. (4) Cannot use fontconvert directly because GFXfont.first/last are uint8_t (max 255) — Thai codepoints (0x0E01+) require custom indexing, which printThai() already implements. Python script bypasses this constraint and writes correctly indexed output.
+**Root cause of previous blank Thai:** SarabanSubset.h bitmaps were all zero bytes (placeholder). Code/conditionals in ui_screens.h were always correct. This commit fixes the visual issue.
+**Updated:** firmware/SarabanSubset.h (real bitmaps), tools/generate_sarabun.py (NEW — regenerate anytime by running script). CC_CHAT_LOG.md v2.18.
+**Re-run anytime:** `pip install freetype-py && python3 tools/generate_sarabun.py` (downloads Sarabun.ttf, overwrites SarabanSubset.h).
+**Flags:** hardware.h NOT touched (R2 LOCKED). No other firmware files touched. PAYMENT_MODE stays fake.
 
 ---
 ## 2026-06-24 — D-11: Thai language support + welcome screen (CC_BUILD_PROMPT_welcome_thai_v1.md)
