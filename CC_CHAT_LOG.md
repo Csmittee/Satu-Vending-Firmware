@@ -1,10 +1,15 @@
 # CC_CHAT_LOG.md — Satu 1.0 (Firmware)
-> Version 2.18 — 2026-06-24
-> Changes: D-11b — SarabanSubset.h populated with real Sarabun bitmaps; tools/generate_sarabun.py added
-> Previous: v2.17 — 2026-06-24
-> CC writes one entry per session at TOP · Chat reads last 3 entries at session open
-> Format defined in CC_SKILL.md · Max 10 lines per entry · Never delete old entries
-
+> Version 2.19 — 2026-06-24
+> Changes: D-11c — Fixed printThai() row-bit desync bug in ui_strings.h; pixel_mode guard added to generate_sarabun.py
+> Previous: v2.18 — 2026-06-24
+---
+## 2026-06-24 — D-11c: Fix corrupted Thai glyph rendering (ui_strings.h printThai row-bit bug)
+**Symptom:** Thai glyphs rendered but corrupted — wrong character shapes on hardware (all 3 screens in photos).
+**Root cause:** `printThai()` in ui_strings.h declared `uint8_t bits = 0, bit = 0` OUTSIDE the row loop. For any glyph with width not a multiple of 8 (most Thai characters at 12/18/24pt), the `bit` counter carries over from end-of-row into the next row. This causes a 1–7 pixel horizontal desync of every row after the first — systematic corruption of all multi-row glyphs. Index mapping, bitmap data, UTF-8 decode, and bmp advance were all correct.
+**Fix:** Moved `uint8_t bits = 0, bit = 0` inside the row loop (ui_strings.h). One line moved. bmp advance is unaffected — it calls bmp++ exactly ceil(width/8) times per row regardless of where bit lands at row-end.
+**Also:** Hardened tools/generate_sarabun.py pack_mono_bitmap() to handle FT_PIXEL_MODE_GRAY in addition to FT_PIXEL_MODE_MONO. Added abs(pitch) for bottom-up bitmap safety. FreeType returned MONO for Sarabun.ttf so bitmap content unchanged (905+2025+3227 bytes).
+**Updated:** firmware/ui_strings.h (bit-reset fix inside row loop), tools/generate_sarabun.py (pixel_mode guard). CC_CHAT_LOG.md v2.19.
+**Flags:** hardware.h NOT touched (R2 LOCKED). SarabanSubset.h NOT touched (bitmap data was already correct). PAYMENT_MODE stays fake.
 ---
 ## 2026-06-24 — D-11b: Real Sarabun Thai bitmaps (tools/generate_sarabun.py)
 **Did:** (1) Wrote tools/generate_sarabun.py — Python script using freetype-py that downloads Sarabun-Regular.ttf (Apache 2.0, Google Fonts), renders all 76 Thai glyphs (U+0E01–U+0E4C) at 12pt/18pt/24pt at 96 DPI, 1-bit mono, and overwrites firmware/SarabanSubset.h. (2) Ran script in this session — confirmed real non-zero bitmap data generated: 905+2025+3227=6157 bytes across 3 sizes. (3) Verified glyph indexing: first=0/last=75, gi=cp-0x0E01, combining marks (ั ิ ี ึ ื ุ ู ฺ ็ ่ ้ ๊ ๋ ์) have xAdvance=0 — all match printThai() in ui_strings.h exactly. (4) Cannot use fontconvert directly because GFXfont.first/last are uint8_t (max 255) — Thai codepoints (0x0E01+) require custom indexing, which printThai() already implements. Python script bypasses this constraint and writes correctly indexed output.

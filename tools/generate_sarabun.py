@@ -87,12 +87,13 @@ def download_font():
 
 
 def pack_mono_bitmap(ft_bitmap):
-    """Pack a FreeType MONO bitmap into GFX format.
+    """Pack a FreeType bitmap into GFX 1-bit MSB-first format.
 
-    FreeType MONO: 1 bit per pixel, MSB first, rows padded to byte boundaries (ft_bitmap.pitch bytes/row).
-    GFX format:    1 bit per pixel, MSB first, rows padded to byte boundaries — same layout.
+    FreeType may return pixel_mode=1 (FT_PIXEL_MODE_MONO: 1-bit packed, MSB first, pitch bytes/row)
+    or pixel_mode=2 (FT_PIXEL_MODE_GRAY: 1 byte per pixel, 0=black, 255=white).
+    GFX format: 1 bit per pixel, MSB first, rows padded to byte boundaries.
 
-    So we just copy the relevant bytes for each row (width bits, padded).
+    pitch can be negative for bottom-up bitmaps — always use abs(pitch).
     Returns (packed_bytes: bytes, width: int, height: int).
     """
     w = ft_bitmap.width
@@ -100,16 +101,33 @@ def pack_mono_bitmap(ft_bitmap):
     if w == 0 or h == 0:
         return b"", 0, 0
 
-    row_bytes = (w + 7) // 8  # bytes needed per row (GFX format)
+    row_bytes_dst = (w + 7) // 8  # bytes per row in GFX format
+    pitch = abs(ft_bitmap.pitch)  # abs(): FreeType may use negative pitch for bottom-up bitmaps
     result = bytearray()
-    for row in range(h):
-        src_start = row * ft_bitmap.pitch
-        for byte_col in range(row_bytes):
-            src_idx = src_start + byte_col
-            if src_idx < len(ft_bitmap.buffer):
-                result.append(ft_bitmap.buffer[src_idx])
-            else:
-                result.append(0)
+
+    if ft_bitmap.pixel_mode == 1:  # FT_PIXEL_MODE_MONO: already 1-bit packed, MSB first
+        for row in range(h):
+            src_start = row * pitch
+            for byte_col in range(row_bytes_dst):
+                src_idx = src_start + byte_col
+                result.append(ft_bitmap.buffer[src_idx] if src_idx < len(ft_bitmap.buffer) else 0)
+    else:  # FT_PIXEL_MODE_GRAY (pixel_mode=2): 1 byte per pixel, threshold at 128
+        for row in range(h):
+            src_start = row * pitch
+            packed_byte = 0
+            bits_written = 0
+            for col in range(w):
+                src_idx = src_start + col
+                gray = ft_bitmap.buffer[src_idx] if src_idx < len(ft_bitmap.buffer) else 0
+                packed_byte = (packed_byte << 1) | (1 if gray >= 128 else 0)
+                bits_written += 1
+                if bits_written == 8:
+                    result.append(packed_byte)
+                    packed_byte = 0
+                    bits_written = 0
+            if bits_written > 0:  # flush partial byte, pad with 0 bits on the right
+                result.append(packed_byte << (8 - bits_written))
+
     return bytes(result), w, h
 
 
