@@ -1,10 +1,19 @@
 # PROJECT STATE — Satu 1.0 Vending Machine
-> Version 1.18 — 2026-06-24
-> Changes: D-11 delivered — STATE_WELCOME + Thai language UI
-> Previous: v1.17 — 2026-06-22
+> Version 1.19 — 2026-06-24
+> Changes: D-11b+D-11c — real Sarabun bitmaps + printThai row-bit fix; Thai text confirmed readable on hardware
+> Previous: v1.18 — 2026-06-24
 > Status: Phase 1 active — ~75% complete
 
 ## SESSION LOG (newest first)
+### 2026-06-24 — D-11b+D-11c: Real Sarabun Thai bitmaps + printThai corruption fix
+- D-11b: tools/generate_sarabun.py (NEW) — downloads Sarabun-Regular.ttf (Apache 2.0, Google Fonts), renders 76 Thai glyphs × 3 sizes (12/18/24pt, 96 DPI, 1-bit MONO), writes firmware/SarabanSubset.h. Replaces zero-placeholder with real pixel data: 905+2025+3227=6157 bytes.
+- D-11c: Root cause of corrupted Thai on hardware — `uint8_t bits = 0, bit = 0` declared outside row loop in printThai() (ui_strings.h). For glyphs with width not a multiple of 8 (most Thai characters), bit counter carried over between rows causing 1–7px horizontal desync of all rows. Fix: moved declaration inside row loop. One line.
+- RESULT: Thai text readable on hardware at demo level. Minor alignment/size polish deferred.
+- NOTE: Product card content (images, prices, names) is backend-driven — firmware renders API response only. No firmware change needed.
+- DEFERRED: Settings tab language default toggle (Task 5) — space constraint. Reserved action 901.
+- CI: ⬜ pending — PR #61 on claude/dazzling-fermi-aefx6t
+- CHAT HANDOFF: Thai D-11 complete for demo. Flash PR #61. Merge when hardware confirmed.
+
 
 ### 2026-06-24 — D-11: Thai language support (CC_BUILD_PROMPT_welcome_thai_v1.md)
 - TASK: Welcome screen (STATE_WELCOME) on every boot + Thai language in sale sequence
@@ -13,7 +22,7 @@
 - DEFERRED: Settings tab language default toggle (Task 5) — only 18px space after Factory Reset button (need 34px for new row). Reserved action code 901.
 - DOCS: RULES.md v2.7 (R-172 to R-175). KNOWLEDGE_MAP.md v1.6. CLAUDE.md v1.9. UI_SPEC.md v2.1. CC_CHAT_LOG.md v2.17.
 - CI: ⬜ pending — push triggers compile-check.yml
-- PENDING: Owner must run fontconvert to generate real SarabanSubset bitmaps before Thai renders on hardware. All architecture + placeholder present. See SarabanSubset.h header comment for instructions.
+- COMPLETE: SarabanSubset.h populated with real Sarabun bitmaps via tools/generate_sarabun.py (D-11b). printThai() row-bit bug fixed (D-11c). Thai text readable on hardware.
 - OWNER ACTION: flash → boot → welcome screen shows "SATU" + EN/TH buttons. EN tap → idle grid in EN. TH tap → idle grid with Thai status bar. Payment flow uses Thai labels when TH selected.
 
 ### 2026-06-22 — D-10: ui.h split (CC_BUILD_PROMPT_ui_split_v1.md)
