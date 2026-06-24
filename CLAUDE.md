@@ -1,7 +1,7 @@
 # CLAUDE.md — Satu Project Compass
-> Version 1.9 — 2026-06-24
-> Changes: Added SarabanSubset.h, ui_strings.h, ui_screens.h to Key Files (D-11 Thai language)
-> Previous: v1.8 — 2026-06-21
+> Version 2.0 — 2026-06-24
+> Changes: D-11 complete — SarabanSubset.h has real bitmaps (generate_sarabun.py); printThai() row-bit fix
+> Previous: v1.9 — 2026-06-24
 <!-- max 35 lines · never grows · CC reads this on every session start -->
 
 ## Stack
@@ -40,7 +40,7 @@
 - `firmware/hardware.h`               — R2 LOCKED · relay + sensor + flap control · read-only always
 - `firmware/network.h`                — WiFi + API calls
 - `firmware/ui.h`                     — R7: touch display + QR rendering + include chain (SarabanSubset.h → ui_strings.h → ...)
-- `firmware/SarabanSubset.h`          — D-11: Thai GFXfont placeholder (12/18/24pt) · owner runs fontconvert with Sarabun.ttf
+- `firmware/SarabanSubset.h`          — D-11: Thai GFXfont, real Sarabun bitmaps (76 glyphs × 3 sizes) · regenerate: python3 tools/generate_sarabun.py
 - `firmware/ui_strings.h`             — R2: EN/TH labels, g_lang_th, printThai(), all Thai string constants
 - `firmware/ui_screens.h`             — R2: customer screens + welcome screen + getTouchedWelcome()
 - `firmware/ui_service.h`             — service mode 5-tab body implementations + _getTouchedServiceExtra()
